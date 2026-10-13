@@ -993,6 +993,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   let booking = {
     tour: "",
     tripId: "",
+    availableTrips: [],
     duration: "",
     date: "",
     people: 2,
@@ -1021,8 +1022,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     .from("public_trip_availability")
     .select("id, title, starts_at, ends_at, seats_available")
     .eq("title", tour)
-    .order("id")
-    .limit(1);
+    .order("starts_at");
 
   if (error) {
     console.error("Supabase error:", error);
@@ -1035,15 +1035,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     return;
   }
 
-  booking.tripId = data[0].id;
-  booking.seatsAvailable = data[0].seats_available;
-  booking.startsAt = data[0].starts_at;
-  booking.endsAt = data[0].ends_at;
-  const availableDate = new Date(booking.startsAt);
-const availableDay = availableDate.getDate();
-    
-    document.getElementById("calendar-month").textContent =
-  availableDate.toLocaleDateString("en-GB", {
+  booking.availableTrips = data;
+
+const firstDate = new Date(data[0].starts_at);
+
+document.getElementById("calendar-month").textContent =
+  firstDate.toLocaleDateString("en-GB", {
     month: "long",
     year: "numeric"
   });
@@ -1055,10 +1052,15 @@ document.querySelectorAll(".day").forEach(el => {
   el.classList.add("muted");
   el.removeAttribute("onclick");
 
-  if (dayNumber === availableDay) {
+  const trip = data.find(item => {
+    const tripDate = new Date(item.starts_at);
+    return tripDate.getDate() === dayNumber;
+  });
+
+  if (trip) {
     el.classList.remove("muted");
     el.classList.add("available");
-    el.setAttribute("onclick", `chooseDate(${availableDay})`);
+    el.setAttribute("onclick", `chooseDate(${dayNumber})`);
   }
 });
   
@@ -1068,6 +1070,18 @@ document.querySelectorAll(".day").forEach(el => {
 
   function chooseDate(day) {
 
+    const selectedTrip = booking.availableTrips.find(item => {
+  const tripDate = new Date(item.starts_at);
+  return tripDate.getDate() === day;
+});
+
+if (!selectedTrip) return;
+
+booking.tripId = selectedTrip.id;
+booking.seatsAvailable = selectedTrip.seats_available;
+booking.startsAt = selectedTrip.starts_at;
+booking.endsAt = selectedTrip.ends_at;
+    
     document.querySelectorAll(".day").forEach(el => {
       el.classList.remove("selected");
     });
@@ -1189,6 +1203,7 @@ document.getElementById("review-phone").textContent =
     booking = {
       tour: "",
       tripId: "",
+      availableTrips: [],
       duration: "",
       date: "",
       people: 2,
