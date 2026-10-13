@@ -661,7 +661,7 @@
 
     <div class="calendar-header">
       <span>‹</span>
-      <span>October 2026</span>
+      <span id="calendar-month">October 2026</span>
       <span>›</span>
     </div>
 
@@ -689,7 +689,7 @@
       <div class="day muted">13</div>
       <div class="day muted">14</div>
       <div class="day muted">15</div>
-      <div class="day selected">16</div>
+      <div class="day muted">16</div>
       <div class="day muted">17</div>
       <div class="day muted">18</div>
 
@@ -1037,8 +1037,32 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   booking.tripId = data[0].id;
   booking.seatsAvailable = data[0].seats_available;
+  booking.startsAt = data[0].starts_at;
+  booking.endsAt = data[0].ends_at;
+  const availableDate = new Date(booking.startsAt);
+const availableDay = availableDate.getDate();
+    
+    document.getElementById("calendar-month").textContent =
+  availableDate.toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric"
+  });
 
-  showScreen("screen-date");
+document.querySelectorAll(".day").forEach(el => {
+  const dayNumber = parseInt(el.textContent);
+
+  el.classList.remove("available", "selected");
+  el.classList.add("muted");
+  el.removeAttribute("onclick");
+
+  if (dayNumber === availableDay) {
+    el.classList.remove("muted");
+    el.classList.add("available");
+    el.setAttribute("onclick", `chooseDate(${availableDay})`);
+  }
+});
+  
+    showScreen("screen-date");
 }
 
 
@@ -1050,11 +1074,20 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     event.target.classList.add("selected");
 
-    booking.date = day + " October 2026";
+    const tripDate = new Date(booking.startsAt);
+    booking.date = tripDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
 
     document.getElementById("selected-date-text").textContent =
-      (day === 20 ? "Tuesday" : "Wednesday") + ", " + day + " October";
-
+      tripDate.toLocaleDateString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long"
+    });
+    
     document.getElementById("date-seats").textContent =
       booking.seatsAvailable + " seats left";
 
