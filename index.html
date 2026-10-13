@@ -659,11 +659,11 @@
     <h1>Choose your date</h1>
     <p class="subtitle">Select an available date.</p>
 
-    <div class="calendar-header">
-      <span>‹</span>
-      <span id="calendar-month">October 2026</span>
-      <span>›</span>
-    </div>
+  <div class="calendar-header">
+    <span id="calendar-prev">‹</span>
+    <span id="calendar-month">October 2026</span>
+    <span id="calendar-next">›</span>
+  </div>
 
     <div class="weekdays">
       <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div>
@@ -1002,6 +1002,9 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     phone: ""
   };
 
+  let calendarMonth = 9;
+  let calendarYear = 2026;
+
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
       screen.classList.remove("active");
@@ -1045,6 +1048,9 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const firstDate = new Date(data[0].starts_at);
 
+calendarMonth = firstDate.getMonth();
+calendarYear = firstDate.getFullYear();
+
 document.getElementById("calendar-month").textContent =
   firstDate.toLocaleDateString("en-GB", {
     month: "long",
@@ -1073,7 +1079,71 @@ document.querySelectorAll(".day").forEach(el => {
     showScreen("screen-date");
 }
 
+function renderCalendar() {
+  const monthDate = new Date(calendarYear, calendarMonth, 1);
+  const daysContainer = document.querySelector(".days");
 
+  document.getElementById("calendar-month").textContent =
+    monthDate.toLocaleDateString("en-GB", {
+      month: "long",
+      year: "numeric"
+    });
+
+  daysContainer.innerHTML = "";
+
+  const firstDay = (monthDate.getDay() + 6) % 7;
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) {
+    const emptyDay = document.createElement("div");
+    daysContainer.appendChild(emptyDay);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayElement = document.createElement("div");
+    dayElement.className = "day muted";
+    dayElement.textContent = day;
+
+    const trip = booking.availableTrips.find(item => {
+      const tripDate = new Date(item.starts_at);
+
+      return (
+        tripDate.getFullYear() === calendarYear &&
+        tripDate.getMonth() === calendarMonth &&
+        tripDate.getDate() === day
+      );
+    });
+
+    if (trip) {
+      dayElement.classList.remove("muted");
+      dayElement.classList.add("available");
+      dayElement.setAttribute("onclick", `chooseDate(${day})`);
+    }
+
+    daysContainer.appendChild(dayElement);
+  }
+}
+  document.getElementById("calendar-next").onclick = function() {
+  calendarMonth++;
+
+  if (calendarMonth > 11) {
+    calendarMonth = 0;
+    calendarYear++;
+  }
+
+  renderCalendar();
+};
+
+  document.getElementById("calendar-prev").onclick = function() {
+  calendarMonth--;
+
+  if (calendarMonth < 0) {
+    calendarMonth = 11;
+    calendarYear--;
+  }
+
+  renderCalendar();
+};
   function chooseDate(day) {
 
     const selectedTrip = booking.availableTrips.find(item => {
