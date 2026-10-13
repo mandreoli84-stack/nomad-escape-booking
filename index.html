@@ -1019,7 +1019,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const { data, error } = await supabaseClient
     .from("public_trip_availability")
-    .select("id, title, seats_available")
+    .select("id, title, starts_at, ends_at, seats_available")
     .eq("title", tour)
     .order("id")
     .limit(1);
