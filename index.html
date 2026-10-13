@@ -1017,6 +1017,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   booking.tour = tour;
   booking.duration = duration;
   booking.tripId = "";
+  booking.date = "";
+  booking.seatsAvailable = 0;
+
+  document.getElementById("selected-date-text").textContent = "Select a date";
+  document.getElementById("date-seats").textContent = "";
+  document.getElementById("date-continue").disabled = true;
 
   const { data, error } = await supabaseClient
     .from("public_trip_availability")
