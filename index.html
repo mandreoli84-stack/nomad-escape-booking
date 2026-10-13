@@ -981,11 +981,18 @@
 
 </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
+  const SUPABASE_URL = "https://vrjcvihuejztnazgmowm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_HIxK_5mntK9MnpFB5o9UJw_kakAVeOl";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
   let booking = {
     tour: "",
+    tripId: "",
     duration: "",
     date: "",
     people: 2,
@@ -1004,12 +1011,35 @@
   }
 
 
-  function selectTour(tour, duration) {
-    booking.tour = tour;
-    booking.duration = duration;
+  async function selectTour(tour, duration) {
 
-    showScreen("screen-date");
+  booking.tour = tour;
+  booking.duration = duration;
+  booking.tripId = "";
+
+  const { data, error } = await supabaseClient
+    .from("public_trip_availability")
+    .select("id, title, seats_available")
+    .eq("title", tour)
+    .order("id")
+    .limit(1);
+
+  if (error) {
+    console.error("Supabase error:", error);
+    alert("Unable to load tour availability. Please try again.");
+    return;
   }
+
+  if (!data || data.length === 0) {
+    alert("This tour is currently unavailable.");
+    return;
+  }
+
+  booking.tripId = data[0].id;
+  booking.seatsAvailable = data[0].seats_available;
+
+  showScreen("screen-date");
+}
 
 
   function chooseDate(day) {
@@ -1086,21 +1116,46 @@ document.getElementById("review-phone").textContent =
   }
 
 
-  function confirmBooking() {
+  async function confirmBooking() {
 
-    /*
-      In the next phase this function will send
-      the real booking to Supabase.
-    */
-
-    showScreen("screen-confirmation");
+  if (!booking.tripId) {
+    alert("Tour information is missing. Please select the tour again.");
+    return;
   }
+
+  const countryCode = document.getElementById("country-code").value;
+  const fullPhone = countryCode + " " + booking.phone;
+
+  const { data, error } = await supabaseClient.rpc(
+    "create_shared_booking",
+    {
+      p_trip_id: booking.tripId,
+      p_passengers: booking.people,
+      p_customer_name: booking.name,
+      p_customer_phone: fullPhone,
+      p_customer_email: null,
+      p_company_name: null,
+      p_notes: null
+    }
+  );
+
+  if (error) {
+    console.error("Booking error:", error);
+    alert(error.message || "Unable to complete the booking. Please try again.");
+    return;
+  }
+
+  booking.bookingCode = data;
+
+  showScreen("screen-confirmation");
+}
 
 
   function resetApp() {
 
     booking = {
       tour: "",
+      tripId: "",
       duration: "",
       date: "",
       people: 2,
