@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nomad Escape Fuerteventura</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f7f8f8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #10233b;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 18px 18px 24px;
+    }
+
+    /* LOGO AREA */
+    .logo {
+      text-align: center;
+      margin: 6px auto 16px;
+    }
+
+    .logo-art {
+      position: relative;
+      width: 130px;
+      height: 48px;
+      margin: auto;
+    }
+
+    .sun {
+      position: absolute;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #e7b58d;
+      right: 22px;
+      top: 1px;
+    }
+
+    .mountain-one {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 38px solid transparent;
+      border-right: 38px solid transparent;
+      border-bottom: 24px solid #9a7258;
+      left: 5px;
+      top: 12px;
+    }
+
+    .mountain-two {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 30px solid transparent;
+      border-right: 30px solid transparent;
+      border-bottom: 18px solid #d6aa89;
+      left: 48px;
+      top: 17px;
+    }
+
+    .sea {
+      position: absolute;
+      width: 70px;
+      height: 7px;
+      background: #2fa5aa;
+      transform: skewX(-30deg);
+      right: 3px;
+      bottom: 6px;
+    }
+
+    .brand {
+      margin-top: 1px;
+      font-family: Georgia, serif;
+      font-size: 18px;
+      color: #161616;
+      letter-spacing: -0.5px;
+    }
+
+    .destination {
+      font-size: 7px;
+      letter-spacing: 2px;
+      color: #d79a69;
+      margin-top: 1px;
+    }
+
+    h1 {
+      margin: 20px 0 5px;
+      font-size: 25px;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: #728093;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* TOUR CARDS */
+    .tour-card {
+      background: #f7f9fa;
+      border: 1px solid #e1e6e8;
+      border-radius: 7px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.04);
+      cursor: pointer;
+    }
+
+    .tour-photo {
+      height: 145px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg,
+          #46b9e5 0%,
+          #9bdcf0 37%,
+          #e6c18c 38%,
+          #d7a865 57%,
+          #35a9b0 58%,
+          #22a5ad 100%);
+    }
+
+    .tour-photo::before {
+      content: "";
+      position: absolute;
+      left: -15%;
+      bottom: 36%;
+      width: 85%;
+      height: 45%;
+      background: #9d7455;
+      clip-path: polygon(0 100%, 38% 35%, 56% 65%, 76% 25%, 100% 100%);
+    }
+
+    .tour-photo::after {
+      content: "";
+      position: absolute;
+      right: -8%;
+      bottom: -20px;
+      width: 80%;
+      height: 75px;
+      background: rgba(255,255,255,.82);
+      transform: rotate(-7deg);
+      border-radius: 50%;
+    }
+
+    .tour-info {
+      position: relative;
+      padding: 11px 48px 12px 12px;
+    }
+
+    .tour-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .tour-meta {
+      color: #647589;
+      font-size: 12px;
+    }
+
+    .tour-arrow {
+      position: absolute;
+      right: 12px;
+      top: 15px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #319da2;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .tour-card.selected {
+      outline: 2px solid #319da2;
+    }
+
+    /* PROGRESS */
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin: 5px 0 22px;
+      position: relative;
+    }
+
+    .progress::before {
+      content: "";
+      position: absolute;
+      top: 11px;
+      left: 11%;
+      right: 11%;
+      height: 2px;
+      background: #dce4e7;
+      z-index: 0;
+    }
+
+    .step {
+      width: 25%;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      font-size: 9px;
+      color: #68798a;
+    }
+
+    .step-circle {
+      margin: 0 auto 5px;
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      background: #edf2f3;
+      color: #71808d;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .step.active .step-circle,
+    .step.done .step-circle {
+      background: #329da2;
+      color: white;
+    }
+
+    /* GENERIC PANELS */
+    .panel {
+      background: #f5f8f8;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 15px 0;
+    }
+
+    /* CALENDAR */
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 8px 2px;
+    }
+
+    .weekdays {
+      font-size: 10px;
+      color: #6f7d89;
+      margin-bottom: 12px;
+    }
+
+    .day {
+      height: 31px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border-radius: 50%;
+    }
+
+    .day.available {
+      cursor: pointer;
+    }
+
+    .day.selected {
+      width: 31px;
+      margin: auto;
+      background: #329da2;
+      color: white;
+    }
+
+    .day.muted {
+      color: #c4ccd1;
+    }
+
+    .selected-date {
+      margin-top: 22px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #f5f8f8;
+      border: 1px solid #e1e7e8;
+      border-radius: 7px;
+      padding: 12px;
+    }
+
+    .calendar-icon {
+      font-size: 25px;
+      color: #319da2;
+    }
+
+    .date-main {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .seats-warning {
+      font-size: 12px;
+      color: #e09a2b;
+      margin-top: 4px;
+    }
+
+    /* PEOPLE */
+    .people-control {
+      margin: 25px 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f3f7f7;
+      border-radius: 40px;
+      padding: 10px 15px;
+    }
+
+    .counter-button {
+      border: none;
+      background: transparent;
+      color: #218f95;
+      font-size: 32px;
+      width: 55px;
+      cursor: pointer;
+    }
+
+    .people-number {
+      font-size: 30px;
+      font-weight: 600;
+    }
+
+    .availability {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 10px 20px;
+      color: #238e92;
+    }
+
+    .people-icon {
+      font-size: 28px;
+    }
+
+    .availability strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .availability small {
+      color: #70808c;
+    }
+
+    .info-note {
+      padding: 11px;
+      background: #f2f5f6;
+      color: #677786;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    /* FORM */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 17px 0 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d9e0e3;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #319da2;
+    }
+
+    .phone-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .country-code {
+      width: 90px;
+      flex: none;
+    }
+
+    .helper {
+      color: #728091;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 9px;
+    }
+
+    /* REVIEW */
+    .review-card {
+      border: 1px solid #e0e5e7;
+      border-radius: 7px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    .review-tour {
+      padding: 12px;
+      background: #f5f8f8;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .review-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-top: 1px solid #e5e9ea;
+      font-size: 12px;
+    }
+
+    .review-icon {
+      width: 25px;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .review-content {
+      flex: 1;
+    }
+
+    .review-label {
+      color: #6d7a88;
+      font-size: 10px;
+    }
+
+    .edit {
+      color: #26959a;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* BUTTONS */
+    .bottom-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    button.primary,
+    button.secondary {
+      min-height: 48px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border: none;
+      background: #319da2;
+      color: white;
+      flex: 1;
+    }
+
+    button.secondary {
+      background: white;
+      color: #14273d;
+      border: 1px solid #ccd5d9;
+      min-width: 105px;
+    }
+
+    button.primary:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    /* CONFIRMATION */
+    .confirmation {
+      text-align: center;
+      padding-top: 35px;
+    }
+
+    .check-circle {
+      width: 90px;
+      height: 90px;
+      margin: 35px auto 25px;
+      background: #e7f2f2;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #167a80;
+      font-size: 45px;
+      font-weight: bold;
+    }
+
+    .confirmation h2 {
+      font-size: 21px;
+      margin-bottom: 10px;
+    }
+
+    .confirmation p {
+      color: #6f7f90;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .whatsapp-box {
+      text-align: left;
+      margin: 28px 0;
+      padding: 14px;
+      background: #f3f8f8;
+      border-radius: 7px;
+      display: flex;
+      gap: 12px;
+      color: #617381;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* THANK YOU */
+    .thank-art {
+      height: 250px;
+      margin: 30px 0;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(
+        160deg,
+        #ffffff 0 35%,
+        #b7835e 36% 52%,
+        #2aa6aa 53% 65%,
+        #f1d0ad 66% 100%
+      );
+    }
+
+    .thank-art::after {
+      content: "";
+      position: absolute;
+      width: 85px;
+      height: 85px;
+      border-radius: 50%;
+      background: #e8ad7c;
+      right: 30px;
+      top: 25px;
+    }
+
+    .thank-you {
+      text-align: center;
+    }
+
+    .thank-you h1 {
+      font-size: 28px;
+    }
+
+    .thank-you p {
+      color: #6d7d8d;
+      line-height: 1.6;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- SCREEN 1 -->
+  <section class="screen active" id="screen-tour">
+
+    <div class="logo">
+      <div class="logo-art">
+        <div class="sun"></div>
+        <div class="mountain-one"></div>
+        <div class="mountain-two"></div>
+        <div class="sea"></div>
+      </div>
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <h1>Choose your tour</h1>
+    <p class="subtitle">Select your experience and continue with the booking.</p>
+
+    <div class="tour-card" onclick="selectTour('North Fuerteventura', '4 hours')">
+      <div class="tour-photo"></div>
+      <div class="tour-info">
+        <div class="tour-title">North Fuerteventura</div>
+        <div class="tour-meta">4 hours · From Corralejo</div>
+        <div class="tour-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="tour-card" onclick="selectTour('Sotavento Experience', '7-8 hours')">
+      <div class="tour-photo"></div>
+      <div class="tour-info">
+        <div class="tour-title">Sotavento Experience</div>
+        <div class="tour-meta">7-8 hours · From Corralejo</div>
+        <div class="tour-arrow">›</div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- SCREEN 2 -->
+  <section class="screen" id="screen-date">
+
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <div class="progress">
+      <div class="step active">
+        <div class="step-circle">1</div>
+        Date
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        People
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        Details
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        Review
+      </div>
+    </div>
+
+    <h1>Choose your date</h1>
+    <p class="subtitle">Select an available date.</p>
+
+    <div class="calendar-header">
+      <span>‹</span>
+      <span>October 2026</span>
+      <span>›</span>
+    </div>
+
+    <div class="weekdays">
+      <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div>
+      <div>Fri</div><div>Sat</div><div>Sun</div>
+    </div>
+
+    <div class="days">
+      <div></div><div></div><div></div>
+      <div class="day muted">1</div>
+      <div class="day muted">2</div>
+      <div class="day muted">3</div>
+      <div class="day muted">4</div>
+
+      <div class="day muted">5</div>
+      <div class="day muted">6</div>
+      <div class="day muted">7</div>
+      <div class="day muted">8</div>
+      <div class="day muted">9</div>
+      <div class="day muted">10</div>
+      <div class="day muted">11</div>
+
+      <div class="day muted">12</div>
+      <div class="day muted">13</div>
+      <div class="day muted">14</div>
+      <div class="day muted">15</div>
+      <div class="day selected">16</div>
+      <div class="day muted">17</div>
+      <div class="day muted">18</div>
+
+      <div class="day muted">19</div>
+      <div class="day available" onclick="chooseDate(20)">20</div>
+      <div class="day available" onclick="chooseDate(21)">21</div>
+      <div class="day muted">22</div>
+      <div class="day muted">23</div>
+      <div class="day muted">24</div>
+      <div class="day muted">25</div>
+
+      <div class="day muted">26</div>
+      <div class="day muted">27</div>
+      <div class="day muted">28</div>
+      <div class="day muted">29</div>
+      <div class="day muted">30</div>
+      <div class="day muted">31</div>
+    </div>
+
+    <div class="selected-date">
+      <div class="calendar-icon">▣</div>
+      <div>
+        <div class="date-main" id="selected-date-text">Select a date</div>
+        <div class="seats-warning" id="date-seats"></div>
+      </div>
+    </div>
+
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="showScreen('screen-tour')">BACK</button>
+      <button class="primary" id="date-continue" disabled onclick="showScreen('screen-people')">
+        CONTINUE
+      </button>
+    </div>
+
+  </section>
+
+
+  <!-- SCREEN 3 -->
+  <section class="screen" id="screen-people">
+
+    <div class="progress">
+      <div class="step done">
+        <div class="step-circle">✓</div>
+        Date
+      </div>
+      <div class="step active">
+        <div class="step-circle">2</div>
+        People
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        Details
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        Review
+      </div>
+    </div>
+
+    <h1>How many people?</h1>
+    <p class="subtitle">Select the number of seats you want to book.</p>
+
+    <div class="people-control">
+      <button class="counter-button" onclick="changePeople(-1)">−</button>
+      <div class="people-number" id="people-count">2</div>
+      <button class="counter-button" onclick="changePeople(1)">+</button>
+    </div>
+
+    <div class="availability">
+      <div class="people-icon">♟♟</div>
+      <div>
+        <strong id="seats-left">8 seats left</strong>
+        <small>out of 8 available</small>
+      </div>
+    </div>
+
+    <div class="info-note">ⓘ &nbsp; Children count as a seat.</div>
+
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="showScreen('screen-date')">BACK</button>
+      <button class="primary" onclick="showScreen('screen-details')">CONTINUE</button>
+    </div>
+
+  </section>
+
+
+  <!-- SCREEN 4 -->
+  <section class="screen" id="screen-details">
+
+    <div class="progress">
+      <div class="step done"><div class="step-circle">✓</div>Date</div>
+      <div class="step done"><div class="step-circle">✓</div>People</div>
+      <div class="step active"><div class="step-circle">3</div>Details</div>
+      <div class="step"><div class="step-circle">4</div>Review</div>
+    </div>
+
+    <h1>Your details</h1>
+    <p class="subtitle">Enter your contact details for the booking confirmation.</p>
+
+    <label>Name</label>
+    <input id="customer-name" type="text" placeholder="Your name">
+
+    <label>Phone / WhatsApp</label>
+
+    <div class="phone-row">
+      <input class="country-code" value="🇪🇸 +34" readonly>
+      <input id="customer-phone" type="tel" placeholder="Your phone number">
+    </div>
+
+    <div class="helper">
+      We'll use this number for your booking confirmation.
+    </div>
+
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="showScreen('screen-people')">BACK</button>
+      <button class="primary" onclick="openReview()">CONTINUE</button>
+    </div>
+
+  </section>
+
+
+  <!-- SCREEN 5 -->
+  <section class="screen" id="screen-review">
+
+    <div class="progress">
+      <div class="step done"><div class="step-circle">✓</div>Date</div>
+      <div class="step done"><div class="step-circle">✓</div>People</div>
+      <div class="step done"><div class="step-circle">✓</div>Details</div>
+      <div class="step active"><div class="step-circle">4</div>Review</div>
+    </div>
+
+    <h1>Review your booking</h1>
+    <p class="subtitle">Please check everything before confirming.</p>
+
+    <div class="review-card">
+
+      <div class="review-tour">
+        <div>
+          <div class="review-label">Tour</div>
+          <strong id="review-tour"></strong>
+          <div class="tour-meta" id="review-duration"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-tour')">Edit</span>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">▣</div>
+        <div class="review-content">
+          <div class="review-label">Date</div>
+          <div id="review-date"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-date')">Edit</span>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">◷</div>
+        <div class="review-content">
+          <div class="review-label">Time</div>
+          <div id="review-time"></div>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">♟</div>
+        <div class="review-content">
+          <div class="review-label">People</div>
+          <div id="review-people"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-people')">Edit</span>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">♙</div>
+        <div class="review-content">
+          <div class="review-label">Name</div>
+          <div id="review-name"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-details')">Edit</span>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">◉</div>
+        <div class="review-content">
+          <div class="review-label">Phone / WhatsApp</div>
+          <div id="review-phone"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-details')">Edit</span>
+      </div>
+
+    </div>
+
+    <button class="primary" style="width:100%" onclick="confirmBooking()">
+      CONFIRM BOOKING
+    </button>
+
+    <button class="secondary" style="width:100%; margin-top:9px" onclick="showScreen('screen-details')">
+      BACK
+    </button>
+
+  </section>
+
+
+  <!-- SCREEN 6 -->
+  <section class="screen" id="screen-confirmation">
+
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <div class="confirmation">
+
+      <div class="check-circle">✓</div>
+
+      <h2>Booking request sent!</h2>
+
+      <p>
+        We'll confirm your booking<br>
+        shortly via WhatsApp.
+      </p>
+
+      <div class="whatsapp-box">
+        <strong>◉</strong>
+        <div>Keep an eye on your WhatsApp for the confirmation.</div>
+      </div>
+
+      <button class="primary" style="width:100%" onclick="showScreen('screen-thanks')">
+        BACK TO HOME
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- SCREEN 7 -->
+  <section class="screen" id="screen-thanks">
+
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <div class="thank-art"></div>
+
+    <div class="thank-you">
+      <h1>Thank you!</h1>
+
+      <p>
+        We look forward to<br>
+        welcoming you in<br>
+        Fuerteventura.
+      </p>
+
+      <button class="primary" style="width:100%; margin-top:25px" onclick="resetApp()">
+        BACK TO HOME
+      </button>
+    </div>
+
+  </section>
+
+</div>
+
+
+<script>
+
+  let booking = {
+    tour: "",
+    duration: "",
+    date: "",
+    people: 2,
+    seatsAvailable: 8,
+    name: "",
+    phone: ""
+  };
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(screen => {
+      screen.classList.remove("active");
+    });
+
+    document.getElementById(id).classList.add("active");
+    window.scrollTo(0, 0);
+  }
+
+
+  function selectTour(tour, duration) {
+    booking.tour = tour;
+    booking.duration = duration;
+
+    showScreen("screen-date");
+  }
+
+
+  function chooseDate(day) {
+
+    document.querySelectorAll(".day").forEach(el => {
+      el.classList.remove("selected");
+    });
+
+    event.target.classList.add("selected");
+
+    booking.date = day + " October 2026";
+
+    document.getElementById("selected-date-text").textContent =
+      (day === 20 ? "Tuesday" : "Wednesday") + ", " + day + " October";
+
+    document.getElementById("date-seats").textContent =
+      booking.seatsAvailable + " seats left";
+
+    document.getElementById("date-continue").disabled = false;
+  }
+
+
+  function changePeople(change) {
+
+    let newValue = booking.people + change;
+
+    if (newValue < 1) newValue = 1;
+    if (newValue > booking.seatsAvailable) newValue = booking.seatsAvailable;
+
+    booking.people = newValue;
+
+    document.getElementById("people-count").textContent = booking.people;
+  }
+
+
+  function openReview() {
+
+    booking.name = document.getElementById("customer-name").value.trim();
+    booking.phone = document.getElementById("customer-phone").value.trim();
+
+    if (booking.name.length < 2) {
+      alert("Please enter your name.");
+      return;
+    }
+
+    if (booking.phone.length < 5) {
+      alert("Please enter a valid phone number.");
+      return;
+    }
+
+    document.getElementById("review-tour").textContent = booking.tour;
+
+    document.getElementById("review-duration").textContent =
+      booking.duration + " · From Corralejo";
+
+    document.getElementById("review-date").textContent = booking.date;
+
+    document.getElementById("review-time").textContent =
+      booking.tour === "North Fuerteventura"
+      ? "09:30 – 13:30"
+      : "09:30 – 17:00";
+
+    document.getElementById("review-people").textContent =
+      booking.people + (booking.people === 1 ? " person" : " people");
+
+    document.getElementById("review-name").textContent = booking.name;
+
+    document.getElementById("review-phone").textContent =
+      "+34 " + booking.phone;
+
+    showScreen("screen-review");
+  }
+
+
+  function confirmBooking() {
+
+    /*
+      In the next phase this function will send
+      the real booking to Supabase.
+    */
+
+    showScreen("screen-confirmation");
+  }
+
+
+  function resetApp() {
+
+    booking = {
+      tour: "",
+      duration: "",
+      date: "",
+      people: 2,
+      seatsAvailable: 8,
+      name: "",
+      phone: ""
+    };
+
+    document.getElementById("customer-name").value = "";
+    document.getElementById("customer-phone").value = "";
+    document.getElementById("people-count").textContent = "2";
+
+    showScreen("screen-tour");
+  }
+
+</script>
+
+</body>
+</html>
