@@ -795,10 +795,38 @@
     <label>Phone / WhatsApp</label>
 
     <div class="phone-row">
-      <input class="country-code" value="🇪🇸 +34" readonly>
-      <input id="customer-phone" type="tel" placeholder="Your phone number">
-    </div>
+  <select id="country-code" class="country-code">
+    <option value="+34" selected>🇪🇸 +34</option>
+    <option value="+39">🇮🇹 +39</option>
+    <option value="+44">🇬🇧 +44</option>
+    <option value="+33">🇫🇷 +33</option>
+    <option value="+49">🇩🇪 +49</option>
+    <option value="+31">🇳🇱 +31</option>
+    <option value="+32">🇧🇪 +32</option>
+    <option value="+41">🇨🇭 +41</option>
+    <option value="+43">🇦🇹 +43</option>
+    <option value="+351">🇵🇹 +351</option>
+    <option value="+353">🇮🇪 +353</option>
+    <option value="+45">🇩🇰 +45</option>
+    <option value="+46">🇸🇪 +46</option>
+    <option value="+47">🇳🇴 +47</option>
+    <option value="+358">🇫🇮 +358</option>
+    <option value="+48">🇵🇱 +48</option>
+    <option value="+420">🇨🇿 +420</option>
+    <option value="+30">🇬🇷 +30</option>
+    <option value="+40">🇷🇴 +40</option>
+    <option value="+1">🇺🇸 +1</option>
+    <option value="+1">🇨🇦 +1</option>
+    <option value="+52">🇲🇽 +52</option>
+    <option value="+55">🇧🇷 +55</option>
+    <option value="+54">🇦🇷 +54</option>
+    <option value="+61">🇦🇺 +61</option>
+    <option value="+64">🇳🇿 +64</option>
+  </select>
 
+  <input id="customer-phone" type="tel" placeholder="Your phone number">
+</div>
+    
     <div class="helper">
       We'll use this number for your booking confirmation.
     </div>
@@ -1049,8 +1077,10 @@
 
     document.getElementById("review-name").textContent = booking.name;
 
-    document.getElementById("review-phone").textContent =
-      "+34 " + booking.phone;
+    const countryCode = document.getElementById("country-code").value;
+
+document.getElementById("review-phone").textContent =
+  countryCode + " " + booking.phone;
 
     showScreen("screen-review");
   }
