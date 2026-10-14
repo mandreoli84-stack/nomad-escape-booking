@@ -1061,24 +1061,7 @@ document.getElementById("calendar-month").textContent =
     year: "numeric"
   });
 
-document.querySelectorAll(".day").forEach(el => {
-  const dayNumber = parseInt(el.textContent);
-
-  el.classList.remove("available", "selected");
-  el.classList.add("muted");
-  el.removeAttribute("onclick");
-
-  const trip = data.find(item => {
-    const tripDate = new Date(item.starts_at);
-    return tripDate.getDate() === dayNumber;
-  });
-
-  if (trip) {
-    el.classList.remove("muted");
-    el.classList.add("available");
-    el.setAttribute("onclick", `chooseDate(${dayNumber})`);
-  }
-});
+    renderCalendar();
   
     showScreen("screen-date");
 }
@@ -1150,9 +1133,14 @@ function renderCalendar() {
 };
   function chooseDate(day) {
 
-    const selectedTrip = booking.availableTrips.find(item => {
+  const selectedTrip = booking.availableTrips.find(item => {
   const tripDate = new Date(item.starts_at);
-  return tripDate.getDate() === day;
+
+  return (
+    tripDate.getFullYear() === calendarYear &&
+    tripDate.getMonth() === calendarMonth &&
+    tripDate.getDate() === day
+  );
 });
 
 if (!selectedTrip) return;
