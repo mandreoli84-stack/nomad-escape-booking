@@ -594,9 +594,42 @@
 <body>
 
 <div class="app">
+<!-- ACCESS SCREEN -->
+<section class="screen active" id="screen-access">
 
+  <div class="logo">
+    <div class="logo-art">
+      <div class="sun"></div>
+      <div class="mountain-one"></div>
+      <div class="mountain-two"></div>
+      <div class="sea"></div>
+    </div>
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>How would you like to book?</h1>
+  <p class="subtitle">Choose how you are booking your experience.</p>
+
+  <div class="tour-card" onclick="selectAccessType('guest')">
+    <div class="tour-info">
+      <div class="tour-title">Guest</div>
+      <div class="tour-meta">Book your tour</div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="tour-card" onclick="selectAccessType('business')">
+    <div class="tour-info">
+      <div class="tour-title">Business</div>
+      <div class="tour-meta">Book for your customer</div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+
+</section>
   <!-- SCREEN 1 -->
-  <section class="screen active" id="screen-tour">
+ <section class="screen" id="screen-tour">
 
     <div class="logo">
       <div class="logo-art">
@@ -1002,6 +1035,7 @@ const SUPABASE_KEY = "sb_publishable_HIxK_5mntK9MnpFB5o9UJw_kakAVeOl";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let booking = {
+    accessType: "",
     tour: "",
     tripId: "",
     availableTrips: [],
@@ -1013,13 +1047,18 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     phone: ""
   };
 
+  function selectAccessType(type) {
+  booking.accessType = type;
+  showScreen("screen-tour");
+  }
+  
   let calendarMonth = 9;
   let calendarYear = 2026;
 
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
       screen.classList.remove("active");
-    });
+  });
 
     document.getElementById(id).classList.add("active");
     window.scrollTo(0, 0);
