@@ -837,7 +837,12 @@
     <h1>Your details</h1>
     <p class="subtitle">Enter your contact details for the booking confirmation.</p>
 
-    <label>Name</label>
+<div id="business-fields" style="display:none;">
+  <label>Business Name</label>
+  <input id="business-name" type="text" placeholder="Your business name">
+</div>
+    
+    <label id="customer-name-label">Name</label>
     <input id="customer-name" type="text" placeholder="Your name">
 
     <label>Phone / WhatsApp</label>
@@ -1051,10 +1056,25 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     phone: ""
   };
 
-  function selectAccessType(type) {
+ function selectAccessType(type) {
   booking.accessType = type;
+
+  const businessFields = document.getElementById("business-fields");
+  const customerNameLabel = document.getElementById("customer-name-label");
+  const customerNameInput = document.getElementById("customer-name");
+
+  if (type === "business") {
+  businessFields.style.display = "block";
+  customerNameLabel.textContent = "Customer Name";
+  customerNameInput.placeholder = "Customer name";
+} else {
+  businessFields.style.display = "none";
+  customerNameLabel.textContent = "Name";
+  customerNameInput.placeholder = "Your name";
+}
+
   showScreen("screen-tour");
-  }
+}
   
   let calendarMonth = 9;
   let calendarYear = 2026;
