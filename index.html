@@ -814,7 +814,7 @@
       </div>
     </div>
 
-    <div class="info-note">ⓘ &nbsp; Children count as a seat.</div>
+   <div class="info-note">ⓘ &nbsp; Children count as a seat.</div>
 
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-date')">BACK</button>
@@ -843,7 +843,7 @@
 </div>
     
     <label id="customer-name-label">Name</label>
-    <input id="customer-name" type="text" placeholder="Your name">
+    <input id="customer-name" type="text" placeholder="Your name" oninput="capitalizeName(this)">
 
     <label>WhatsApp</label>
     
@@ -1299,7 +1299,11 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("people-count").textContent = booking.people;
   }
 
-
+    function capitalizeName(input) {
+  input.value = input.value
+    .toLowerCase()
+    .replace(/\b\p{L}/gu, letter => letter.toUpperCase());
+}
   function openReview() {
 
     booking.name = document.getElementById("customer-name").value.trim();
