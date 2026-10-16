@@ -1042,7 +1042,32 @@
         We'll confirm your booking<br>
         shortly via WhatsApp.
       </p>
+      <div class="review-row">
+     <div class="review-content">
+    <div class="review-label">Booking Code</div>
+    <div id="confirmation-booking-code" style="font-size:22px; font-weight:800;"></div>
+  </div>
+</div>
+      <div class="review-row">
+  <div class="review-content">
+    <div class="review-label">Tour Total</div>
+    <div id="confirmation-total"></div>
+  </div>
+</div>
 
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">25% Deposit</div>
+    <div id="confirmation-deposit"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">Remaining Balance</div>
+    <div id="confirmation-balance"></div>
+  </div>
+</div>
       <div class="whatsapp-box">
         <strong>◉</strong>
         <div>Keep an eye on your WhatsApp for the confirmation.</div>
@@ -1401,11 +1426,13 @@ booking.endsAt = selectedTrip.ends_at;
       p_customer_name: booking.name,
       p_customer_phone: fullPhone,
       p_customer_email: null,
-      p_company_name: null,
+      p_company_name: booking.accessType === "business"
+        ? document.getElementById("business-name").value.trim()
+        : null,
       p_notes: null
     }
   );
-
+  
   if (error) {
     console.error("Booking error:", error);
     alert(error.message || "Unable to complete the booking. Please try again.");
@@ -1413,25 +1440,42 @@ booking.endsAt = selectedTrip.ends_at;
   }
 
   booking.bookingCode = data;
+    
+  document.getElementById("confirmation-booking-code").textContent =
+    booking.bookingCode;
 
+    const depositAmount = Math.floor(booking.tourTotal * 0.25);
+const balanceAmount = booking.tourTotal - depositAmount;
+
+document.getElementById("confirmation-total").textContent =
+  "€" + booking.tourTotal;
+
+document.getElementById("confirmation-deposit").textContent =
+  "€" + depositAmount;
+
+document.getElementById("confirmation-balance").textContent =
+  "€" + balanceAmount;
   showScreen("screen-confirmation");
 }
 
 
   function resetApp() {
 
-    booking = {
-      tour: "",
-      tripId: "",
-      availableTrips: [],
-      duration: "",
-      date: "",
-      people: 2,
-      seatsAvailable: 8,
-      name: "",
-      phone: ""
-    };
-
+   booking = {
+  accessType: "",
+  pricePerPerson: 0,
+  tourTotal: 0,
+  bookingCode: "",
+  tour: "",
+  tripId: "",
+  availableTrips: [],
+  duration: "",
+  date: "",
+  people: 2,
+  seatsAvailable: 8,
+  name: "",
+  phone: ""
+};
     document.getElementById("customer-name").value = "";
     document.getElementById("customer-phone").value = "";
     document.getElementById("people-count").textContent = "2";
