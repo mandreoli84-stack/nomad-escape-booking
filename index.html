@@ -485,27 +485,19 @@
       text-align: left;
     }
 
-    .cash-dot {
-      width: 12px;
-      height: 12px;
-      border: 1px solid #81939d;
-      border-radius: 50%;
-      background: #f1f6f6;
+    .cash-van {
+      width: 24px;
+      height: 18px;
+      color: #607985;
       flex-shrink: 0;
-      position: relative;
-      box-sizing: border-box;
+      display: flex;
+      align-items: center;
     }
 
-    .cash-dot::after {
-      content: "";
-      position: absolute;
-      width: 7px;
-      height: 7px;
-      background: #607985;
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .cash-van svg {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     
     button.primary,
@@ -1195,7 +1187,17 @@
     </div>
 
     <p class="cash-note">
-      <span class="cash-dot"></span>
+      <span class="cash-van" aria-hidden="true">
+  <svg viewBox="0 0 32 22">
+    <path d="M3 6h17l5 6h3c1.1 0 2 .9 2 2v3h-3.2a4 4 0 0 0-7.6 0H11a4 4 0 0 0-7.6 0H2V8c0-1.1.9-2 2-2Z" fill="currentColor"/>
+    <rect x="6" y="8" width="6" height="4" rx="1" fill="#f1f6f6"/>
+    <rect x="14" y="8" width="6" height="4" rx="1" fill="#f1f6f6"/>
+    <circle cx="7" cy="18" r="2.5" fill="currentColor"/>
+    <circle cx="23" cy="18" r="2.5" fill="currentColor"/>
+    <circle cx="7" cy="18" r="1" fill="#f1f6f6"/>
+    <circle cx="23" cy="18" r="1" fill="#f1f6f6"/>
+  </svg>
+</span>
       The remaining balance must be paid in cash on the day of the tour.
     </p>
 
