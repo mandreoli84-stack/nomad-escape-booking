@@ -486,11 +486,24 @@
     }
 
     .cash-dot {
-      width: 8px;
-      height: 8px;
-      background: #319da2;
+      width: 11px;
+      height: 11px;
+      border: 1px solid #526b7a;
       border-radius: 50%;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .cash-dot::after {
+      content: "";
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background: #526b7a;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     
     button.primary,
