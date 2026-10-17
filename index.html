@@ -470,7 +470,25 @@
       gap: 10px;
       margin-top: 22px;
     }
+    
+    .cash-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      color: #319da2;
+      font-size: 14px;
+      font-weight: 500;
+    }
 
+    .cash-dot {
+      width: 8px;
+      height: 8px;
+      background: #319da2;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
     button.primary,
     button.secondary {
       min-height: 48px;
@@ -1036,19 +1054,51 @@
 
       <div class="check-circle">✓</div>
 
-      <h2>Booking request sent!</h2>
+      <h2>Booking confirmed!</h2>
 
-      <p>
-        We'll confirm your booking<br>
-        shortly via WhatsApp.
-      </p>
-      <div class="review-row">
-     <div class="review-content">
+<div class="review-row">
+  <div class="review-content">
     <div class="review-label">Booking Code</div>
     <div id="confirmation-booking-code" style="font-size:22px; font-weight:800;"></div>
   </div>
 </div>
-      <div class="review-row">
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">Customer</div>
+    <div id="confirmation-customer"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">WhatsApp</div>
+    <div id="confirmation-phone"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">Tour</div>
+    <div id="confirmation-tour"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">Date / Time</div>
+    <div id="confirmation-date-time"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
+    <div class="review-label">People</div>
+    <div id="confirmation-people"></div>
+  </div>
+</div>
+
+<div class="review-row">
   <div class="review-content">
     <div class="review-label">Tour Total</div>
     <div id="confirmation-total"></div>
@@ -1062,20 +1112,27 @@
   </div>
 </div>
 
-<div class="review-row">
-  <div class="review-content">
-    <div class="review-label">Remaining Balance</div>
-    <div id="confirmation-balance"></div>
+<div class="whatsapp-box">
+  <strong>✓</strong>
+  <div>
+    Thank you for booking with Nomad Escape!<br>
+    We appreciate your partnership.
   </div>
 </div>
-      <div class="whatsapp-box">
-        <strong>◉</strong>
-        <div>Keep an eye on your WhatsApp for the confirmation.</div>
-      </div>
 
-      <button class="primary" style="width:100%" onclick="showScreen('screen-thanks')">
-        BACK TO HOME
-      </button>
+<div class="bottom-buttons">
+  <button class="secondary" onclick="copyBusinessBooking()">
+    COPY BOOKING
+  </button>
+
+  <button class="primary" onclick="downloadBusinessReceipt()">
+    DOWNLOAD RECEIPT
+  </button>
+</div>
+
+<button class="secondary" style="width:100%; margin-top:9px" onclick="showScreen('screen-thanks')">
+  BACK TO HOME
+</button>
 
     </div>
 
@@ -1118,7 +1175,8 @@
       </div>
     </div>
 
-    <p>
+    <p class="cash-note">
+      <span class="cash-dot"></span>
       The remaining balance must be paid in cash on the day of the tour.
     </p>
 
@@ -1524,18 +1582,208 @@ booking.endsAt = selectedTrip.ends_at;
     const depositAmount = Math.floor(booking.tourTotal * 0.25);
 const balanceAmount = booking.tourTotal - depositAmount;
 
+document.getElementById("confirmation-customer").textContent =
+  booking.name;
+
+document.getElementById("confirmation-phone").textContent =
+  fullPhone;
+
+document.getElementById("confirmation-tour").textContent =
+  booking.tour;
+
+document.getElementById("confirmation-date-time").textContent =
+  booking.date + " · " +
+  (booking.tour === "North Fuerteventura"
+    ? "09:30 – 13:30"
+    : "09:30 – 17:00");
+
+document.getElementById("confirmation-people").textContent =
+  booking.people + (booking.people === 1 ? " person" : " people");
+
 document.getElementById("confirmation-total").textContent =
   "€" + booking.tourTotal;
 
 document.getElementById("confirmation-deposit").textContent =
   "€" + depositAmount;
-
-document.getElementById("confirmation-balance").textContent =
-  "€" + balanceAmount;
   showScreen("screen-confirmation");
 }
+  
+  async function copyBusinessBooking() {
+  const time =
+    booking.tour === "North Fuerteventura"
+      ? "09:30 – 13:30"
+      : "09:30 – 17:00";
 
+  const countryCode = document.getElementById("country-code").value;
+  const fullPhone = countryCode + " " + booking.phone;
+  const depositAmount = Math.floor(booking.tourTotal * 0.25);
 
+  const bookingText =
+`NOMAD ESCAPE FUERTEVENTURA
+
+Booking Code: ${booking.bookingCode}
+Customer: ${booking.name}
+WhatsApp: ${fullPhone}
+Tour: ${booking.tour}
+Date: ${booking.date}
+Time: ${time}
+People: ${booking.people}
+Tour Total: €${booking.tourTotal}
+25% Deposit: €${depositAmount}
+
+Thank you for booking with Nomad Escape!`;
+
+  try {
+    await navigator.clipboard.writeText(bookingText);
+    alert("Booking copied!");
+  } catch (error) {
+    alert("Unable to copy the booking.");
+  }
+
+}
+  
+  function downloadBusinessReceipt() {
+  const time =
+    booking.tour === "North Fuerteventura"
+      ? "09:30 – 13:30"
+      : "09:30 – 17:00";
+
+  const countryCode = document.getElementById("country-code").value;
+  const fullPhone = countryCode + " " + booking.phone;
+  const depositAmount = Math.floor(booking.tourTotal * 0.25);
+
+  const receiptWindow = window.open("", "_blank");
+
+  receiptWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Booking ${booking.bookingCode}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 20px;
+          color: #17283f;
+        }
+
+        h1 {
+          text-align: center;
+          margin-bottom: 4px;
+        }
+
+        .destination {
+          text-align: center;
+          letter-spacing: 3px;
+          font-size: 12px;
+          margin-bottom: 35px;
+        }
+
+        h2 {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .row {
+          border-bottom: 1px solid #ddd;
+          padding: 12px 0;
+        }
+
+        .label {
+          font-size: 12px;
+          color: #667085;
+        }
+
+        .value {
+          font-size: 17px;
+          font-weight: 600;
+          margin-top: 3px;
+        }
+
+        .code {
+          font-size: 22px;
+          font-weight: 800;
+        }
+
+        .thanks {
+          margin-top: 30px;
+          text-align: center;
+        }
+
+        @media print {
+          .print-button {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+      <h1>NOMAD ESCAPE</h1>
+      <div class="destination">FUERTEVENTURA</div>
+
+      <h2>Booking Receipt</h2>
+
+      <div class="row">
+        <div class="label">Booking Code</div>
+        <div class="value code">${booking.bookingCode}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Customer</div>
+        <div class="value">${booking.name}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">WhatsApp</div>
+        <div class="value">${fullPhone}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Tour</div>
+        <div class="value">${booking.tour}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Date / Time</div>
+        <div class="value">${booking.date} · ${time}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">People</div>
+        <div class="value">${booking.people}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Tour Total</div>
+        <div class="value">€${booking.tourTotal}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">25% Deposit</div>
+        <div class="value">€${depositAmount}</div>
+      </div>
+
+      <div class="thanks">
+        <strong>Thank you for booking with Nomad Escape!</strong><br>
+        We appreciate your partnership.
+      </div>
+
+      <div style="text-align:center; margin-top:30px;">
+        <button class="print-button" onclick="window.print()">
+          SAVE / PRINT RECEIPT
+        </button>
+      </div>
+    </body>
+    </html>
+  `);
+
+ receiptWindow.document.close();
+    
+}
+  
   function resetApp() {
 
    booking = {
