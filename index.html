@@ -1013,7 +1013,7 @@
 
     </div>
 
-    <button class="primary" style="width:100%" onclick="confirmBooking()">
+    <button class="primary" style="width:100%" onclick="continueFromReview()">
       CONFIRM BOOKING
     </button>
 
@@ -1081,7 +1081,61 @@
 
   </section>
 
+<!-- PAYMENT SCREEN -->
+<section class="screen" id="screen-payment">
 
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <div class="confirmation">
+
+    <h2>Secure your booking</h2>
+
+    <p>
+      To confirm your seats, a 25% deposit is required.
+    </p>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Tour Total</div>
+        <div id="payment-total"></div>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Deposit to pay now</div>
+        <div id="payment-deposit" style="font-size:22px; font-weight:800;"></div>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Remaining Balance</div>
+        <div id="payment-balance"></div>
+      </div>
+    </div>
+
+    <p>
+      The remaining balance must be paid in cash on the day of the tour.
+    </p>
+
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="showScreen('screen-review')">
+        BACK
+      </button>
+
+      <button class="primary" id="pay-deposit-button">
+        PAY DEPOSIT
+      </button>
+    </div>
+
+  </div>
+
+</section>
+  
   <!-- SCREEN 7 -->
   <section class="screen" id="screen-thanks">
 
@@ -1407,7 +1461,30 @@ booking.endsAt = selectedTrip.ends_at;
     showScreen("screen-review");
   }
 
+  function continueFromReview() {
+    if (booking.accessType === "business") {
+      confirmBooking();
+      return;
+  }
 
+  const depositAmount = Math.floor(booking.tourTotal * 0.25);
+  const balanceAmount = booking.tourTotal - depositAmount;
+
+  document.getElementById("payment-total").textContent =
+    "€" + booking.tourTotal;
+
+  document.getElementById("payment-deposit").textContent =
+    "€" + depositAmount;
+
+  document.getElementById("payment-balance").textContent =
+    "€" + balanceAmount;
+
+  document.getElementById("pay-deposit-button").textContent =
+    "PAY €" + depositAmount;
+
+  showScreen("screen-payment");
+}
+  
   async function confirmBooking() {
 
   if (!booking.tripId) {
