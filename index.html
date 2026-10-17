@@ -1206,7 +1206,7 @@
         BACK
       </button>
 
-      <button class="primary" id="pay-deposit-button">
+      <button class="primary" id="pay-deposit-button" onclick="payDeposit()">
         PAY DEPOSIT
       </button>
     </div>
@@ -1562,6 +1562,10 @@ booking.endsAt = selectedTrip.ends_at;
     "PAY €" + depositAmount;
 
   showScreen("screen-payment");
+}
+
+  function payDeposit() {
+  alert("Payment integration coming next.");
 }
   
   async function confirmBooking() {
