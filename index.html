@@ -687,6 +687,38 @@
   </div>
 
 </section>
+  <!-- BUSINESS LOGIN -->
+<section class="screen" id="screen-business-login">
+
+  <div class="logo">
+    <div class="logo-art">
+      <div class="sun"></div>
+      <div class="mountain-one"></div>
+      <div class="mountain-two"></div>
+      <div class="sea"></div>
+    </div>
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Business access</h1>
+  <p class="subtitle">Enter your password to continue.</p>
+
+  <div class="field">
+    <label>Password</label>
+    <input
+      id="business-password"
+      type="password"
+      placeholder="Password"
+    >
+  </div>
+
+  <button class="primary" style="width:100%; margin-top:20px;" onclick="checkBusinessPassword()">
+    CONTINUE
+  </button>
+
+</section>
+
   <!-- SCREEN 1 -->
  <section class="screen" id="screen-tour">
 
@@ -1327,7 +1359,21 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   customerNameInput.placeholder = "Your name";
 }
 
-  showScreen("screen-tour");
+  if (type === "business") {
+    showScreen("screen-business-login");
+  } else {
+    showScreen("screen-tour");
+  }
+  }
+
+  function checkBusinessPassword() {
+  const password = document.getElementById("business-password").value;
+
+  if (password === "2026") {
+    showScreen("screen-tour");
+  } else {
+    alert("Incorrect password.");
+  }
 }
   
   let calendarMonth = 9;
