@@ -1519,7 +1519,12 @@ booking.endsAt = selectedTrip.ends_at;
       alert("Please enter a valid phone number.");
       return;
     }
-
+    
+    if (booking.pickup.length < 2) {
+      alert("Please enter your pickup location.");
+      return;
+    }
+    
     document.getElementById("review-tour").textContent = booking.tour;
 
     document.getElementById("review-duration").textContent =
@@ -1603,7 +1608,8 @@ booking.endsAt = selectedTrip.ends_at;
       p_company_name: booking.accessType === "business"
         ? document.getElementById("business-name").value.trim()
         : null,
-      p_notes: null
+      p_notes: null,
+      p_pickup_location: booking.pickup
     }
   );
   
