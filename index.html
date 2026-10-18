@@ -1588,8 +1588,53 @@ booking.endsAt = selectedTrip.ends_at;
   showScreen("screen-payment");
 }
 
-function payDeposit() {
+  function payDeposit() {
   alert("Payment integration coming next.");
+}
+
+  function getOrdinalSuffix(day) {
+  if (day >= 11 && day <= 13) return day + "th";
+
+  switch (day % 10) {
+    case 1: return day + "st";
+    case 2: return day + "nd";
+    case 3: return day + "rd";
+    default: return day + "th";
+  }
+}
+
+  function formatDateWithOrdinal(dateString) {
+  const parts = dateString.split(" ");
+  const day = parseInt(parts[0], 10);
+
+  if (isNaN(day) || parts.length < 3) {
+    return dateString;
+  }
+
+  return getOrdinalSuffix(day) + " " + parts.slice(1).join(" ");
+}
+
+  function buildWhatsAppMessage() {
+  const formattedDate = formatDateWithOrdinal(booking.date);
+  const peopleText = booking.people === 1
+    ? "1 person"
+    : booking.people + " people";
+
+  return `🌴 *Thank you for choosing Nomad Escape!*
+
+☀️ *Are you ready for the adventure?*
+
+We're looking forward to having you with us on the van.
+
+*${booking.tour}*
+📅 *${formattedDate}*
+🕘 *09:30*
+👥 *${peopleText}*
+📍 *${booking.pickup}*
+
+✌️ *See you soon!*
+
+*Explore ☀️ Escape ☀️ Be free*`;
 }
   
   async function confirmBooking() {
@@ -1655,6 +1700,9 @@ document.getElementById("confirmation-total").textContent =
 
 document.getElementById("confirmation-deposit").textContent =
   "€" + depositAmount;
+  const whatsappMessage = buildWhatsAppMessage();
+  console.log("WhatsApp confirmation message:", whatsappMessage);
+  
   showScreen("screen-confirmation");
 }
   
