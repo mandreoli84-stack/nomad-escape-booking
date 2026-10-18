@@ -944,7 +944,8 @@
     <div class="helper">
       We'll use this number for your booking confirmation.
     </div>
-
+    <label>Pickup location</label>
+    <input id="pickup-location" type="text" placeholder="Hotel / Accommodation">
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-people')">BACK</button>
       <button class="primary" onclick="openReview()">CONTINUE</button>
@@ -1021,6 +1022,14 @@
         <div class="review-content">
           <div class="review-label">WhatsApp</div>
           <div id="review-phone"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-details')">Edit</span>
+      </div>
+      <div class="review-row">
+        <div class="review-icon">⌖</div>
+        <div class="review-content">
+          <div class="review-label">Pickup location</div>
+          <div id="review-pickup"></div>
         </div>
         <span class="edit" onclick="showScreen('screen-details')">Edit</span>
       </div>
@@ -1264,7 +1273,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     people: 2,
     seatsAvailable: 8,
     name: "",
-    phone: ""
+    phone: "",
+    pickup: ""
   };
 
  function selectAccessType(type) {
@@ -1498,7 +1508,8 @@ booking.endsAt = selectedTrip.ends_at;
 
     booking.name = document.getElementById("customer-name").value.trim();
     booking.phone = document.getElementById("customer-phone").value.trim();
-
+    booking.pickup = document.getElementById("pickup-location").value.trim();
+    
     if (booking.name.length < 2) {
       alert("Please enter your name.");
       return;
@@ -1530,6 +1541,9 @@ booking.endsAt = selectedTrip.ends_at;
 
     document.getElementById("review-phone").textContent =
       countryCode + " " + booking.phone;
+
+    document.getElementById("review-pickup").textContent =
+      booking.pickup;
 
     document.getElementById("review-price").textContent =
       "€" + booking.pricePerPerson;
