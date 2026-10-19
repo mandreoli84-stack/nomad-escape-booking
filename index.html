@@ -1338,23 +1338,28 @@
       The remaining balance must be paid in cash on the day of the tour.
     </p>
 
-    <div class="bottom-buttons">
-      <button class="secondary" onclick="showScreen('screen-review')">
-        BACK
-      </button>
+    <div class="bottom-buttons" style="display:block;">
 
-      <button class="primary" id="pay-deposit-button" onclick="payDeposit()">
-        PAY DEPOSIT
-      </button>
-      <div class="payment-cards">
-        <span class="visa-logo">VISA</span>
-        <span class="mastercard-logo">
-          <span class="mc-circle mc-left"></span>
-          <span class="mc-circle mc-right"></span>
-        </span>
-      </div>
+  <button class="primary" id="pay-deposit-button"
+          style="width:100%" onclick="payDeposit()">
+    PAY DEPOSIT
+  </button>
 
+  <div class="payment-cards">
+    <span class="visa-logo">VISA</span>
+    <span class="mastercard-logo">
+      <span class="mc-circle mc-left"></span>
+      <span class="mc-circle mc-right"></span>
+    </span>
   </div>
+
+  <button class="secondary"
+          style="width:100%; margin-top:9px"
+          onclick="showScreen('screen-review')">
+    BACK
+  </button>
+
+</div>
 
 </section>
   
