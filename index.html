@@ -505,6 +505,48 @@
       height: 100%;
       display: block;
     }
+
+    .payment-cards {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .visa-logo {
+      font-size: 20px;
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: -1px;
+      color: #1a1f71;
+    }
+
+    .mastercard-logo {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 24px;
+    }
+
+    .mc-circle {
+      position: absolute;
+      top: 3px;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+    }
+
+    .mc-left {
+      left: 0;
+      background: #eb001b;
+    }
+
+    .mc-right {
+      right: 0;
+      background: #f79e1b;
+      opacity: 0.9;
+    }
     
     button.primary,
     button.secondary {
@@ -1300,7 +1342,13 @@
       <button class="primary" id="pay-deposit-button" onclick="payDeposit()">
         PAY DEPOSIT
       </button>
-    </div>
+      <div class="payment-cards">
+        <span class="visa-logo">VISA</span>
+        <span class="mastercard-logo">
+          <span class="mc-circle mc-left"></span>
+          <span class="mc-circle mc-right"></span>
+        </span>
+      </div>
 
   </div>
 
