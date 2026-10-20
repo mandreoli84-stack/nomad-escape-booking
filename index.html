@@ -1440,13 +1440,32 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   }
 
-  function checkBusinessPassword() {
-  const password = document.getElementById("business-password").value;
+  async function checkBusinessPassword() {
+  const passwordInput = document.getElementById("business-password");
+  const password = passwordInput.value;
 
-  if (password === "2026") {
+  if (!password) {
+    alert("Enter your password.");
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("business-login", {
+      body: { password }
+    });
+
+    if (error || !data?.ok) {
+      alert("Incorrect password.");
+      passwordInput.value = "";
+      return;
+    }
+
+    passwordInput.value = "";
     showScreen("screen-tour");
-  } else {
-    alert("Incorrect password.");
+
+  } catch (error) {
+    console.error("Business login error:", error);
+    alert("Unable to verify password. Please try again.");
   }
 }
   
