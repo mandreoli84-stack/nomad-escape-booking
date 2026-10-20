@@ -1440,6 +1440,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   }
 
+  let businessSessionToken = null;
+  
   async function checkBusinessPassword() {
   const passwordInput = document.getElementById("business-password");
   const password = passwordInput.value;
@@ -1459,6 +1461,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       passwordInput.value = "";
       return;
     }
+
+    businessSessionToken = data.token;
 
     passwordInput.value = "";
     showScreen("screen-tour");
@@ -1814,7 +1818,26 @@ We're looking forward to having you with us on the van.
   const countryCode = document.getElementById("country-code").value;
   const fullPhone = countryCode + " " + booking.phone;
 
-  const { data, error } = await supabaseClient.rpc(
+  let data;
+let error;
+
+if (booking.accessType === "business") {
+  const result = await supabaseClient.functions.invoke("business-booking", {
+    body: {
+      token: businessSessionToken,
+      tripId: booking.tripId,
+      passengers: booking.people,
+      customerName: booking.name,
+      customerPhone: fullPhone,
+      companyName: document.getElementById("business-name").value.trim(),
+      pickupLocation: booking.pickup
+    }
+  });
+
+  error = result.error;
+  data = result.data?.bookingCode;
+} else {
+  const result = await supabaseClient.rpc(
     "create_shared_booking",
     {
       p_trip_id: booking.tripId,
@@ -1822,13 +1845,15 @@ We're looking forward to having you with us on the van.
       p_customer_name: booking.name,
       p_customer_phone: fullPhone,
       p_customer_email: null,
-      p_company_name: booking.accessType === "business"
-        ? document.getElementById("business-name").value.trim()
-        : null,
+      p_company_name: null,
       p_notes: null,
       p_pickup_location: booking.pickup
     }
   );
+
+  error = result.error;
+  data = result.data;
+}
   
   if (error) {
     console.error("Booking error:", error);
