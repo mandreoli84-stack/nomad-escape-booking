@@ -819,6 +819,10 @@
       </div>
     </div>
 
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="backFromTour()">BACK</button>
+    </div>
+
   </section>
 
 
@@ -1479,13 +1483,20 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
       screen.classList.remove("active");
-  });
+    });
 
     document.getElementById(id).classList.add("active");
     window.scrollTo(0, 0);
   }
 
-
+  function backFromTour() {
+    if (booking.accessType === "business") {
+      showScreen("screen-business-login");
+    } else {
+      showScreen("screen-access");
+    }
+  }
+  
   async function selectTour(tour, duration, price) {
 
   booking.tour = tour;
