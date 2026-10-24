@@ -782,6 +782,12 @@
     CONTINUE
   </button>
 
+  <button class="secondary"
+          style="width:100%; margin-top:9px;"
+          onclick="showScreen('screen-access')">
+    BACK
+  </button>
+  
 </section>
 
   <!-- SCREEN 1 -->
@@ -1490,11 +1496,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
   function backFromTour() {
-    if (booking.accessType === "business") {
-      showScreen("screen-business-login");
-    } else {
-      showScreen("screen-access");
-    }
+    showScreen("screen-access");
   }
   
   async function selectTour(tour, duration, price) {
