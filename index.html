@@ -1835,9 +1835,30 @@ booking.endsAt = selectedTrip.ends_at;
   showScreen("screen-payment");
 }
 
-  function payDeposit() {
-  alert("Payment integration coming next.");
-}
+  async function payDeposit() {
+    const fullPhone = booking.phonePrefix + booking.phone;
+
+    const { data, error } = await supabaseClient.rpc(
+      "create_shared_booking_hold",
+      {
+        p_trip_id: booking.tripId,
+        p_passengers: booking.people,
+        p_customer_name: booking.name,
+        p_customer_phone: fullPhone,
+        p_customer_email: null,
+        p_pickup_location: booking.pickup
+      }
+    );
+
+    if (error) {
+      console.error("HOLD error:", error);
+      alert(error.message || "Unable to secure your booking. Please try again.");
+      return;
+    }
+
+    console.log("HOLD result:", data);
+    alert("HOLD result: " + data.result);
+  }
 
   function getOrdinalSuffix(day) {
   if (day >= 11 && day <= 13) return day + "th";
