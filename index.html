@@ -1807,10 +1807,7 @@ booking.endsAt = selectedTrip.ends_at;
 
     document.getElementById("review-total").textContent =
       "€" + booking.tourTotal;
-    const guestSeatHoldNote = document.getElementById("guest-seat-hold-note");
-
-    guestSeatHoldNote.style.display =
-      booking.accessType === "guest" ? "flex" : "none";
+    
     showScreen("screen-review");
   }
 
