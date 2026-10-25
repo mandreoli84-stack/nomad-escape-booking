@@ -1857,7 +1857,14 @@ booking.endsAt = selectedTrip.ends_at;
     }
 
     console.log("HOLD result:", data);
-    alert("HOLD result: " + data.result);
+    if (data.result === "HELD_BY_OTHER") {
+      alert(
+        "These seats have just been temporarily reserved by another customer for 10 minutes.\n\nPlease keep an eye on WhatsApp — we'll send you a message shortly if the seats become available again."
+      );
+      return;
+    }
+
+alert("HOLD result: " + data.result);
   }
 
   function getOrdinalSuffix(day) {
