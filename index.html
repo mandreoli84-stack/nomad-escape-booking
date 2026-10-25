@@ -1198,6 +1198,11 @@
 
     </div>
 
+    <div id="guest-seat-hold-note" class="info-note" style="margin:15px 0; display:none;">
+      ⓘ &nbsp; <strong>Your seats will be reserved for 5 minutes</strong><br>
+      After clicking Confirm Booking, your seats will be held for 5 minutes while you complete the secure payment.
+    </div>
+    
     <button class="primary" style="width:100%" onclick="continueFromReview()">
       CONFIRM BOOKING
     </button>
@@ -1755,7 +1760,10 @@ booking.endsAt = selectedTrip.ends_at;
 
     document.getElementById("review-total").textContent =
       "€" + booking.tourTotal;
-    
+    const guestSeatHoldNote = document.getElementById("guest-seat-hold-note");
+
+    guestSeatHoldNote.style.display =
+      booking.accessType === "guest" ? "block" : "none";
     showScreen("screen-review");
   }
 
