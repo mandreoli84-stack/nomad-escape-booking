@@ -828,7 +828,7 @@
       <div style="height:1px; background:#9aa5aa; width:100%;"></div>
     </div>
 
-    <div class="tour-card">
+    <div class="tour-card" onclick="openPrivateExperience()">
       <div class="tour-photo"></div>
       <div class="tour-info">
         <div class="tour-title">Private Experience</div>
@@ -842,7 +842,48 @@
 
   </section>
 
+  <!-- PRIVATE EXPERIENCE -->
+  <section class="screen" id="screen-private-experience">
 
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <h1>Private Experience</h1>
+
+    <p class="subtitle">
+      Your island, your way.
+    </p>
+
+    <div class="tour-card" onclick="selectPrivateExperience('4 hours', 299)">
+      <div class="tour-info">
+        <div class="tour-title">4 hours</div>
+        <div class="tour-meta">Private Experience · €299</div>
+        <div class="tour-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="tour-card" onclick="selectPrivateExperience('8 hours', 399)">
+      <div class="tour-info">
+        <div class="tour-title">8 hours</div>
+        <div class="tour-meta">Private Experience · €399</div>
+        <div class="tour-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="info-note" style="margin-top:18px;">
+      A private experience with driver. Choose where you want to go and discover Fuerteventura at your own pace.
+    </div>
+
+    <div class="bottom-buttons">
+      <button class="secondary" onclick="showScreen('screen-tour')">
+        BACK
+      </button>
+    </div>
+
+  </section>
+  
   <!-- SCREEN 2 -->
   <section class="screen" id="screen-date">
 
@@ -1560,6 +1601,18 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function backFromTour() {
     showScreen("screen-access");
+  }
+
+  function openPrivateExperience() {
+    booking.tour = "Private Experience";
+    showScreen("screen-private-experience");
+  }
+
+  function selectPrivateExperience(duration, price) {
+    booking.tour = "Private Experience";
+    booking.duration = duration;
+    booking.pricePerPerson = 0;
+    booking.tourTotal = price;
   }
   
   async function selectTour(tour, duration, price) {
