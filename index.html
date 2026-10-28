@@ -903,9 +903,63 @@
 
   </section>
   
+  <!-- PRIVATE EXPERIENCE - GUEST CONTACT -->
+  <section class="screen" id="screen-private-contact">
+
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <h1>Contact Us</h1>
+    <p class="subtitle">
+      Your island, your way. Tell us about your Private Experience
+      and we'll get back to you as soon as possible.
+    </p>
+
+    <label for="private-guest-name">Full Name *</label>
+    <input id="private-guest-name" type="text"
+           placeholder="Your full name" required>
+
+    <label for="private-guest-whatsapp">WhatsApp *</label>
+    <input id="private-guest-whatsapp" type="tel"
+           placeholder="Country code + phone number" required>
+
+    <label for="private-guest-email">Email *</label>
+    <input id="private-guest-email" type="email"
+           placeholder="Your email address" required>
+
+    <label for="private-guest-message">Your Message</label>
+    <textarea id="private-guest-message"
+              placeholder="Tell us what you would like to experience..."
+              rows="5"
+              style="width:100%; padding:13px; border:1px solid #d9e0e3;
+                     border-radius:6px; font:14px Arial, sans-serif;
+                     resize:vertical;"></textarea>
+
+    <div class="bottom-buttons">
+      <button class="secondary"
+              onclick="showScreen('screen-tour')">
+        BACK
+      </button>
+
+      <button class="primary"
+              id="private-guest-send"
+              disabled
+              onclick="submitPrivateGuestRequest()">
+        SEND REQUEST
+      </button>
+    </div>
+
+    <p class="helper">
+      * Required fields. This is an enquiry, not a booking.
+    </p>
+
+  </section>
+
   <!-- SCREEN 2 -->
   <section class="screen" id="screen-date">
-
+   
     <div class="logo">
       <div class="brand">NOMAD ESCAPE</div>
       <div class="destination">FUERTEVENTURA</div>
@@ -1624,9 +1678,36 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function openPrivateExperience() {
     booking.tour = "Private Experience";
-    showScreen("screen-private-experience");
+
+    if (booking.accessType === "business") {
+      showScreen("screen-private-experience");
+    } else {
+      showScreen("screen-private-contact");
+    }
   }
 
+  function validatePrivateGuestForm() {
+    const name = document.getElementById("private-guest-name").value.trim();
+    const whatsapp = document.getElementById("private-guest-whatsapp").value.trim();
+    const emailInput = document.getElementById("private-guest-email");
+    const email = emailInput.value.trim();
+
+    const validName = name.length >= 2;
+    const validWhatsapp = /^\+?[0-9\s()-]{7,20}$/.test(whatsapp);
+    const validEmail = email !== "" && emailInput.checkValidity();
+
+    document.getElementById("private-guest-send").disabled =
+      !(validName && validWhatsapp && validEmail);
+  }
+
+  ["private-guest-name", "private-guest-whatsapp", "private-guest-email"]
+    .forEach(id => {
+      document.getElementById(id).addEventListener(
+        "input",
+        validatePrivateGuestForm
+      );
+    });
+  
   function selectPrivateExperience(duration, price) {
     booking.tour = "Private Experience";
     booking.duration = duration;
