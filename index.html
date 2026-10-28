@@ -921,9 +921,15 @@
     <input id="private-guest-name" type="text"
            placeholder="Your full name" required>
 
+    
     <label for="private-guest-whatsapp">WhatsApp *</label>
-    <input id="private-guest-whatsapp" type="tel"
-           placeholder="Country code + phone number" required>
+    <div class="phone-row">
+      <select id="private-guest-country-code" class="country-code"
+              aria-label="Country code"></select>
+      <input id="private-guest-whatsapp" type="tel"
+             placeholder="Your phone number" required>
+    </div>
+
 
     <label for="private-guest-email">Email *</label>
     <input id="private-guest-email" type="email"
@@ -1686,6 +1692,9 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
   }
 
+    document.getElementById("private-guest-country-code").innerHTML =
+      document.getElementById("country-code").innerHTML;
+
   function validatePrivateGuestForm() {
     const name = document.getElementById("private-guest-name").value.trim();
     const whatsapp = document.getElementById("private-guest-whatsapp").value.trim();
@@ -1717,8 +1726,10 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const full_name = document
       .getElementById("private-guest-name").value.trim();
 
-    const whatsapp = document
-      .getElementById("private-guest-whatsapp").value.trim();
+    const whatsapp =
+      document.getElementById("private-guest-country-code").value +
+      document.getElementById("private-guest-whatsapp")
+        .value.trim().replace(/\D/g, "");
 
     const email = document
         .getElementById("private-guest-email").value.trim();
