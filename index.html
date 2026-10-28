@@ -962,6 +962,49 @@
     </p>
 
   </section>
+  
+  <!-- PRIVATE EXPERIENCE - THANK YOU -->
+  <section class="screen" id="screen-private-thank-you">
+
+    <div class="logo">
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <div class="confirmation">
+
+      <div class="check-circle">✓</div>
+
+      <h1>Thank You!</h1>
+
+      <p style="font-size:16px; font-weight:600; color:#10233b;">
+        Your request has been sent successfully.
+      </p>
+
+      <p style="font-size:15px; line-height:1.6; margin-top:18px;">
+        Thank you for contacting Nomad Escape Fuerteventura.
+        We'll get back to you as soon as possible.
+      </p>
+
+      <div class="whatsapp-box"
+           style="justify-content:center; gap:10px; margin-top:32px;">
+        <span>🌴</span>
+        <strong style="font-size:15px; color:#10233b;">
+          Explore - Escape - Be Free...
+        </strong>
+        <span>🌴</span>
+      </div>
+
+      <div class="bottom-buttons">
+        <button class="primary"
+                onclick="showScreen('screen-access')">
+          BACK TO HOME
+        </button>
+      </div>
+
+    </div>
+
+  </section>
 
   <!-- SCREEN 2 -->
   <section class="screen" id="screen-date">
@@ -1757,10 +1800,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         throw new Error("Request could not be saved");
       }
 
-      alert(
-        "Thank you! Your request has been sent successfully. " +
-        "Nomad Escape will contact you soon."
-      );
+      showScreen("screen-private-thank-you");
 
       document.getElementById("private-guest-name").value = "";
       document.getElementById("private-guest-whatsapp").value = "";
