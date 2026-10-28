@@ -1708,6 +1708,67 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       );
     });
   
+  async function submitPrivateGuestRequest() {
+    const button = document.getElementById("private-guest-send");
+
+    validatePrivateGuestForm();
+    if (button.disabled) return;
+
+    const full_name = document
+      .getElementById("private-guest-name").value.trim();
+
+    const whatsapp = document
+      .getElementById("private-guest-whatsapp").value.trim();
+
+    const email = document
+        .getElementById("private-guest-email").value.trim();
+
+    const message = document
+      .getElementById("private-guest-message").value.trim();
+
+    button.disabled = true;
+    button.textContent = "SENDING...";
+
+    try {
+      const { data, error } = await supabaseClient.functions.invoke(
+        "private-experience-request",
+        {
+          body: {
+            full_name,
+            whatsapp,
+            email,
+            message
+          }
+        }
+      );
+
+      if (error || !data?.success) {
+        throw new Error("Request could not be saved");
+      }
+
+      alert(
+        "Thank you! Your request has been sent successfully. " +
+        "Nomad Escape will contact you soon."
+      );
+
+      document.getElementById("private-guest-name").value = "";
+      document.getElementById("private-guest-whatsapp").value = "";
+      document.getElementById("private-guest-email").value = "";
+      document.getElementById("private-guest-message").value = "";
+
+    } catch (error) {
+      console.error("Private Experience request error:", error);
+
+      alert(
+      "We couldn't send your request. " +
+      "Please try again."
+      );
+    } finally {
+      button.textContent = "SEND REQUEST";
+      validatePrivateGuestForm();
+    }
+  }
+
   function selectPrivateExperience(duration, price) {
     booking.tour = "Private Experience";
     booking.duration = duration;
