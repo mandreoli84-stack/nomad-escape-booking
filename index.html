@@ -2129,7 +2129,25 @@ booking.endsAt = selectedTrip.ends_at;
       return;
     }
 
-alert("HOLD result: " + data.result);
+    if (data.result === "SOLD_OUT") {
+      alert(
+        "Sorry, these seats are no longer available.\n\n" +
+        "Another customer has already completed the booking. " +
+        "Please choose another date or tour."
+      );
+      return;
+    }
+
+    if (data.result === "AVAILABLE") {
+      alert(
+        "Your seats are temporarily reserved for 10 minutes.\n\n" +
+        "Secure payment will be available soon."
+      );
+      return;
+    }
+
+    alert("Unable to verify availability. Please try again.");
+
   }
 
   function getOrdinalSuffix(day) {
