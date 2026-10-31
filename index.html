@@ -2053,9 +2053,6 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("seats-left").textContent =
       booking.seatsAvailable + (booking.seatsAvailable === 1 ? " seat left" : " seats left");
 
-    document.querySelector("#screen-people .availability small").textContent =
-  "out of " + booking.seatsAvailable + " available";
-
    if (booking.people > booking.seatsAvailable) {
       booking.people = booking.seatsAvailable;
   }
