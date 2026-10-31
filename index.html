@@ -728,13 +728,13 @@
     <div class="destination">FUERTEVENTURA</div>
   </div>
 
-  <h1>How would you like to book?</h1>
-  <p class="subtitle">Choose how you are booking your experience.</p>
+  <h1>Welcome to Nomad Escape!</h1>
+  <p class="subtitle">Your Fuerteventura adventure starts here.</p>
 
   <div class="tour-card" onclick="selectAccessType('guest')">
     <div class="tour-info">
-      <div class="tour-title">Guest</div>
-      <div class="tour-meta">Book your tour</div>
+      <div class="tour-title">BOOK YOUR EXPERIENCE</div>
+      <div class="tour-meta">Discover Fuerteventura with us</div>
       <div class="tour-arrow">›</div>
     </div>
   </div>
@@ -745,8 +745,8 @@
   
   <div class="tour-card" style="margin-top: 0;" onclick="selectAccessType('business')">
     <div class="tour-info">
-      <div class="tour-title">Business</div>
-      <div class="tour-meta">Book for your customer</div>
+      <div class="tour-title">PARTNER</div>
+      <div class="tour-meta">Business access</div>
       <div class="tour-arrow">›</div>
     </div>
   </div>
@@ -1180,13 +1180,15 @@
     <h1>Your details</h1>
     <p class="subtitle">Enter your contact details for the booking confirmation.</p>
 
-<div id="business-fields" style="display:none;">
-  <label>Business Name</label>
-  <input id="business-name" type="text" placeholder="Your business name" oninput="capitalizeName(this)">
-</div>
-    
-    <label id="customer-name-label">Name</label>
-    <input id="customer-name" type="text" placeholder="Your name" oninput="capitalizeName(this)">
+
+  <div id="business-fields" style="display:none;">
+    <label>Partner Name</label>
+    <input id="business-name" type="text" placeholder="Your partner name" oninput="capitalizeName(this)">
+  </div>
+
+  <label id="customer-name-label">Guest Name</label>
+  <input id="customer-name" type="text" placeholder="Guest full name" oninput="capitalizeName(this)">
+
 
     <label>WhatsApp</label>
     
@@ -1318,12 +1320,24 @@
         <span class="edit" onclick="showScreen('screen-people')">Edit</span>
       </div>
 
-      <div class="review-row">
-        <div class="review-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+      <div class="review-row" id="review-partner-row" style="display:none;">
+        <div class="review-icon">▣</div>
         <div class="review-content">
-          <div class="review-label">Name</div>
+          <div class="review-label">Partner Name</div>
+          <div id="review-partner"></div>
+        </div>
+        <span class="edit" onclick="showScreen('screen-details')">Edit</span>
+      </div>
+
+      <div class="review-row">
+        <div class="review-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </div>
+        <div class="review-content">
+          <div class="review-label">Guest Name</div>
           <div id="review-name"></div>
         </div>
+        
         <span class="edit" onclick="showScreen('screen-details')">Edit</span>
       </div>
 
@@ -1402,9 +1416,17 @@
   </div>
 </div>
 
+
+<div class="review-row" id="confirmation-partner-row" style="display:none;">
+  <div class="review-content">
+    <div class="review-label">Partner Name</div>
+    <div id="confirmation-partner"></div>
+  </div>
+</div>
+
 <div class="review-row">
   <div class="review-content">
-    <div class="review-label">Customer</div>
+    <div class="review-label">Guest Name</div>
     <div id="confirmation-customer"></div>
   </div>
 </div>
@@ -1661,13 +1683,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   if (type === "business") {
   businessFields.style.display = "block";
-  customerNameLabel.textContent = "Customer Name";
-  customerNameInput.placeholder = "Customer name";
+  customerNameLabel.textContent = "Guest Name";
+  customerNameInput.placeholder = "Guest full name";
 } else {
   businessFields.style.display = "none";
-  customerNameLabel.textContent = "Name";
-  customerNameInput.placeholder = "Your name";
-}
+  customerNameLabel.textContent = "Guest Name";
+  customerNameInput.placeholder = "Guest full name";
 
   if (type === "business") {
     showScreen("screen-business-login");
@@ -2122,7 +2143,17 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("review-people").textContent =
       booking.people + (booking.people === 1 ? " person" : " people");
 
+    
     document.getElementById("review-name").textContent = booking.name;
+
+    const isPartner = booking.accessType === "business";
+    const partnerRow = document.getElementById("review-partner-row");
+
+    partnerRow.style.display = isPartner ? "flex" : "none";
+
+    document.getElementById("review-partner").textContent = isPartner
+      ? document.getElementById("business-name").value.trim()
+      : "";
 
     const countryCode = document.getElementById("country-code").value;
 
@@ -2338,6 +2369,11 @@ if (booking.accessType === "business") {
     const depositAmount = Math.floor(booking.tourTotal * 0.25);
 const balanceAmount = booking.tourTotal - depositAmount;
 
+document.getElementById("confirmation-partner").textContent =
+  document.getElementById("business-name").value.trim();
+
+document.getElementById("confirmation-partner-row").style.display = "flex";
+
 document.getElementById("confirmation-customer").textContent =
   booking.name;
 
@@ -2384,8 +2420,11 @@ document.getElementById("confirmation-deposit").textContent =
 `NOMAD ESCAPE FUERTEVENTURA
 
 Booking Code: ${booking.bookingCode}
-Customer: ${booking.name}
+
+Partner Name: ${document.getElementById("business-name").value.trim()}
+Guest Name: ${booking.name}
 WhatsApp: ${fullPhone}
+
 Tour: ${booking.tour}
 Date: ${booking.date}
 Time: ${time}
@@ -2492,9 +2531,14 @@ Thank you for booking with Nomad Escape!`;
         <div class="label">Booking Code</div>
         <div class="value code">${booking.bookingCode}</div>
       </div>
-
+      
       <div class="row">
-        <div class="label">Customer</div>
+      <div class="label">Partner Name</div>
+      <div class="value">${document.getElementById("business-name").value.trim()}</div>
+      </div>
+      
+      <div class="row">
+        <div class="label">Guest Name</div>
         <div class="value">${booking.name}</div>
       </div>
 
