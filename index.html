@@ -1720,6 +1720,72 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     document.getElementById(id).classList.add("active");
     window.scrollTo(0, 0);
   }
+  
+  function showAvailabilityPopup(result) {
+    const isHeld = result === "HELD_BY_OTHER";
+
+    const title = isHeld
+      ? "Seats Temporarily Reserved"
+      : "Seats No Longer Available";
+
+    const message = isHeld
+      ? "We're sorry, these seats are temporarily reserved by another customer. Please try again in 10 minutes or choose another date."
+      : "We're sorry, these seats have just been booked by another customer. Please choose another date.";
+
+    const overlay = document.createElement("div");
+
+    overlay.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 35, 59, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+    `;
+
+    overlay.innerHTML = `
+      <div style="
+        background: white;
+        border-radius: 12px;
+        padding: 28px 22px;
+        width: 100%;
+        max-width: 380px;
+        text-align: center;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+      ">
+        <div style="font-size:38px; margin-bottom:15px;">
+          ${isHeld ? "⏳" : "📅"}
+        </div>
+
+        <h2 style="font-size:21px; color:#10233b; margin:0 0 15px;">
+          ${title}
+        </h2>
+
+        <p style="font-size:15px; line-height:1.6; color:#617381;">
+          ${message}
+        </p>
+
+        <button class="primary" id="availability-back"
+          style="width:100%; margin-top:18px; padding:15px;">
+          BACK TO CALENDAR
+        </button>
+      </div>
+    `;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById("availability-back").onclick = async () => {
+    overlay.remove();
+
+    await selectTour(
+      booking.tour,
+      booking.duration,
+      booking.pricePerPerson
+    );
+  };
+}
 
   function backFromTour() {
     showScreen("screen-access");
@@ -2223,6 +2289,23 @@ if (booking.accessType === "business") {
 
   error = result.error;
   data = result.data?.bookingCode;
+
+  if (error && result.error?.context instanceof Response) {
+    try {
+      const errorBody = await result.error.context.clone().json();
+
+      if (
+        errorBody.result === "HELD_BY_OTHER" ||
+        errorBody.result === "SOLD_OUT"
+      ) {
+        showAvailabilityPopup(errorBody.result);
+        return;
+      }
+    } catch (parseError) {
+      console.error("Unable to read booking response:", parseError);
+    }
+  }
+
 } else {
   const result = await supabaseClient.rpc(
     "create_shared_booking",
