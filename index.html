@@ -1674,7 +1674,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     pickup: ""
   };
 
- function selectAccessType(type) {
+  function selectAccessType(type) {
   booking.accessType = type;
 
   const businessFields = document.getElementById("business-fields");
@@ -1682,11 +1682,11 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const customerNameInput = document.getElementById("customer-name");
 
   if (type === "business") {
-  businessFields.style.display = "block";
-  customerNameLabel.textContent = "Guest Name";
-  customerNameInput.placeholder = "Guest full name";
-} else {
-  businessFields.style.display = "none";
+    businessFields.style.display = "block";
+  } else {
+    businessFields.style.display = "none";
+  }
+
   customerNameLabel.textContent = "Guest Name";
   customerNameInput.placeholder = "Guest full name";
 
@@ -1695,7 +1695,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } else {
     showScreen("screen-tour");
   }
-  }
+}
 
   let businessSessionToken = null;
   
