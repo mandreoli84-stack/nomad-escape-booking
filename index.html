@@ -2444,8 +2444,6 @@ booking.endsAt = selectedTrip.ends_at;
       } else {
         button.disabled = true;
         button.textContent = "SEATS TEMPORARILY RESERVED";
-      }
-    }
 
     }
   }
@@ -2540,25 +2538,15 @@ if (booking.accessType === "business") {
     }
   }
 
-} else {
-  const result = await supabaseClient.rpc(
-    "create_shared_booking",
-    {
-      p_trip_id: booking.tripId,
-      p_passengers: booking.people,
-      p_customer_name: booking.name,
-      p_customer_phone: fullPhone,
-      p_customer_email: null,
-      p_company_name: null,
-      p_notes: null,
-      p_pickup_location: booking.pickup
-    }
-  );
 
-  error = result.error;
-  data = result.data;
+} else {
+  alert(
+    "Guest bookings must be completed through secure payment.\n\n" +
+    "Please use PAY DEPOSIT to continue."
+  );
+  return;
 }
-  
+
   if (error) {
     console.error("Booking error:", error);
     alert(error.message || "Unable to complete the booking. Please try again.");
