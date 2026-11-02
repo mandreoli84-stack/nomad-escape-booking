@@ -2003,6 +2003,32 @@ document.getElementById("calendar-month").textContent =
     showScreen("screen-date");
 }
 
+   async function refreshLiveSeatsCalendar() {
+    const { data, error } = await supabaseClient
+      .from("public_trip_availability")
+      .select("id, title, starts_at, ends_at, seats_available")
+      .eq("title", booking.tour)
+      .order("starts_at");
+
+    if (error) {
+      console.error("Live Seats refresh error:", error);
+      throw error;
+    }
+
+    booking.availableTrips = data || [];
+
+    booking.tripId = "";
+    booking.date = "";
+    booking.seatsAvailable = 0;
+
+    document.getElementById("selected-date-text").textContent =
+      "Select a date";
+    document.getElementById("date-seats").textContent = "";
+    document.getElementById("date-continue").disabled = true;
+
+    renderCalendar();
+  }
+
 function renderCalendar() {
   const monthDate = new Date(calendarYear, calendarMonth, 1);
   const daysContainer = document.querySelector(".days");
@@ -2259,13 +2285,45 @@ booking.endsAt = selectedTrip.ends_at;
     popup.style.display = "flex";
   }
 
-  function closeLiveSeatsPopup() {
-    document.getElementById("live-seats-popup").style.display = "none";
-    showScreen("screen-date");
+  async function closeLiveSeatsPopup() {
+    const popup = document.getElementById("live-seats-popup");
+    const button = popup.querySelector("button");
+
+    button.disabled = true;
+    button.textContent = "UPDATING AVAILABILITY...";
+
+    try {
+      await refreshLiveSeatsCalendar();
+      popup.style.display = "none";
+      showScreen("screen-date");
+    } catch (error) {
+      console.error("Unable to refresh Live Seats:", error);
+      alert(
+        "Unable to update availability. Please check your connection and try again."
+      );
+    } finally {
+      button.disabled = false;
+      button.textContent = "BACK TO CALENDAR";
+    }
   }
 
+  let guestHoldRequestId = null;
   async function payDeposit() {
-    const fullPhone = booking.phonePrefix + booking.phone;
+    const button = document.getElementById("pay-deposit-button");
+    
+    if (button.disabled) return;
+    if (!guestHoldRequestId) {
+      guestHoldRequestId = crypto.randomUUID();
+  }
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = "CHECKING AVAILABILITY...";
+
+    let holdCreated = false;
+    let alreadyProcessed = false;
+
+    try {
+      const fullPhone = booking.phonePrefix + booking.phone;
 
     const { data, error } = await supabaseClient.rpc(
       "create_shared_booking_hold",
@@ -2275,7 +2333,8 @@ booking.endsAt = selectedTrip.ends_at;
         p_customer_name: booking.name,
         p_customer_phone: fullPhone,
         p_customer_email: null,
-        p_pickup_location: booking.pickup
+        p_pickup_location: booking.pickup,
+        p_request_id: guestHoldRequestId
       }
     );
 
@@ -2297,7 +2356,18 @@ booking.endsAt = selectedTrip.ends_at;
       return;
     }
 
+    
+    if (data.result === "ALREADY_PROCESSED") {
+      alreadyProcessed = true;
+      alert(
+        "This payment attempt has already been processed.\n\n" +
+        "Please contact Nomad Escape if you need assistance."
+      );
+      return;
+}
+
     if (data.result === "AVAILABLE") {
+      holdCreated = true;
       alert(
         "Your seats are temporarily reserved for 10 minutes.\n\n" +
         "Secure payment will be available soon."
@@ -2306,7 +2376,23 @@ booking.endsAt = selectedTrip.ends_at;
     }
 
     alert("Unable to verify availability. Please try again.");
+    
+    } catch (error) {
+      console.error("PAY DEPOSIT error:", error);
+      alert("Unable to verify availability. Please try again.");
+    } finally {
+      if (!holdCreated && !alreadyProcessed) {
+        button.disabled = false;
+        button.textContent = originalText;
+      
+    } else if (alreadyProcessed) {
+      button.disabled = true;
+      button.textContent = "REQUEST ALREADY PROCESSED";
+    } else {
+      button.textContent = "SEATS TEMPORARILY RESERVED";
+    }
 
+    }
   }
 
   function getOrdinalSuffix(day) {
