@@ -1620,7 +1620,47 @@
 </div>
 
 </section>
-  
+
+<!-- LIVE SEATS POPUP -->
+<div id="live-seats-popup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="live-seats-popup-title"
+     aria-describedby="live-seats-popup-message"
+     style="display:none; position:fixed; inset:0;
+            background:rgba(16,35,59,0.55);
+            z-index:9999; align-items:center;
+            justify-content:center; padding:20px;">
+
+  <div style="background:white; width:100%;
+              max-width:390px; border-radius:12px;
+              padding:28px 22px; text-align:center;
+              box-shadow:0 8px 30px rgba(0,0,0,0.15);">
+
+    <div id="live-seats-popup-icon"
+         style="font-size:38px; margin-bottom:14px;">
+    </div>
+
+    <h2 id="live-seats-popup-title"
+        style="font-size:21px; color:#10233b;
+               margin:0 0 14px;">
+    </h2>
+
+    <p id="live-seats-popup-message"
+       style="font-size:15px; line-height:1.6;
+              color:#647589; margin:0 0 25px;">
+    </p>
+
+    <button class="primary"
+            style="width:100%;"
+            onclick="closeLiveSeatsPopup()">
+      BACK TO CALENDAR
+    </button>
+
+  </div>
+</div>
+<!-- END LIVE SEATS POPUP -->
+
   <!-- SCREEN 7 -->
   <section class="screen" id="screen-thanks">
 
@@ -2196,6 +2236,34 @@ booking.endsAt = selectedTrip.ends_at;
   showScreen("screen-payment");
 }
 
+   function showLiveSeatsPopup(type) {
+    const popup = document.getElementById("live-seats-popup");
+    const icon = document.getElementById("live-seats-popup-icon");
+    const title = document.getElementById("live-seats-popup-title");
+    const message = document.getElementById("live-seats-popup-message");
+
+    if (type === "HELD_BY_OTHER") {
+      icon.textContent = "⏳";
+      title.textContent = "Seats Temporarily Reserved";
+      message.textContent =
+        "We're sorry, these seats are temporarily reserved by another customer. Please try again in 10 minutes or choose another date.";
+    } else if (type === "SOLD_OUT") {
+      icon.textContent = "📅";
+      title.textContent = "Seats No Longer Available";
+      message.textContent =
+        "We're sorry, these seats have just been booked by another customer. Please choose another date.";
+    } else {
+      return;
+    }
+
+    popup.style.display = "flex";
+  }
+
+  function closeLiveSeatsPopup() {
+    document.getElementById("live-seats-popup").style.display = "none";
+    showScreen("screen-date");
+  }
+
   async function payDeposit() {
     const fullPhone = booking.phonePrefix + booking.phone;
 
@@ -2218,19 +2286,14 @@ booking.endsAt = selectedTrip.ends_at;
     }
 
     console.log("HOLD result:", data);
+    
     if (data.result === "HELD_BY_OTHER") {
-      alert(
-        "These seats have just been temporarily reserved by another customer for 10 minutes.\n\nPlease keep an eye on WhatsApp — we'll send you a message shortly if the seats become available again."
-      );
+      showLiveSeatsPopup("HELD_BY_OTHER");
       return;
     }
 
     if (data.result === "SOLD_OUT") {
-      alert(
-        "Sorry, these seats are no longer available.\n\n" +
-        "Another customer has already completed the booking. " +
-        "Please choose another date or tour."
-      );
+      showLiveSeatsPopup("SOLD_OUT");
       return;
     }
 
