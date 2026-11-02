@@ -1955,6 +1955,14 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   
   async function selectTour(tour, duration, price) {
+  
+  if (guestHoldRequestId) {
+    alert(
+      "A booking attempt has already been started.\n\n" +
+      "Please contact Nomad Escape before starting another booking."
+    );
+    return;
+  }
 
   booking.tour = tour;
   booking.pricePerPerson = price;
@@ -2064,7 +2072,7 @@ function renderCalendar() {
       );
     });
 
-    if (trip) {
+    if (trip && Number(trip.seats_available) > 0) {
       dayElement.classList.remove("muted");
       dayElement.classList.add("available");
       dayElement.setAttribute("onclick", `chooseDate(${day})`);
@@ -2095,6 +2103,14 @@ function renderCalendar() {
   renderCalendar();
 };
   function chooseDate(day) {
+  
+  if (guestHoldRequestId) {
+    alert(
+      "A booking attempt has already been started.\n\n" +
+      "Please contact Nomad Escape before changing the date."
+    );
+    return;
+  }
 
   const selectedTrip = booking.availableTrips.find(item => {
   const tripDate = new Date(item.starts_at);
@@ -2106,7 +2122,10 @@ function renderCalendar() {
   );
 });
 
-if (!selectedTrip) return;
+if (!selectedTrip || selectedTrip.seats_available <= 0) {
+  alert("No seats available for this date. Please choose another day.");
+  return;
+}
 
 booking.tripId = selectedTrip.id;
 booking.seatsAvailable = selectedTrip.seats_available;
@@ -2117,7 +2136,14 @@ booking.endsAt = selectedTrip.ends_at;
       el.classList.remove("selected");
     });
 
-    event.target.classList.add("selected");
+    const selectedDayElement = [...document.querySelectorAll(".day")]
+      .find(el => el.textContent.trim() === String(day) &&
+              el.classList.contains("available"));
+
+    if (selectedDayElement) {
+      selectedDayElement.classList.add("selected");
+    }
+
 
     const tripDate = new Date(booking.startsAt);
     booking.date = tripDate.toLocaleDateString("en-GB", {
@@ -2154,6 +2180,14 @@ booking.endsAt = selectedTrip.ends_at;
 
 
   function changePeople(change) {
+    
+    if (guestHoldRequestId) {
+      alert(
+        "A booking attempt has already been started.\n\n" +
+        "Please contact Nomad Escape before changing the number of people."
+      );
+      return;
+    }
 
     let newValue = booking.people + change;
 
@@ -2256,8 +2290,15 @@ booking.endsAt = selectedTrip.ends_at;
   document.getElementById("payment-balance").textContent =
     "€" + balanceAmount;
 
-  document.getElementById("pay-deposit-button").textContent =
-    "PAY DEPOSIT €" + depositAmount;
+  const payDepositButton = document.getElementById("pay-deposit-button");
+
+  if (guestHoldRequestId) {
+    payDepositButton.disabled = true;
+    payDepositButton.textContent = "BOOKING ATTEMPT IN PROGRESS";
+  } else {
+    payDepositButton.disabled = false;
+    payDepositButton.textContent = "PAY DEPOSIT €" + depositAmount;
+  }
 
   showScreen("screen-payment");
 }
@@ -2321,7 +2362,8 @@ booking.endsAt = selectedTrip.ends_at;
 
     let holdCreated = false;
     let alreadyProcessed = false;
-
+    let requestOutcomeUnknown = false;
+    
     try {
       const fullPhone = booking.phonePrefix + booking.phone;
 
@@ -2339,8 +2381,12 @@ booking.endsAt = selectedTrip.ends_at;
     );
 
     if (error) {
+      requestOutcomeUnknown = true;
       console.error("HOLD error:", error);
-      alert(error.message || "Unable to secure your booking. Please try again.");
+      alert(
+        "We couldn't confirm the status of your request.\n\n" +
+        "Please contact Nomad Escape before trying again."
+      );
       return;
     }
 
@@ -2377,19 +2423,28 @@ booking.endsAt = selectedTrip.ends_at;
 
     alert("Unable to verify availability. Please try again.");
     
+    
     } catch (error) {
+      requestOutcomeUnknown = true;
       console.error("PAY DEPOSIT error:", error);
-      alert("Unable to verify availability. Please try again.");
+      alert(
+        "We couldn't confirm the status of your request.\n\n" +
+        "Please contact Nomad Escape before trying again."
+      );
     } finally {
-      if (!holdCreated && !alreadyProcessed) {
+      if (!holdCreated && !alreadyProcessed && !requestOutcomeUnknown) {
         button.disabled = false;
         button.textContent = originalText;
-      
-    } else if (alreadyProcessed) {
-      button.disabled = true;
-      button.textContent = "REQUEST ALREADY PROCESSED";
-    } else {
-      button.textContent = "SEATS TEMPORARILY RESERVED";
+      } else if (alreadyProcessed) {
+        button.disabled = true;
+        button.textContent = "REQUEST ALREADY PROCESSED";
+      } else if (requestOutcomeUnknown) {
+        button.disabled = true;
+        button.textContent = "BOOKING STATUS UNKNOWN";
+      } else {
+        button.disabled = true;
+        button.textContent = "SEATS TEMPORARILY RESERVED";
+      }
     }
 
     }
@@ -2740,22 +2795,27 @@ Thank you for booking with Nomad Escape!`;
 }
   
   function resetApp() {
+    guestHoldRequestId = null;
 
+    const payButton = document.getElementById("pay-deposit-button");
+    payButton.disabled = false;
+    payButton.textContent = "PAY DEPOSIT";
+ 
    booking = {
-  accessType: "",
-  pricePerPerson: 0,
-  tourTotal: 0,
-  bookingCode: "",
-  tour: "",
-  tripId: "",
-  availableTrips: [],
-  duration: "",
-  date: "",
-  people: 2,
-  seatsAvailable: 8,
-  name: "",
-  phone: ""
-};
+   accessType: "",
+   pricePerPerson: 0,
+   tourTotal: 0,
+   bookingCode: "",
+   tour: "",
+   tripId: "",
+   availableTrips: [],
+   duration: "",
+   date: "",
+   people: 2,
+   seatsAvailable: 8,
+   name: "",
+   phone: ""
+ };
     document.getElementById("customer-name").value = "";
     document.getElementById("customer-phone").value = "";
     document.getElementById("people-count").textContent = "2";
