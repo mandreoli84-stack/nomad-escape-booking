@@ -761,6 +761,54 @@
 </div>
 </section>
   
+<!-- ADMIN - RESET PASSWORD -->
+<section class="screen" id="screen-admin-reset-password">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Set New Password</h1>
+
+  <p class="subtitle">
+    Create a new password for your Admin account.
+  </p>
+
+  <label for="admin-new-password">New Password</label>
+  <input
+    id="admin-new-password"
+    type="password"
+    autocomplete="new-password"
+    minlength="12"
+    placeholder="Minimum 12 characters"
+  >
+
+  <label for="admin-confirm-password">Confirm Password</label>
+  <input
+    id="admin-confirm-password"
+    type="password"
+    autocomplete="new-password"
+    minlength="12"
+    placeholder="Repeat your new password"
+  >
+
+  <p id="admin-reset-message"
+     role="status"
+     style="font-size:14px; color:#b42318;">
+  </p>
+
+  <div class="bottom-buttons">
+    <button
+      class="primary"
+      id="admin-reset-button"
+      onclick="saveAdminNewPassword()">
+      SAVE NEW PASSWORD
+    </button>
+  </div>
+
+</section>
+
   <!-- ADMIN LOGIN -->
 <section class="screen" id="screen-admin-login">
 
@@ -3375,6 +3423,73 @@ Thank you for booking with Nomad Escape!`;
     document.getElementById("people-count").textContent = "2";
 
     showScreen("screen-tour");
+  }
+
+  // ADMIN - PASSWORD RECOVERY
+
+  let adminPasswordRecoveryActive = false;
+
+  supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") {
+      adminPasswordRecoveryActive = true;
+      showScreen("screen-admin-reset-password");
+    }
+  });
+
+  async function saveAdminNewPassword() {
+    const password = document.getElementById("admin-new-password").value;
+    const confirmPassword = document.getElementById("admin-confirm-password").value;
+    const message = document.getElementById("admin-reset-message");
+    const button = document.getElementById("admin-reset-button");
+
+    message.textContent = "";
+
+    if (!adminPasswordRecoveryActive) {
+      message.textContent = "Open a valid password recovery link first.";
+      return;
+    }
+
+    if (password.length < 12) {
+      message.textContent = "Password must contain at least 12 characters.";
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      message.textContent = "Passwords do not match.";
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "SAVING...";
+
+    try {
+      const { error } = await supabaseClient.auth.updateUser({
+        password: password
+      });
+
+      if (error) {
+        message.textContent = error.message;
+        return;
+      }
+
+      adminPasswordRecoveryActive = false;
+
+      document.getElementById("admin-new-password").value = "";
+      document.getElementById("admin-confirm-password").value = "";
+
+      await supabaseClient.auth.signOut();
+
+      alert("Password updated successfully. Please log in.");
+
+      showScreen("screen-admin-login");
+
+    } catch (error) {
+      message.textContent = "Unable to update password. Please try again.";
+
+    } finally {
+      button.disabled = false;
+      button.textContent = "SAVE NEW PASSWORD";
+    }
   }
 
 </script>
