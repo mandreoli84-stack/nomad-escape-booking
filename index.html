@@ -819,6 +819,16 @@
       </div>
     </div>
   </div>
+  
+  <div class="tour-card" onclick="openAssistedBookingsList()">
+    <div class="tour-info">
+      <div class="tour-title">Manage Assisted Bookings</div>
+      <div class="tour-meta">
+        View reservations, payment status and booking details
+      </div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
 
   <div class="bottom-buttons">
     <button class="secondary" onclick="adminLogout()">
@@ -889,6 +899,38 @@
             id="assisted-create-button"
             onclick="createAssistedBooking()">
       CREATE BOOKING
+    </button>
+  </div>
+
+</section>
+  
+<!-- ADMIN - MANAGE ASSISTED BOOKINGS -->
+<section class="screen" id="screen-admin-assisted-list">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Manage Assisted Bookings</h1>
+  <p class="subtitle">
+    View and manage guest assisted reservations.
+  </p>
+
+  <div id="assisted-bookings-list"
+       role="status"
+       style="margin-top:20px;">
+  </div>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            onclick="openAssistedBookingsList()">
+      REFRESH
     </button>
   </div>
 
@@ -1910,6 +1952,94 @@ async function openAdminPanel() {
   showScreen("screen-admin");
 }
   
+ // ADMIN - MANAGE ASSISTED BOOKINGS
+
+async function openAssistedBookingsList() {
+  const list = document.getElementById("assisted-bookings-list");
+
+  list.textContent = "Loading bookings...";
+  showScreen("screen-admin-assisted-list");
+
+  const { data: { user }, error: authError } =
+    await supabaseClient.auth.getUser();
+
+  if (authError || !user) {
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  const { data: isAdmin, error: roleError } =
+    await supabaseClient.rpc("is_vanbooking_admin");
+
+  if (roleError || isAdmin !== true) {
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("bookings")
+    .select(
+      "id, booking_code, starts_at, passengers, " +
+      "status, payment_status, deposit_amount, " +
+      "balance_amount, pickup_location, assisted_expires_at"
+    )
+    .eq("booking_source", "assisted")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    list.textContent = "Unable to load bookings: " + error.message;
+    return;
+  }
+
+  list.replaceChildren();
+
+  if (!data || data.length === 0) {
+    list.textContent = "No assisted bookings found.";
+    return;
+  }
+
+  data.forEach(function(booking) {
+    const card = document.createElement("div");
+    card.className = "panel";
+
+    const title = document.createElement("strong");
+    title.textContent = booking.booking_code || "Pending booking";
+    card.appendChild(title);
+
+    const date = booking.starts_at
+      ? new Date(booking.starts_at).toLocaleString("en-GB", {
+          timeZone: "Atlantic/Canary",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "Not available";
+
+    const details = [
+      ["Tour date", date],
+      ["Passengers", booking.passengers],
+      ["Pickup", booking.pickup_location || "Not specified"],
+      ["Deposit", "€" + Number(booking.deposit_amount || 0)],
+      ["Balance", "€" + Number(booking.balance_amount || 0)],
+      ["Booking status", booking.status],
+      ["Payment status", booking.payment_status]
+    ];
+
+    details.forEach(function(item) {
+      const row = document.createElement("p");
+      row.style.fontSize = "13px";
+      row.style.margin = "9px 0";
+      row.textContent = item[0] + ": " + item[1];
+      card.appendChild(row);
+    });
+
+    list.appendChild(card);
+  });
+}
+
 // ADMIN ASSISTED BOOKING - FORM
 
 let assistedTrips = [];
@@ -1931,7 +2061,31 @@ async function openAssistedBookingForm() {
     return;
   }
 
+  // Reset form for a new assisted booking
+  document.getElementById("assisted-tour").value = "";
+
+  const tripSelect = document.getElementById("assisted-trip");
+  tripSelect.innerHTML =
+    '<option value="">Select a tour first</option>';
+  tripSelect.disabled = true;
+
+  assistedTrips = [];
+
+  document.getElementById("assisted-people").value = 1;
+  document.getElementById("assisted-name").value = "";
+  document.getElementById("assisted-phone").value = "";
+  document.getElementById("assisted-email").value = "";
+  document.getElementById("assisted-pickup").value = "";
+
+  document.getElementById("assisted-seats").textContent = "";
+  document.getElementById("assisted-message").textContent = "";
+
+  const button = document.getElementById("assisted-create-button");
+  button.textContent = "CREATE BOOKING";
+  button.disabled = false;
+
   showScreen("screen-admin-assisted");
+
 }
 
 async function loadAssistedTrips() {
