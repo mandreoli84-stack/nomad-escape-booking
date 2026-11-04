@@ -1440,6 +1440,13 @@
 
 <div class="review-row">
   <div class="review-content">
+    <div class="review-label">Pickup Location</div>
+    <div id="confirmation-pickup"></div>
+  </div>
+</div>
+
+<div class="review-row">
+  <div class="review-content">
     <div class="review-label">Tour</div>
     <div id="confirmation-tour"></div>
   </div>
@@ -2233,7 +2240,8 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("review-duration").textContent =
       booking.duration + " · From Corralejo";
 
-    document.getElementById("review-date").textContent = booking.date;
+    document.getElementById("review-date").textContent =
+      formatDateWithOrdinal(booking.date);
 
     document.getElementById("review-time").textContent =
       booking.tour === "North Fuerteventura"
@@ -2243,7 +2251,6 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("review-people").textContent =
       booking.people + (booking.people === 1 ? " person" : " people");
 
-    
     document.getElementById("review-name").textContent = booking.name;
 
     const isPartner = booking.accessType === "business";
@@ -2573,11 +2580,15 @@ document.getElementById("confirmation-customer").textContent =
 document.getElementById("confirmation-phone").textContent =
   fullPhone;
 
+document.getElementById("confirmation-pickup").textContent =
+  booking.pickup;
+
 document.getElementById("confirmation-tour").textContent =
   booking.tour;
 
+
 document.getElementById("confirmation-date-time").textContent =
-  booking.date + " · " +
+  formatDateWithOrdinal(booking.date) + " · " +
   (booking.tour === "North Fuerteventura"
     ? "09:30 – 13:30"
     : "09:30 – 17:00");
@@ -2617,9 +2628,10 @@ Booking Code: ${booking.bookingCode}
 Partner Name: ${document.getElementById("business-name").value.trim()}
 Guest Name: ${booking.name}
 WhatsApp: ${fullPhone}
+Pickup Location: ${booking.pickup}
 
 Tour: ${booking.tour}
-Date: ${booking.date}
+Date: ${formatDateWithOrdinal(booking.date)}
 Time: ${time}
 People: ${booking.people}
 Tour Total: €${booking.tourTotal}
@@ -2741,13 +2753,18 @@ Thank you for booking with Nomad Escape!`;
       </div>
 
       <div class="row">
+        <div class="label">Pickup Location</div>
+        <div class="value">${booking.pickup}</div>
+      </div>
+
+      <div class="row">
         <div class="label">Tour</div>
         <div class="value">${booking.tour}</div>
       </div>
 
       <div class="row">
         <div class="label">Date / Time</div>
-        <div class="value">${booking.date} · ${time}</div>
+        <div class="value">${formatDateWithOrdinal(booking.date)} · ${time}</div>
       </div>
 
       <div class="row">
