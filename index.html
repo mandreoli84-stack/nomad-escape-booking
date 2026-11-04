@@ -811,7 +811,7 @@
   <h1>Admin Dashboard</h1>
   <p class="subtitle">Booking management</p>
 
-  <div class="tour-card">
+  <div class="tour-card" onclick="openAssistedBookingForm()">
     <div class="tour-info">
       <div class="tour-title">Guest Assisted Booking</div>
       <div class="tour-meta">
@@ -828,6 +828,72 @@
 
 </section>
   
+<!-- ADMIN - CREATE GUEST ASSISTED BOOKING -->
+<section class="screen" id="screen-admin-assisted">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Create Assisted Booking</h1>
+  <p class="subtitle">Create a reservation for your guest.</p>
+
+  <label for="assisted-tour">Tour *</label>
+  <select id="assisted-tour" onchange="loadAssistedTrips()"
+          style="width:100%; padding:13px;">
+    <option value="">Select a tour</option>
+    <option value="North Fuerteventura">North Fuerteventura</option>
+    <option value="Sotavento Experience">Sotavento Experience</option>
+  </select>
+
+  <label for="assisted-trip">Date / Time *</label>
+  <select id="assisted-trip" onchange="updateAssistedSeats()"
+          style="width:100%; padding:13px;" disabled>
+    <option value="">Select a tour first</option>
+  </select>
+
+  <p id="assisted-seats" class="helper"></p>
+
+  <label for="assisted-people">Passengers *</label>
+  <input id="assisted-people" type="number"
+         min="1" max="8" value="1">
+
+  <label for="assisted-name">Guest Name *</label>
+  <input id="assisted-name" type="text"
+         placeholder="Full name">
+
+  <label for="assisted-phone">WhatsApp *</label>
+  <input id="assisted-phone" type="tel"
+         placeholder="+34 600 000 000">
+
+  <label for="assisted-email">Email</label>
+  <input id="assisted-email" type="email"
+         placeholder="guest@example.com">
+
+  <label for="assisted-pickup">Pickup Location *</label>
+  <input id="assisted-pickup" type="text"
+         placeholder="Hotel / Accommodation">
+
+  <p id="assisted-message"
+     style="font-size:14px; margin-top:16px;"
+     role="status"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            id="assisted-create-button"
+            onclick="createAssistedBooking()">
+      CREATE BOOKING
+    </button>
+  </div>
+
+</section>
+
   <!-- BUSINESS LOGIN -->
 <section class="screen" id="screen-business-login">
 
@@ -1844,6 +1910,194 @@ async function openAdminPanel() {
   showScreen("screen-admin");
 }
   
+// ADMIN ASSISTED BOOKING - FORM
+
+let assistedTrips = [];
+
+async function openAssistedBookingForm() {
+  const { data: { user }, error } =
+    await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  const { data: isAdmin, error: roleError } =
+    await supabaseClient.rpc("is_vanbooking_admin");
+
+  if (roleError || isAdmin !== true) {
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  showScreen("screen-admin-assisted");
+}
+
+async function loadAssistedTrips() {
+  const tour = document.getElementById("assisted-tour").value;
+  const select = document.getElementById("assisted-trip");
+  const message = document.getElementById("assisted-message");
+
+  select.innerHTML = '<option value="">Select a date</option>';
+  select.disabled = true;
+  assistedTrips = [];
+  updateAssistedSeats();
+  message.textContent = "";
+
+  if (!tour) return;
+
+  const { data, error } = await supabaseClient
+    .from("public_trip_availability")
+    .select("id, title, starts_at, seats_available")
+    .eq("title", tour)
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at");
+
+  if (error) {
+    message.textContent = "Unable to load available dates.";
+    return;
+  }
+
+  if (document.getElementById("assisted-tour").value !== tour) {
+    return;
+  }
+
+  assistedTrips = (data || []).filter(
+    trip => Number(trip.seats_available) > 0
+  );
+
+  assistedTrips.forEach(trip => {
+    const option = document.createElement("option");
+    option.value = trip.id;
+
+    option.textContent =
+      new Date(trip.starts_at).toLocaleString("en-GB", {
+        timeZone: "Atlantic/Canary",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+    select.appendChild(option);
+  });
+
+  select.disabled = assistedTrips.length === 0;
+
+  if (!assistedTrips.length) {
+    message.textContent = "No available dates for this tour.";
+  }
+}
+
+function updateAssistedSeats() {
+  const tripId = document.getElementById("assisted-trip").value;
+  const trip = assistedTrips.find(item => item.id === tripId);
+
+  document.getElementById("assisted-seats").textContent =
+    trip ? `${trip.seats_available} seats currently available` : "";
+}
+
+async function createAssistedBooking() {
+  const button = document.getElementById("assisted-create-button");
+  const message = document.getElementById("assisted-message");
+
+  const tripId = document.getElementById("assisted-trip").value;
+  const passengers = Number(document.getElementById("assisted-people").value);
+  const name = document.getElementById("assisted-name").value.trim();
+  const phone = document.getElementById("assisted-phone").value.trim();
+  const email = document.getElementById("assisted-email").value.trim();
+  const pickup = document.getElementById("assisted-pickup").value.trim();
+
+  message.textContent = "";
+
+  if (!tripId || !Number.isInteger(passengers) ||
+      passengers < 1 || passengers > 8 ||
+      !name || !phone || !pickup) {
+    message.textContent = "Please complete all required fields.";
+    return;
+  }
+
+  const trip = assistedTrips.find(t => t.id === tripId);
+
+  if (!trip || passengers > Number(trip.seats_available)) {
+    message.textContent = "Not enough seats available. Refresh the date.";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = "Creating booking...";
+
+  try {
+    const { data: { user }, error: authError } =
+      await supabaseClient.auth.getUser();
+
+    if (authError || !user) {
+      message.textContent = "Admin session expired. Please log in again.";
+      return;
+    }
+
+    const { data: isAdmin, error: roleError } =
+      await supabaseClient.rpc("is_vanbooking_admin");
+
+    if (roleError || isAdmin !== true) {
+      message.textContent = "Admin access denied.";
+      return;
+    }
+
+    const { data, error } = await supabaseClient.rpc(
+      "admin_create_assisted_booking",
+      {
+        p_trip_id: tripId,
+        p_passengers: passengers,
+        p_customer_name: name,
+        p_customer_phone: phone,
+        p_customer_email: email || null,
+        p_pickup_location: pickup,
+        p_notes: null
+      }
+    );
+
+    if (error) {
+      message.textContent = "Booking failed: " + error.message;
+      return;
+    }
+
+    if (!data || data.result !== "ASSISTED_CREATED" || !data.booking_id) {
+      if (data?.result === "SOLD_OUT") {
+        message.textContent =
+          "Not enough seats available. Remaining seats: " +
+          data.seats_available;
+      } else if (data?.result === "TOUR_UNAVAILABLE") {
+        message.textContent =
+          "This tour is no longer available.";
+      } else {
+        message.textContent =
+          "Booking not created. Please verify availability.";
+      }
+      return;
+    }
+
+message.textContent =
+  "Assisted booking created successfully. Booking ID: " +
+  data.booking_id;
+
+console.log("Assisted booking created:", data);
+
+button.textContent = "BOOKING CREATED";
+return;
+
+
+  } catch (error) {
+    message.textContent = "Connection error: " + error.message;
+  } finally {
+  if (button.textContent.trim() !== "BOOKING CREATED") {
+    button.disabled = false;
+  }
+}
+}
+
   let booking = {
     accessType: "",
     pricePerPerson: 0,
