@@ -750,8 +750,84 @@
       <div class="tour-arrow">›</div>
     </div>
   </div>
+  <div style="text-align:center; margin-top:35px;">
+  <button
+    onclick="openAdminPanel()"
+    style="border:none; background:transparent;
+           color:#728093; font-size:12px;
+           cursor:pointer;">
+    Admin Access
+  </button>
+</div>
+</section>
+  
+  <!-- ADMIN LOGIN -->
+<section class="screen" id="screen-admin-login">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Admin Access</h1>
+  <p class="subtitle">Authorized personnel only.</p>
+
+  <label for="admin-email">Email</label>
+  <input id="admin-email"
+         type="email"
+         autocomplete="username"
+         placeholder="Admin email">
+
+  <label for="admin-password">Password</label>
+  <input id="admin-password"
+         type="password"
+         autocomplete="current-password"
+         placeholder="Password">
+
+  <p id="admin-message"
+     style="color:#b42318; font-size:14px;"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-access')">
+      BACK
+    </button>
+
+    <button class="primary" onclick="adminLogin()">
+      LOGIN
+    </button>
+  </div>
 
 </section>
+
+<!-- ADMIN DASHBOARD -->
+<section class="screen" id="screen-admin">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Admin Dashboard</h1>
+  <p class="subtitle">Booking management</p>
+
+  <div class="tour-card">
+    <div class="tour-info">
+      <div class="tour-title">Guest Assisted Booking</div>
+      <div class="tour-meta">
+        Create and manage assisted reservations
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-buttons">
+    <button class="secondary" onclick="adminLogout()">
+      LOGOUT
+    </button>
+  </div>
+
+</section>
+  
   <!-- BUSINESS LOGIN -->
 <section class="screen" id="screen-business-login">
 
@@ -1704,7 +1780,70 @@
 const SUPABASE_KEY = "sb_publishable_HIxK_5mntK9MnpFB5o9UJw_kakAVeOl";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // ADMIN ACCESS - SUPABASE AUTH
 
+async function adminLogin() {
+  const email = document.getElementById("admin-email").value.trim();
+  const password = document.getElementById("admin-password").value;
+  const message = document.getElementById("admin-message");
+
+  message.textContent = "";
+
+  if (!email || !password) {
+    message.textContent = "Enter your email and password.";
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error || !data.user) {
+    message.textContent = "Invalid login credentials.";
+    return;
+  }
+
+  const { data: isAdmin, error: roleError } =
+    await supabaseClient.rpc("is_vanbooking_admin");
+
+  if (roleError || isAdmin !== true) {
+    await supabaseClient.auth.signOut();
+    message.textContent = "Admin access denied.";
+    return;
+  }
+
+  document.getElementById("admin-password").value = "";
+  showScreen("screen-admin");
+}
+
+async function adminLogout() {
+  await supabaseClient.auth.signOut();
+  document.getElementById("admin-password").value = "";
+  showScreen("screen-access");
+}
+
+async function openAdminPanel() {
+  const { data: { user }, error } =
+    await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  const { data: isAdmin, error: roleError } =
+    await supabaseClient.rpc("is_vanbooking_admin");
+
+  if (roleError || isAdmin !== true) {
+    await supabaseClient.auth.signOut();
+    showScreen("screen-admin-login");
+    return;
+  }
+
+  showScreen("screen-admin");
+}
+  
   let booking = {
     accessType: "",
     pricePerPerson: 0,
