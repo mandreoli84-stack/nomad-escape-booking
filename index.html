@@ -1103,6 +1103,126 @@
 
 </section>
 
+<!-- ADMIN - CASH BOOKING VOUCHER -->
+<section class="screen" id="screen-admin-cash-voucher">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <div class="confirmation" style="padding-top:10px;">
+
+    <div class="check-circle">✓</div>
+
+    <h1>Booking Confirmed!</h1>
+    <p class="subtitle">
+      Cash deposit successfully registered.
+    </p>
+
+    <div class="panel" style="text-align:left;">
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Booking Code</div>
+          <strong id="voucher-code"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Guest</div>
+          <strong id="voucher-guest"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">WhatsApp</div>
+          <strong id="voucher-phone"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Tour</div>
+          <strong id="voucher-tour"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Date / Time</div>
+          <strong id="voucher-date"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Passengers</div>
+          <strong id="voucher-passengers"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Pickup Location</div>
+          <strong id="voucher-pickup"></strong>
+        </div>
+      </div>
+
+      <div class="review-row">
+        <div class="review-content">
+          <div class="review-label">Total Price</div>
+          <strong id="voucher-total"></strong>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="confirmation-balance-box">
+      <div class="review-label">CASH DEPOSIT RECEIVED</div>
+      <strong id="voucher-deposit"
+              style="font-size:28px; color:#319da2;">
+      </strong>
+    </div>
+
+    <div class="confirmation-balance-box">
+      <div class="review-label">BALANCE DUE ON TOUR DAY</div>
+      <strong id="voucher-balance"
+              style="font-size:24px;">
+      </strong>
+    </div>
+
+    <p id="voucher-message"
+       role="status"
+       style="color:#b42318; font-size:14px;">
+    </p>
+
+    <div class="bottom-buttons">
+      <button class="primary"
+              style="width:100%; flex:auto;"
+              onclick="downloadAssistedCashVoucher()">
+        DOWNLOAD PDF
+      </button>
+
+      <button class="primary"
+              style="width:100%; flex:auto;"
+              onclick="shareAssistedCashWhatsApp()">
+        SHARE VIA WHATSAPP
+      </button>
+
+      <button class="secondary"
+              style="width:100%;"
+              onclick="openAssistedBookingsList()">
+        BACK TO ADMIN
+      </button>
+    </div>
+
+  </div>
+
+</section>
+
   <!-- BUSINESS LOGIN -->
 <section class="screen" id="screen-business-login">
 
@@ -2048,7 +2168,8 @@
 </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  
 <script>
 
   const SUPABASE_URL = "https://vrjcvihuejztnazgmowm.supabase.co";
@@ -2366,20 +2487,18 @@ async function confirmAssistedCashDeposit() {
     if (error) {
       throw error;
     }
-
+    
     if (
       data?.result === "CONFIRMED_CASH" ||
       data?.result === "ALREADY_CONFIRMED"
     ) {
-      message.style.color = "#167a80";
-      message.textContent =
-        "✓ BOOKING CONFIRMED — " +
-        data.booking_code +
-        ". Cash deposit: €" + amount +
-        ". Balance due: €" + Number(booking.balance_amount) +
-        ".";
-
       button.textContent = "BOOKING CONFIRMED";
+
+      showAssistedCashVoucher(
+        booking,
+        data.booking_code || booking.booking_code
+      );
+
       return;
     }
 
@@ -2402,6 +2521,158 @@ async function confirmAssistedCashDeposit() {
     button.textContent = "CHECK BOOKING STATUS";
     button.disabled = true;
   }
+}
+
+let confirmedAssistedCashVoucher = null;
+
+function showAssistedCashVoucher(booking, bookingCode) {
+  const trip = booking.trips || {};
+  const customer = booking.customers || {};
+
+  const dateTime = trip.starts_at
+    ? new Date(trip.starts_at).toLocaleString("en-GB", {
+        timeZone: "Atlantic/Canary",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    : "Not specified";
+
+  confirmedAssistedCashVoucher = {
+    code: bookingCode,
+    guest: customer.full_name || "Guest",
+    phone: customer.phone || "",
+    tour: trip.title || "Not specified",
+    dateTime,
+    passengers: booking.passengers,
+    pickup: booking.pickup_location || "Not specified",
+    total: Number(booking.deposit_amount) +
+           Number(booking.balance_amount),
+    deposit: Number(booking.deposit_amount),
+    balance: Number(booking.balance_amount)
+  };
+
+  const v = confirmedAssistedCashVoucher;
+
+  const fields = {
+    "voucher-code": v.code,
+    "voucher-guest": v.guest,
+    "voucher-phone": v.phone,
+    "voucher-tour": v.tour,
+    "voucher-date": v.dateTime,
+    "voucher-passengers": v.passengers,
+    "voucher-pickup": v.pickup,
+    "voucher-total": "€" + v.total,
+    "voucher-deposit": "€" + v.deposit,
+    "voucher-balance": "€" + v.balance
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    document.getElementById(id).textContent = value;
+  });
+
+  document.getElementById("voucher-message").textContent = "";
+  showScreen("screen-admin-cash-voucher");
+}
+
+function downloadAssistedCashVoucher() {
+  const v = confirmedAssistedCashVoucher;
+  if (!v) return;
+
+  const message = document.getElementById("voucher-message");
+
+  if (!window.jspdf?.jsPDF) {
+    message.textContent = "PDF library unavailable. Try again.";
+    return;
+  }
+
+  const doc = new window.jspdf.jsPDF();
+  let y = 22;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(19);
+  doc.text("NOMAD ESCAPE", 105, y, { align: "center" });
+
+  y += 8;
+  doc.setFontSize(10);
+  doc.text("FUERTEVENTURA", 105, y, { align: "center" });
+
+  y += 18;
+  doc.setFontSize(16);
+  doc.text("BOOKING CONFIRMED", 105, y, { align: "center" });
+
+  y += 15;
+  doc.setFontSize(11);
+
+  const rows = [
+    ["Booking Code", v.code],
+    ["Guest", v.guest],
+    ["WhatsApp", v.phone],
+    ["Tour", v.tour],
+    ["Date / Time", v.dateTime],
+    ["Passengers", String(v.passengers)],
+    ["Pickup Location", v.pickup],
+    ["Total Price", "EUR " + v.total],
+    ["Cash Deposit Received", "EUR " + v.deposit],
+    ["Balance Due on Tour Day", "EUR " + v.balance]
+  ];
+
+  rows.forEach(([label, value]) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(label + ":", 20, y);
+    doc.setFont("helvetica", "normal");
+
+    const lines = doc.splitTextToSize(String(value), 105);
+    doc.text(lines, 82, y);
+    y += Math.max(10, lines.length * 6 + 4);
+  });
+
+  y += 10;
+  doc.setFontSize(10);
+  doc.text(
+    "Cash deposit received. Balance payable on tour day.",
+    20, y
+  );
+
+  doc.save(v.code + "-voucher.pdf");
+}
+
+function shareAssistedCashWhatsApp() {
+  const v = confirmedAssistedCashVoucher;
+  if (!v) return;
+
+  const message = [
+    "NOMAD ESCAPE FUERTEVENTURA",
+    "BOOKING CONFIRMED",
+    "",
+    "Booking Code: " + v.code,
+    "Guest: " + v.guest,
+    "Tour: " + v.tour,
+    "Date / Time: " + v.dateTime,
+    "Passengers: " + v.passengers,
+    "Pickup: " + v.pickup,
+    "",
+    "Total: €" + v.total,
+    "Cash deposit received: €" + v.deposit,
+    "Balance due on tour day: €" + v.balance,
+    "",
+    "Thank you for booking with Nomad Escape!"
+  ].join("\n");
+
+  const phone = (v.phone || "").replace(/\D/g, "");
+
+  if (!phone) {
+    document.getElementById("voucher-message").textContent =
+      "Guest WhatsApp number unavailable.";
+    return;
+  }
+
+  const url = "https://wa.me/" + phone +
+    "?text=" + encodeURIComponent(message);
+
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 // ADMIN ASSISTED BOOKING - FORM
