@@ -2032,8 +2032,6 @@ async function openAssistedBookingsList() {
       "balance_amount, pickup_location, assisted_expires_at, " +
       "customers!bookings_customer_id_fkey(full_name, phone, email)"
     )
-
-    )
     .eq("booking_source", "assisted")
     .order("created_at", { ascending: false })
     .limit(100);
