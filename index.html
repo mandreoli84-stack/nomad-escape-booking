@@ -2619,17 +2619,35 @@ function downloadAssistedCashVoucher() {
     ["Balance Due on Tour Day", "EUR " + v.balance]
   ];
 
-  rows.forEach(([label, value]) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(label + ":", 20, y);
+    rows.forEach(([label, value]) => {
     doc.setFont("helvetica", "normal");
 
     const lines = doc.splitTextToSize(String(value), 105);
+    const rowHeight = Math.max(10, lines.length * 6 + 4);
+
+    if (y + rowHeight > 270) {
+      doc.addPage();
+      y = 22;
+    }
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(label + ":", 20, y);
+
+    doc.setFont("helvetica", "normal");
     doc.text(lines, 82, y);
-    y += Math.max(10, lines.length * 6 + 4);
+
+    y += rowHeight;
   });
 
-  y += 10;
+    y += 10;
+
+  if (y + 10 > 280) {
+    doc.addPage();
+    y = 22;
+  }
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(
     "Cash deposit received. Balance payable on tour day.",
