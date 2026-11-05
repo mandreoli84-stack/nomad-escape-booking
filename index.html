@@ -3444,6 +3444,16 @@ booking.endsAt = selectedTrip.ends_at;
     booking.name = document.getElementById("customer-name").value.trim();
     booking.phone = document.getElementById("customer-phone").value.trim();
     booking.pickup = document.getElementById("pickup-location").value.trim();
+    if (booking.accessType === "business") {
+      const partnerName =
+        document.getElementById("business-name").value.trim();
+
+      if (partnerName.length < 2) {
+        alert("Please enter the Partner Name before continuing.");
+        document.getElementById("business-name").focus();
+        return;
+      }
+    }
     
     if (booking.name.length < 2) {
       alert("Please enter your name.");
@@ -3729,7 +3739,17 @@ We're looking forward to having you with us on the van.
 }
   
   async function confirmBooking() {
+  if (booking.accessType === "business") {
+    const partnerName =
+      document.getElementById("business-name").value.trim();
 
+    if (partnerName.length < 2) {
+      alert("Partner Name is required to confirm this booking.");
+      showScreen("screen-details");
+      document.getElementById("business-name").focus();
+      return;
+    }
+  }
   if (!booking.tripId) {
     alert("Tour information is missing. Please select the tour again.");
     return;
@@ -3874,8 +3894,16 @@ Thank you for booking with Nomad Escape!`;
   }
 
 }
+  function escapeReceiptHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
   
-  function downloadBusinessReceipt() {
+function downloadBusinessReceipt() {
   const time =
     booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
@@ -3885,13 +3913,19 @@ Thank you for booking with Nomad Escape!`;
   const fullPhone = countryCode + " " + booking.phone;
   const depositAmount = Math.floor(booking.tourTotal * 0.25);
 
+  const safe = escapeReceiptHTML;
   const receiptWindow = window.open("", "_blank");
+
+  if (!receiptWindow) {
+    alert("Please allow pop-ups to download your receipt.");
+    return;
+  }
 
   receiptWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Booking ${booking.bookingCode}</title>
+      <title>Booking ${safe(booking.bookingCode)}</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body {
@@ -3961,52 +3995,52 @@ Thank you for booking with Nomad Escape!`;
 
       <div class="row">
         <div class="label">Booking Code</div>
-        <div class="value code">${booking.bookingCode}</div>
+        <div class="value code">${safe(booking.bookingCode)}</div>
       </div>
-      
+
       <div class="row">
-      <div class="label">Partner Name</div>
-      <div class="value">${document.getElementById("business-name").value.trim()}</div>
+        <div class="label">Partner Name</div>
+        <div class="value">${safe(document.getElementById("business-name").value.trim())}</div>
       </div>
-      
+
       <div class="row">
         <div class="label">Guest Name</div>
-        <div class="value">${booking.name}</div>
+        <div class="value">${safe(booking.name)}</div>
       </div>
 
       <div class="row">
         <div class="label">WhatsApp</div>
-        <div class="value">${fullPhone}</div>
+        <div class="value">${safe(fullPhone)}</div>
       </div>
 
       <div class="row">
         <div class="label">Pickup Location</div>
-        <div class="value">${booking.pickup}</div>
+        <div class="value">${safe(booking.pickup)}</div>
       </div>
 
       <div class="row">
         <div class="label">Tour</div>
-        <div class="value">${booking.tour}</div>
+        <div class="value">${safe(booking.tour)}</div>
       </div>
 
       <div class="row">
         <div class="label">Date / Time</div>
-        <div class="value">${formatDateWithOrdinal(booking.date)} · ${time}</div>
+        <div class="value">${safe(formatDateWithOrdinal(booking.date))} · ${safe(time)}</div>
       </div>
 
       <div class="row">
         <div class="label">People</div>
-        <div class="value">${booking.people}</div>
+        <div class="value">${safe(booking.people)}</div>
       </div>
 
       <div class="row">
         <div class="label">Tour Total</div>
-        <div class="value">€${booking.tourTotal}</div>
+        <div class="value">€${safe(booking.tourTotal)}</div>
       </div>
 
       <div class="row">
         <div class="label">25% Deposit</div>
-        <div class="value">€${depositAmount}</div>
+        <div class="value">€${safe(depositAmount)}</div>
       </div>
 
       <div class="thanks">
@@ -4023,8 +4057,7 @@ Thank you for booking with Nomad Escape!`;
     </html>
   `);
 
- receiptWindow.document.close();
-    
+  receiptWindow.document.close();
 }
   
   function resetApp() {
