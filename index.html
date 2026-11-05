@@ -2148,7 +2148,7 @@ async function openAssistedBookingsList() {
       "status, payment_status, deposit_amount, " +
       "balance_amount, pickup_location, assisted_expires_at, " +    
       "customers!bookings_customer_id_fkey(full_name, phone, email), " +
-      "trips!bookings_trip_id_fkey(starts_at)"
+      "trips!bookings_trip_id_fkey(title, starts_at)"
 
     )
     .eq("booking_source", "assisted")
@@ -2289,7 +2289,7 @@ function openAssistedCashScreen(booking) {
   const trip = booking.trips;
 
   document.getElementById("cash-tour").textContent =
-    trip?.tour_name || trip?.name || "Not specified";
+    trip?.title || "Not specified";
 
   document.getElementById("cash-date-time").textContent =
     trip?.starts_at
