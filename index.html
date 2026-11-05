@@ -2029,8 +2029,10 @@ async function openAssistedBookingsList() {
     .select(
       "id, booking_code, starts_at, passengers, " +
       "status, payment_status, deposit_amount, " +
-      "balance_amount, pickup_location, assisted_expires_at, " +
-      "customers!bookings_customer_id_fkey(full_name, phone, email)"
+      "balance_amount, pickup_location, assisted_expires_at, " +    
+      "customers!bookings_customer_id_fkey(full_name, phone, email), " +
+      "trips!bookings_trip_id_fkey(starts_at)"
+
     )
     .eq("booking_source", "assisted")
     .order("created_at", { ascending: false })
@@ -2056,8 +2058,11 @@ async function openAssistedBookingsList() {
     title.textContent = booking.booking_code || "Pending booking";
     card.appendChild(title);
 
-    const date = booking.starts_at
-      ? new Date(booking.starts_at).toLocaleString("en-GB", {
+    const tourStartsAt = booking.trips?.starts_at || booking.starts_at;
+
+    const date = tourStartsAt
+      ? new Date(tourStartsAt).toLocaleString("en-GB", {
+
           timeZone: "Atlantic/Canary",
           day: "numeric",
           month: "long",
