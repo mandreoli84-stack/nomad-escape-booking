@@ -984,6 +984,89 @@
 
 </section>
 
+<!-- ADMIN - CONFIRM CASH DEPOSIT -->
+<section class="screen" id="screen-admin-cash">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Confirm Cash Deposit</h1>
+  <p class="subtitle">
+    Review the payment details before confirming.
+  </p>
+
+  <div class="panel">
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Guest</div>
+        <strong id="cash-guest"></strong>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Booking Code</div>
+        <strong id="cash-booking-code"></strong>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Total Price</div>
+        <strong id="cash-total"></strong>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">
+          Balance Due on Tour Day
+        </div>
+        <strong id="cash-balance"></strong>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="confirmation-balance-box">
+    <div class="review-label">
+      CASH DEPOSIT RECEIVED
+    </div>
+    <div id="cash-deposit-amount"
+         style="font-size:30px; font-weight:700;
+                color:#319da2; margin-top:8px;">
+    </div>
+  </div>
+
+  <div class="info-note"
+       style="margin-top:20px; font-size:14px;">
+    Confirm only after receiving the cash deposit
+    directly from the guest.
+  </div>
+
+  <p id="cash-confirm-message"
+     role="status"
+     style="font-size:14px; margin-top:15px;">
+  </p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="openAssistedBookingsList()">
+      BACK
+    </button>
+
+    <button class="primary"
+            id="cash-confirm-button"
+            disabled>
+      CONFIRM CASH PAYMENT
+    </button>
+  </div>
+
+</section>
+
   <!-- BUSINESS LOGIN -->
 <section class="screen" id="screen-business-login">
 
@@ -2137,9 +2220,9 @@ if (tourStartsAt) {
         cashButton.textContent = "DEPOSIT PAID CASH";
         cashButton.style.width = "100%";
         cashButton.style.marginTop = "10px";
-
+        
         cashButton.onclick = function() {
-          confirmAssistedCashDeposit(booking);
+          openAssistedCashScreen(booking);
         };
 
         card.appendChild(cashButton);
@@ -2149,6 +2232,35 @@ if (tourStartsAt) {
     list.appendChild(card);
 
   });
+}
+
+let selectedAssistedCashBooking = null;
+
+function openAssistedCashScreen(booking) {
+  selectedAssistedCashBooking = booking;
+
+  const deposit = Number(booking.deposit_amount);
+  const balance = Number(booking.balance_amount);
+  const total = deposit + balance;
+
+  document.getElementById("cash-guest").textContent =
+    booking.customers?.full_name || "Guest";
+
+  document.getElementById("cash-booking-code").textContent =
+    booking.booking_code;
+
+  document.getElementById("cash-total").textContent =
+    "€" + total;
+
+  document.getElementById("cash-balance").textContent =
+    "€" + balance;
+
+  document.getElementById("cash-deposit-amount").textContent =
+    "€" + deposit;
+
+  document.getElementById("cash-confirm-message").textContent = "";
+
+  showScreen("screen-admin-cash");
 }
 
 async function confirmAssistedCashDeposit(booking) {
