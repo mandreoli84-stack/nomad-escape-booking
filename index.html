@@ -2124,12 +2124,78 @@ if (tourStartsAt) {
         "Waiting for secure payment link activation";
       sendButton.style.width = "100%";
       sendButton.style.marginTop = "12px";
-
+      
       card.appendChild(sendButton);
+      
+      if (
+        booking.status === "pending" &&
+        booking.payment_status === "unpaid"
+      ) {
+
+        const cashButton = document.createElement("button");
+        cashButton.className = "primary";
+        cashButton.textContent = "DEPOSIT PAID CASH";
+        cashButton.style.width = "100%";
+        cashButton.style.marginTop = "10px";
+
+        cashButton.onclick = function() {
+          confirmAssistedCashDeposit(booking);
+        };
+
+        card.appendChild(cashButton);
+      }
     }
 
     list.appendChild(card);
+
   });
+}
+
+async function confirmAssistedCashDeposit(booking) {
+  const amount = Number(booking.deposit_amount);
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    alert("Invalid deposit amount.");
+    return;
+  }
+
+  const guestName =
+    booking.customers?.full_name || "Guest";
+
+  const confirmed = window.confirm(
+    "CONFIRM CASH DEPOSIT\n\n" +
+    "Guest: " + guestName + "\n" +
+    "Booking: " + booking.booking_code + "\n" +
+    "Cash received: €" + amount + "\n\n" +
+    "Have you received this cash deposit?"
+  );
+
+  if (!confirmed) return;
+
+  const { data, error } = await supabaseClient.rpc(
+    "admin_confirm_assisted_cash_deposit",
+    { p_booking_id: booking.id }
+  );
+
+  if (error) {
+    alert("Cash confirmation failed: " + error.message);
+    return;
+  }
+
+  if (data?.result === "CONFIRMED_CASH" ||
+      data?.result === "ALREADY_CONFIRMED") {
+    alert(
+      "Booking confirmed!\n\n" +
+      "Code: " + data.booking_code
+    );
+    await openAssistedBookingsList();
+    return;
+  }
+
+  alert(
+    "Booking not confirmed: " +
+    (data?.result || "Unknown error")
+  );
 }
 
 // ADMIN ASSISTED BOOKING - FORM
