@@ -1092,11 +1092,13 @@
       BACK
     </button>
 
+    
     <button class="primary"
             id="cash-confirm-button"
-            disabled>
+            onclick="confirmAssistedCashDeposit()">
       CONFIRM CASH PAYMENT
     </button>
+
   </div>
 
 </section>
@@ -2318,56 +2320,88 @@ function openAssistedCashScreen(booking) {
   document.getElementById("cash-deposit-amount").textContent =
     "€" + deposit;
 
-  document.getElementById("cash-confirm-message").textContent = "";
+  
+  const message = document.getElementById("cash-confirm-message");
+  message.textContent = "";
+  message.style.color = "#10233b";
+
+  const button = document.getElementById("cash-confirm-button");
+  button.disabled = false;
+  button.textContent = "CONFIRM CASH PAYMENT";
 
   showScreen("screen-admin-cash");
-}
 
-async function confirmAssistedCashDeposit(booking) {
+  }
+
+async function confirmAssistedCashDeposit() {
+  const booking = selectedAssistedCashBooking;
+  const button = document.getElementById("cash-confirm-button");
+  const message = document.getElementById("cash-confirm-message");
+
+  if (!booking || !booking.id) {
+    message.style.color = "#b42318";
+    message.textContent = "No booking selected.";
+    return;
+  }
+
   const amount = Number(booking.deposit_amount);
 
   if (!Number.isInteger(amount) || amount <= 0) {
-    alert("Invalid deposit amount.");
+    message.style.color = "#b42318";
+    message.textContent = "Invalid cash deposit amount.";
     return;
   }
 
-  const guestName =
-    booking.customers?.full_name || "Guest";
+  button.disabled = true;
+  button.textContent = "CONFIRMING...";
+  message.style.color = "#526b7a";
+  message.textContent = "Checking and confirming the cash deposit...";
 
-  const confirmed = window.confirm(
-    "CONFIRM CASH DEPOSIT\n\n" +
-    "Guest: " + guestName + "\n" +
-    "Booking: " + booking.booking_code + "\n" +
-    "Cash received: €" + amount + "\n\n" +
-    "Have you received this cash deposit?"
-  );
-
-  if (!confirmed) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "admin_confirm_assisted_cash_deposit",
-    { p_booking_id: booking.id }
-  );
-
-  if (error) {
-    alert("Cash confirmation failed: " + error.message);
-    return;
-  }
-
-  if (data?.result === "CONFIRMED_CASH" ||
-      data?.result === "ALREADY_CONFIRMED") {
-    alert(
-      "Booking confirmed!\n\n" +
-      "Code: " + data.booking_code
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      "admin_confirm_assisted_cash_deposit",
+      { p_booking_id: booking.id }
     );
-    await openAssistedBookingsList();
-    return;
-  }
 
-  alert(
-    "Booking not confirmed: " +
-    (data?.result || "Unknown error")
-  );
+    if (error) {
+      throw error;
+    }
+
+    if (
+      data?.result === "CONFIRMED_CASH" ||
+      data?.result === "ALREADY_CONFIRMED"
+    ) {
+      message.style.color = "#167a80";
+      message.textContent =
+        "✓ BOOKING CONFIRMED — " +
+        data.booking_code +
+        ". Cash deposit: €" + amount +
+        ". Balance due: €" + Number(booking.balance_amount) +
+        ".";
+
+      button.textContent = "BOOKING CONFIRMED";
+      return;
+    }
+
+    message.style.color = "#b42318";
+    message.textContent =
+      "Booking not confirmed: " +
+      (data?.result || "Unknown response") +
+      ". Please review before trying again.";
+
+    button.textContent = "CONFIRM CASH PAYMENT";
+    button.disabled = true;
+
+  } catch (error) {
+    message.style.color = "#b42318";
+    message.textContent =
+      "Confirmation could not be verified: " +
+      (error?.message || "Unknown error") +
+      ". Check the booking status before retrying.";
+
+    button.textContent = "CHECK BOOKING STATUS";
+    button.disabled = true;
+  }
 }
 
 // ADMIN ASSISTED BOOKING - FORM
