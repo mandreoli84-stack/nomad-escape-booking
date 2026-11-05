@@ -1012,7 +1012,41 @@
         <strong id="cash-booking-code"></strong>
       </div>
     </div>
+    
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Pickup Location</div>
+        <strong id="cash-pickup"></strong>
+      </div>
+    </div>
+    
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Tour</div>
+        <strong id="cash-tour"></strong>
+      </div>
+    </div>
 
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Date / Time</div>
+        <strong id="cash-date-time"></strong>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">Passengers</div>
+        <strong id="cash-passengers"></strong>
+      </div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-content">
+        <div class="review-label">WhatsApp</div>
+        <strong id="cash-whatsapp"></strong>
+      </div>
+    </div>
     <div class="review-row">
       <div class="review-content">
         <div class="review-label">Total Price</div>
@@ -2248,6 +2282,32 @@ function openAssistedCashScreen(booking) {
 
   document.getElementById("cash-booking-code").textContent =
     booking.booking_code;
+  
+  document.getElementById("cash-pickup").textContent =
+    booking.pickup_location || "Not specified";
+  
+  const trip = booking.trips;
+
+  document.getElementById("cash-tour").textContent =
+    trip?.tour_name || trip?.name || "Not specified";
+
+  document.getElementById("cash-date-time").textContent =
+    trip?.starts_at
+      ? new Date(trip.starts_at).toLocaleString("en-GB", {
+          timeZone: "Atlantic/Canary",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "Not specified";
+
+  document.getElementById("cash-passengers").textContent =
+    booking.passengers;
+
+  document.getElementById("cash-whatsapp").textContent =
+    booking.customers?.phone || "Not specified";
 
   document.getElementById("cash-total").textContent =
     "€" + total;
