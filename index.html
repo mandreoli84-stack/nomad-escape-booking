@@ -2029,7 +2029,10 @@ async function openAssistedBookingsList() {
     .select(
       "id, booking_code, starts_at, passengers, " +
       "status, payment_status, deposit_amount, " +
-      "balance_amount, pickup_location, assisted_expires_at"
+      "balance_amount, pickup_location, assisted_expires_at, " +
+      "customers!bookings_customer_id_fkey(full_name, phone, email)"
+    )
+
     )
     .eq("booking_source", "assisted")
     .order("created_at", { ascending: false })
@@ -2067,6 +2070,9 @@ async function openAssistedBookingsList() {
       : "Not available";
 
     const details = [
+      
+      ["Guest", booking.customers?.full_name || "Not specified"],
+      ["WhatsApp", booking.customers?.phone || "Not specified"],
       ["Tour date", date],
       ["Passengers", booking.passengers],
       ["Pickup", booking.pickup_location || "Not specified"],
