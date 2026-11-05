@@ -2083,6 +2083,19 @@ async function openAssistedBookingsList() {
       row.textContent = item[0] + ": " + item[1];
       card.appendChild(row);
     });
+    
+    if (booking.status === "pending") {
+      const sendButton = document.createElement("button");
+      sendButton.className = "primary";
+      sendButton.textContent = "SEND PAYMENT LINK";
+      sendButton.disabled = true;
+      sendButton.title =
+        "Waiting for secure payment link activation";
+      sendButton.style.width = "100%";
+      sendButton.style.marginTop = "12px";
+
+      card.appendChild(sendButton);
+    }
 
     list.appendChild(card);
   });
