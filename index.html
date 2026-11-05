@@ -2281,16 +2281,31 @@ async function createAssistedBooking() {
       return;
     }
 
-message.textContent =
-  "Assisted booking created successfully. Booking ID: " +
-  data.booking_id;
+    button.textContent = "BOOKING CREATED";
+    button.disabled = true;
 
-console.log("Assisted booking created:", data);
+    message.textContent = "Booking created. Preparing payment link...";
 
-button.textContent = "BOOKING CREATED";
-button.disabled = true;
-return;
+    const { data: linkData, error: linkError } =
+      await supabaseClient.rpc(
+        "admin_prepare_assisted_link",
+        { p_booking_id: data.booking_id }
+      );
 
+    if (linkError || !linkData ||
+        linkData.result !== "LINK_READY") {
+      message.textContent =
+        "Booking created successfully, but payment link preparation failed. " +
+        "Open Manage Assisted Bookings to continue.";
+      return;
+    }
+
+    message.textContent =
+      "Assisted booking created and payment link prepared. " +
+      "Booking ID: " + data.booking_id +
+      ". Payment link has NOT been sent yet.";
+
+    return;
 
   } catch (error) {
     message.textContent = "Connection error: " + error.message;
