@@ -1632,7 +1632,10 @@
 
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-date')">BACK</button>
-      <button class="primary" onclick="showScreen('screen-details')">CONTINUE</button>
+      <button class="primary" id="people-continue"
+              onclick="continueFromPeople()">
+        CONTINUE
+      </button>
     </div>
 
   </section>
@@ -3007,7 +3010,9 @@ async function createAssistedBooking() {
   let calendarMonth = 9;
   let calendarYear = 2026;
   
+  
   let liveSeatsTimer = null;
+  let liveSeatsRefreshing = false;
 
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
@@ -3023,16 +3028,23 @@ async function createAssistedBooking() {
     }
 
     if (id === "screen-date") {
-      liveSeatsTimer = setInterval(() => {
+      liveSeatsTimer = setInterval(async () => {
         if (document.visibilityState !== "visible") return;
+        if (liveSeatsRefreshing) return;
 
-        refreshLiveSeatsCalendar().catch(error => {
+        liveSeatsRefreshing = true;
+
+        try {
+          await refreshLiveSeatsCalendar();
+        } catch (error) {
           console.error("Live Seats automatic refresh:", error);
-        });
+        } finally {
+          liveSeatsRefreshing = false;
+        }
       }, 15000);
     }
   }
-  
+
   function showAvailabilityPopup(result) {
     const isHeld = result === "HELD_BY_OTHER";
 
@@ -3527,7 +3539,8 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("date-seats").textContent =
       booking.seatsAvailable + " seats left";
 
-    document.getElementById("date-continue").disabled = false;
+    document.getElementById("date-continue").disabled =
+      booking.seatsAvailable < booking.people;
     document.getElementById("seats-left").textContent =
       booking.seatsAvailable + (booking.seatsAvailable === 1 ? " seat left" : " seats left");
 
@@ -3542,7 +3555,58 @@ booking.endsAt = selectedTrip.ends_at;
     document.getElementById("people-count").textContent = booking.people;
       booking.tourTotal = booking.pricePerPerson * booking.people;
   }
+    
+async function continueFromPeople() {
+  const button = document.getElementById("people-continue");
 
+  if (button.disabled) return;
+
+  button.disabled = true;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("public_trip_availability")
+      .select("seats_available")
+      .eq("id", booking.tripId)
+      .single();
+
+    if (error) throw error;
+
+    const seats = Number(data.seats_available);
+    booking.seatsAvailable = seats;
+
+    document.getElementById("seats-left").textContent =
+      seats + (seats === 1 ? " seat left" : " seats left");
+
+    if (seats < booking.people) {
+      if (seats === 0) {
+        alert(
+         "Unfortunately, this date is now fully booked. " +
+         "Please choose another available date."
+        );
+      } else {
+        alert(
+          "Unfortunately, only " + seats +
+          " seats are now available for this date. " +
+          "Please choose another available date."
+        );
+      }
+
+      showScreen("screen-date");
+      await refreshLiveSeatsCalendar();
+      return;
+    }
+
+    showScreen("screen-details");
+
+  } catch (error) {
+    console.error("Live Seats validation error:", error);
+    alert("Unable to verify availability. Please try again.");
+
+  } finally {
+    button.disabled = false;
+  }
+}
 
   function changePeople(change) {
     
