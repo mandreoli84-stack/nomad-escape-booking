@@ -3006,6 +3006,8 @@ async function createAssistedBooking() {
   
   let calendarMonth = 9;
   let calendarYear = 2026;
+  
+  let liveSeatsTimer = null;
 
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
@@ -3014,6 +3016,21 @@ async function createAssistedBooking() {
 
     document.getElementById(id).classList.add("active");
     window.scrollTo(0, 0);
+
+    if (liveSeatsTimer !== null) {
+      clearInterval(liveSeatsTimer);
+      liveSeatsTimer = null;
+    }
+
+    if (id === "screen-date") {
+      liveSeatsTimer = setInterval(() => {
+        if (document.visibilityState !== "visible") return;
+
+        refreshLiveSeatsCalendar().catch(error => {
+          console.error("Live Seats automatic refresh:", error);
+        });
+      }, 15000);
+    }
   }
   
   function showAvailabilityPopup(result) {
@@ -3231,21 +3248,32 @@ async function createAssistedBooking() {
 
 const firstDate = new Date(data[0].starts_at);
 
-calendarMonth = firstDate.getMonth();
-calendarYear = firstDate.getFullYear();
+const firstDateParts = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Atlantic/Canary",
+  month: "numeric",
+  year: "numeric"
+}).formatToParts(firstDate);
+
+calendarMonth = Number(
+  firstDateParts.find(part => part.type === "month").value
+) - 1;
+
+calendarYear = Number(
+  firstDateParts.find(part => part.type === "year").value
+);
 
 document.getElementById("calendar-month").textContent =
   firstDate.toLocaleDateString("en-GB", {
+    timeZone: "Atlantic/Canary",
     month: "long",
     year: "numeric"
   });
-
     renderCalendar();
   
     showScreen("screen-date");
 }
 
-   async function refreshLiveSeatsCalendar() {
+  async function refreshLiveSeatsCalendar() {
     const { data, error } = await supabaseClient
       .from("public_trip_availability")
       .select("id, title, starts_at, ends_at, seats_available")
@@ -3259,16 +3287,82 @@ document.getElementById("calendar-month").textContent =
 
     booking.availableTrips = data || [];
 
-    booking.tripId = "";
-    booking.date = "";
-    booking.seatsAvailable = 0;
+    if (booking.tripId) {
+      const selectedTrip = booking.availableTrips.find(
+        trip => trip.id === booking.tripId
+      );
 
-    document.getElementById("selected-date-text").textContent =
-      "Select a date";
-    document.getElementById("date-seats").textContent = "";
-    document.getElementById("date-continue").disabled = true;
+      const seats = selectedTrip
+        ? Number(selectedTrip.seats_available)
+        : 0;
+
+      booking.seatsAvailable = seats;
+
+      if (seats > 0) {
+        document.getElementById("date-seats").textContent =
+          seats + (seats === 1 ? " seat left" : " seats left");
+
+        document.getElementById("seats-left").textContent =
+          seats + (seats === 1 ? " seat left" : " seats left");
+
+        document.getElementById("date-continue").disabled =
+          seats < booking.people;
+      } else {
+        booking.tripId = "";
+        booking.date = "";
+        booking.seatsAvailable = 0;
+
+        document.getElementById("selected-date-text").textContent =
+          "Select another date";
+
+        document.getElementById("date-seats").textContent =
+          "This date is no longer available.";
+
+        document.getElementById("date-continue").disabled = true;
+      }
+    }
 
     renderCalendar();
+
+    if (booking.tripId) {
+      const selectedTrip = booking.availableTrips.find(
+        trip => trip.id === booking.tripId
+      );
+
+      if (selectedTrip) {
+         
+      const selectedDate = new Date(selectedTrip.starts_at);
+
+      const canaryDate = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric"
+      }).formatToParts(selectedDate);
+
+      const selectedDay = Number(
+        canaryDate.find(part => part.type === "day").value
+      );
+
+      const selectedMonth = Number(
+        canaryDate.find(part => part.type === "month").value
+      ) - 1;
+
+      const selectedYear = Number(
+        canaryDate.find(part => part.type === "year").value
+      );
+
+        document.querySelectorAll(".day.available").forEach(day => {
+          if (
+            Number(day.textContent.trim()) === selectedDay &&
+            selectedMonth === calendarMonth &&
+            selectedYear === calendarYear
+          ) {
+            day.classList.add("selected");
+          }
+        });
+      }
+    }
   }
 
 function renderCalendar() {
@@ -3297,14 +3391,32 @@ function renderCalendar() {
     dayElement.textContent = day;
 
     const trip = booking.availableTrips.find(item => {
-      const tripDate = new Date(item.starts_at);
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric"
+      }).formatToParts(new Date(item.starts_at));
+
+      const tripDay = Number(
+        parts.find(p => p.type === "day").value
+      );
+
+      const tripMonth = Number(
+        parts.find(p => p.type === "month").value
+      ) - 1;
+
+      const tripYear = Number(
+        parts.find(p => p.type === "year").value
+      );
 
       return (
-        tripDate.getFullYear() === calendarYear &&
-        tripDate.getMonth() === calendarMonth &&
-        tripDate.getDate() === day
+        tripYear === calendarYear &&
+        tripMonth === calendarMonth &&
+        tripDay === day
       );
     });
+
 
     if (trip && Number(trip.seats_available) > 0) {
       dayElement.classList.remove("muted");
@@ -3345,16 +3457,33 @@ function renderCalendar() {
     );
     return;
   }
-
+  
   const selectedTrip = booking.availableTrips.find(item => {
-  const tripDate = new Date(item.starts_at);
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Atlantic/Canary",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric"
+    }).formatToParts(new Date(item.starts_at));
 
-  return (
-    tripDate.getFullYear() === calendarYear &&
-    tripDate.getMonth() === calendarMonth &&
-    tripDate.getDate() === day
-  );
-});
+    const tripDay = Number(
+      parts.find(p => p.type === "day").value
+    );
+
+    const tripMonth = Number(
+      parts.find(p => p.type === "month").value
+    ) - 1;
+
+    const tripYear = Number(
+      parts.find(p => p.type === "year").value
+    );
+
+    return (
+      tripYear === calendarYear &&
+      tripMonth === calendarMonth &&
+      tripDay === day
+    );
+  });
 
 if (!selectedTrip || selectedTrip.seats_available <= 0) {
   alert("No seats available for this date. Please choose another day.");
@@ -3378,9 +3507,10 @@ booking.endsAt = selectedTrip.ends_at;
       selectedDayElement.classList.add("selected");
     }
 
-
     const tripDate = new Date(booking.startsAt);
+
     booking.date = tripDate.toLocaleDateString("en-GB", {
+      timeZone: "Atlantic/Canary",
       day: "numeric",
       month: "long",
       year: "numeric"
@@ -3388,11 +3518,12 @@ booking.endsAt = selectedTrip.ends_at;
 
     document.getElementById("selected-date-text").textContent =
       tripDate.toLocaleDateString("en-GB", {
+        timeZone: "Atlantic/Canary",
         weekday: "long",
         day: "numeric",
         month: "long"
-    });
-    
+      });
+
     document.getElementById("date-seats").textContent =
       booking.seatsAvailable + " seats left";
 
