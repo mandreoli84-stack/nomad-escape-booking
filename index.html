@@ -3513,7 +3513,7 @@ function renderCalendar() {
   if (guestHoldRequestId) {
     alert(
       "A booking attempt has already been started.\n\n" +
-      "Please contact Nomad Escape before changing the date."
+      "Please wait 10 minutes before starting a new booking to change your date."
     );
     return;
   }
@@ -3664,7 +3664,7 @@ async function continueFromPeople() {
     if (guestHoldRequestId) {
       alert(
         "A booking attempt has already been started.\n\n" +
-        "Please contact Nomad Escape before changing the number of people."
+        "Please wait 10 minutes before starting a new booking to change the number of guests."
       );
       return;
     }
@@ -3901,8 +3901,8 @@ async function continueFromPeople() {
     if (data.result === "WAIT_10_MINUTES") {
       alert(
         "Reservation Still Active\n\n" +
-        "Please wait until the 10-minute reservation period " +
-        "has expired before starting another booking attempt."
+        "For security reasons, please wait until the 10-minute " +
+        "reservation period has expired before starting another booking attempt."
       );
       return;
     }
@@ -3910,10 +3910,13 @@ async function continueFromPeople() {
     if (data.result === "DAILY_LIMIT_REACHED") {
       alert(
         "Daily Payment Attempt Limit Reached\n\n" +
-        "You have reached the maximum of 2 booking attempts " +
-        "allowed per day.\n\n" +
-        "Please try again tomorrow or contact Nomad Escape if you need assistance."
-      );
+        "For security reasons, a maximum of 2 booking attempts " +
+        "is allowed per day.\n\n" +
+        "Please try again tomorrow or contact Nomad Escape " +
+        "if you need assistance.\n\n" +
+        "WhatsApp: +34 608 020 146\n" +
+        "Email: nomadescapefuerteventura@gmail.com"
+       );
       return;
     }
       
