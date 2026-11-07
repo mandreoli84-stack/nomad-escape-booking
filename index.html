@@ -1567,7 +1567,7 @@
 
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-tour')">BACK</button>
-      <button class="primary" id="date-continue" disabled onclick="showScreen('screen-people')">
+      <button class="primary" id="date-continue" disabled onclick="continueFromDate()">
         CONTINUE
       </button>
     </div>
@@ -3835,8 +3835,15 @@ async function continueFromPeople() {
     try {
       const fullPhone = booking.phonePrefix + booking.phone;
 
+    let browserId = localStorage.getItem("nomad_guest_browser_id");
+
+    if (!browserId) {
+      browserId = crypto.randomUUID();
+      localStorage.setItem("nomad_guest_browser_id", browserId);
+    }
+
     const { data, error } = await supabaseClient.rpc(
-      "create_shared_booking_hold",
+      "create_shared_booking_hold_v2",
       {
         p_trip_id: booking.tripId,
         p_passengers: booking.people,
@@ -3844,7 +3851,8 @@ async function continueFromPeople() {
         p_customer_phone: fullPhone,
         p_customer_email: null,
         p_pickup_location: booking.pickup,
-        p_request_id: guestHoldRequestId
+        p_request_id: guestHoldRequestId,
+        p_browser_id: browserId
       }
     );
 
@@ -3859,7 +3867,25 @@ async function continueFromPeople() {
     }
 
     console.log("HOLD result:", data);
-    
+    if (data.result === "WAIT_10_MINUTES") {
+      alert(
+        "Reservation Still Active\n\n" +
+        "Please wait until the 10-minute reservation period " +
+        "has expired before starting another booking attempt."
+      );
+      return;
+    }
+
+    if (data.result === "DAILY_LIMIT_REACHED") {
+      alert(
+        "Daily Payment Attempt Limit Reached\n\n" +
+        "You have reached the maximum of 2 booking attempts " +
+        "allowed per day.\n\n" +
+        "Please try again tomorrow or contact Nomad Escape if you need assistance."
+      );
+      return;
+    }
+      
     if (data.result === "HELD_BY_OTHER") {
       showLiveSeatsPopup("HELD_BY_OTHER");
       return;
@@ -3882,10 +3908,6 @@ async function continueFromPeople() {
 
     if (data.result === "AVAILABLE") {
       holdCreated = true;
-      alert(
-        "Your seats are temporarily reserved for 10 minutes.\n\n" +
-        "Secure payment will be available soon."
-      );
       return;
     }
 
