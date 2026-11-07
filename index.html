@@ -1661,7 +1661,7 @@
   </div>
 
   <label id="customer-name-label">Guest Name</label>
-  <input id="customer-name" type="text" placeholder="Guest full name" oninput="capitalizeName(this)">
+  <input id="customer-name" type="text" maxlength="40" placeholder="Guest full name" oninput="capitalizeName(this)">
 
 
     <label>WhatsApp</label>
@@ -3717,8 +3717,13 @@ async function continueFromPeople() {
       return;
     }
     
+    if (booking.pickup.length > 50) {
+      alert("Pickup location cannot exceed 50 characters.");
+      return;
+    }
+    
     if (booking.pickup.length < 2) {
-      alert("Please enter your pickup location.");
+      alert("Please enter your pickup location. Where are you staying?");
       return;
     }
     
