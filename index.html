@@ -3286,12 +3286,21 @@ document.getElementById("calendar-month").textContent =
 }
 
   async function refreshLiveSeatsCalendar() {
+    const requestedTour = booking.tour;
+
     const { data, error } = await supabaseClient
       .from("public_trip_availability")
       .select("id, title, starts_at, ends_at, seats_available")
-      .eq("title", booking.tour)
+      .eq("title", requestedTour)
       .order("starts_at");
 
+    if (
+      booking.tour !== requestedTour ||
+      !document.getElementById("screen-date").classList.contains("active")
+    ) {
+      return;
+    }
+    
     if (error) {
       console.error("Live Seats refresh error:", error);
       throw error;
@@ -3463,12 +3472,22 @@ function renderCalendar() {
 };
   
   function continueFromDate() {
-  const seats = Number(booking.seatsAvailable);
+    const seats = Number(booking.seatsAvailable);
 
-  if (!booking.tripId || !Number.isFinite(seats) || seats <= 0) {
-    document.getElementById("date-continue").disabled = true;
-    return;
-  }
+    const selectedTrip = booking.availableTrips.find(
+      trip => trip.id === booking.tripId
+    );
+
+    if (
+      !selectedTrip ||
+      selectedTrip.title !== booking.tour ||
+      !booking.date ||
+      !Number.isFinite(seats) ||
+      seats <= 0
+    ) {
+      document.getElementById("date-continue").disabled = true;
+      return;
+    }
 
   // Adjust passengers only when continuing from the calendar.
   booking.people = Math.min(booking.people, seats, 8);
@@ -3573,7 +3592,11 @@ booking.endsAt = selectedTrip.ends_at;
 
     document.getElementById("people-count").textContent = booking.people;
     booking.tourTotal = booking.pricePerPerson * booking.people;
-
+    
+    document.getElementById("date-seats").textContent =
+      booking.seatsAvailable +
+      (booking.seatsAvailable === 1 ? " seat left" : " seats left");
+    
     document.getElementById("date-continue").disabled = false;
 
     document.getElementById("seats-left").textContent =
