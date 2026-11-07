@@ -3439,11 +3439,14 @@ function renderCalendar() {
       );
     });
 
-
     if (trip && Number(trip.seats_available) > 0) {
       dayElement.classList.remove("muted");
       dayElement.classList.add("available");
       dayElement.setAttribute("onclick", `chooseDate(${day})`);
+      
+      if (trip.id === booking.tripId) {
+        dayElement.classList.add("selected");
+      }
     }
 
     daysContainer.appendChild(dayElement);
