@@ -3318,17 +3318,18 @@ document.getElementById("calendar-month").textContent =
           seats + (seats === 1 ? " seat left" : " seats left");
 
         document.getElementById("date-continue").disabled =
-          seats < booking.people;
-      } else {
-        booking.tripId = "";
-        booking.date = "";
-        booking.seatsAvailable = 0;
+          seats <= 0;
 
-        document.getElementById("selected-date-text").textContent =
-          "Select another date";
+      } else {
+        // Preserve the selected date and passengers.
+        // Only update availability and prevent continuation.
+        booking.seatsAvailable = 0;
 
         document.getElementById("date-seats").textContent =
           "This date is no longer available.";
+
+        document.getElementById("seats-left").textContent =
+          "0 seats left";
 
         document.getElementById("date-continue").disabled = true;
       }
@@ -3460,6 +3461,31 @@ function renderCalendar() {
 
   renderCalendar();
 };
+  
+  function continueFromDate() {
+  const seats = Number(booking.seatsAvailable);
+
+  if (!booking.tripId || !Number.isFinite(seats) || seats <= 0) {
+    document.getElementById("date-continue").disabled = true;
+    return;
+  }
+
+  // Adjust passengers only when continuing from the calendar.
+  booking.people = Math.min(booking.people, seats, 8);
+  booking.people = Math.max(1, booking.people);
+
+  document.getElementById("people-count").textContent =
+    booking.people;
+
+  booking.tourTotal =
+    booking.pricePerPerson * booking.people;
+
+  document.getElementById("seats-left").textContent =
+    seats + (seats === 1 ? " seat left" : " seats left");
+
+  showScreen("screen-people");
+}
+  
   function chooseDate(day) {
   
   if (guestHoldRequestId) {
@@ -3536,25 +3562,24 @@ booking.endsAt = selectedTrip.ends_at;
         month: "long"
       });
 
-    document.getElementById("date-seats").textContent =
-      booking.seatsAvailable + " seats left";
-
-    document.getElementById("date-continue").disabled =
-      booking.seatsAvailable < booking.people;
-    document.getElementById("seats-left").textContent =
-      booking.seatsAvailable + (booking.seatsAvailable === 1 ? " seat left" : " seats left");
-
-   if (booking.people > booking.seatsAvailable) {
+    // Nuova selezione volontaria della data
+    if (booking.people > booking.seatsAvailable) {
       booking.people = booking.seatsAvailable;
-  }
+    }
 
-   if (booking.people < 1) {
+    if (booking.people < 1) {
       booking.people = 1;
-  }
+    }
 
     document.getElementById("people-count").textContent = booking.people;
-      booking.tourTotal = booking.pricePerPerson * booking.people;
-  }
+    booking.tourTotal = booking.pricePerPerson * booking.people;
+
+    document.getElementById("date-continue").disabled = false;
+
+    document.getElementById("seats-left").textContent =
+      booking.seatsAvailable +
+      (booking.seatsAvailable === 1 ? " seat left" : " seats left");
+    }
     
 async function continueFromPeople() {
   const button = document.getElementById("people-continue");
@@ -3620,14 +3645,18 @@ async function continueFromPeople() {
 
     let newValue = booking.people + change;
 
-    if (newValue < 1) newValue = 1;
-    if (newValue > booking.seatsAvailable) newValue = booking.seatsAvailable;
+    if (newValue < 1) return;
+    if (newValue > 8) return;
+
+    if (change > 0 && newValue > booking.seatsAvailable) {
+      return;
+    }
 
     booking.people = newValue;
     booking.tourTotal = booking.pricePerPerson * booking.people;
 
     document.getElementById("people-count").textContent = booking.people;
-  }
+}
 
     function capitalizeName(input) {
   input.value = input.value
