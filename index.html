@@ -3028,6 +3028,17 @@ async function createAssistedBooking() {
     }
 
     if (id === "screen-date") {
+      if (!liveSeatsRefreshing) {
+        liveSeatsRefreshing = true;
+
+        refreshLiveSeatsCalendar()
+          .catch(error => {
+            console.error("Initial Live Seats refresh:", error);
+          })
+          .finally(() => {
+            liveSeatsRefreshing = false;
+          });
+      }
       liveSeatsTimer = setInterval(async () => {
         if (document.visibilityState !== "visible") return;
         if (liveSeatsRefreshing) return;
