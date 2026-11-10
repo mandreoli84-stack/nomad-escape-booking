@@ -3508,12 +3508,12 @@ function renderCalendar() {
   showScreen("screen-people");
 }
   
-  function chooseDate(day) {
+  async function chooseDate(day) {
   
-  if (guestHoldRequestId) {
+  if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
     alert(
       "A booking attempt has already been started.\n\n" +
-      "Please wait 10 minutes before starting a new booking to change your date."
+      "Please wait until your reservation expires before changing your date."
     );
     return;
   }
@@ -3659,12 +3659,12 @@ async function continueFromPeople() {
   }
 }
 
-  function changePeople(change) {
+  async function changePeople(change) {
     
-    if (guestHoldRequestId) {
+    if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
       alert(
         "A booking attempt has already been started.\n\n" +
-        "Please wait 10 minutes before starting a new booking to change the number of guests."
+        "Please wait until your reservation expires before changing the number of guests."
       );
       return;
     }
@@ -3848,6 +3848,12 @@ async function continueFromPeople() {
   }
 
   let guestHoldRequestId = null;
+    
+  async function checkGuestHoldUnlock() {
+    if (!guestHoldRequestId) return true;
+    return false;
+  }
+    
   async function payDeposit() {
     const button = document.getElementById("pay-deposit-button");
     
