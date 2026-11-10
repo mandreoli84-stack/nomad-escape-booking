@@ -3219,7 +3219,7 @@ async function createAssistedBooking() {
   
   async function selectTour(tour, duration, price) {
   
-  if (guestHoldRequestId) {
+  if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
     alert(
       "A booking attempt has already been started.\n\n" +
       "Please contact Nomad Escape before starting another booking."
@@ -3771,7 +3771,7 @@ async function continueFromPeople() {
     showScreen("screen-review");
   }
 
-  function continueFromReview() {
+  async function continueFromReview() {
     if (booking.accessType === "business") {
       confirmBooking();
       return;
@@ -3791,7 +3791,8 @@ async function continueFromPeople() {
 
   const payDepositButton = document.getElementById("pay-deposit-button");
 
-  if (guestHoldRequestId) {
+  if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
+    payDepositButton.disabled = true;
     payDepositButton.disabled = true;
     payDepositButton.textContent = "BOOKING ATTEMPT IN PROGRESS";
   } else {
@@ -4378,9 +4379,18 @@ function downloadBusinessReceipt() {
   receiptWindow.document.close();
 }
   
-  function resetApp() {
-    guestHoldRequestId = null;
+  async function resetApp() {
+    if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
+      alert(
+        "Reservation Still Active\n\n" +
+        "Your seats are temporarily reserved. " +
+        "Please wait until the reservation expires."
+      );
+      return;
+    }
 
+    guestHoldRequestId = null;
+    guestHoldToken = null;
     const payButton = document.getElementById("pay-deposit-button");
     payButton.disabled = false;
     payButton.textContent = "PAY DEPOSIT";
