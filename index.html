@@ -3882,7 +3882,38 @@ async function continueFromPeople() {
       return false;
     }
   }
-    
+  
+      // Automatically unlock PAY DEPOSIT after the HOLD expires.
+  let guestHoldAutoUnlockChecking = false;
+
+  setInterval(async () => {
+    const paymentScreen = document.getElementById("screen-payment");
+    const button = document.getElementById("pay-deposit-button");
+
+    if (!paymentScreen?.classList.contains("active")) return;
+    if (!guestHoldRequestId || !guestHoldToken) return;
+    if (guestHoldAutoUnlockChecking) return;
+
+    if (
+      button.textContent !== "SEATS TEMPORARILY RESERVED" &&
+      button.textContent !== "BOOKING ATTEMPT IN PROGRESS"
+    ) return;
+
+    guestHoldAutoUnlockChecking = true;
+
+    try {
+      const unlocked = await checkGuestHoldUnlock();
+
+      if (unlocked) {
+        const depositAmount = Math.floor(booking.tourTotal * 0.25);
+
+        button.disabled = false;
+        button.textContent = "PAY DEPOSIT €" + depositAmount;
+      }
+    } finally {
+      guestHoldAutoUnlockChecking = false;
+    }
+  }, 15000);
   async function payDeposit() {
     const button = document.getElementById("pay-deposit-button");
     
