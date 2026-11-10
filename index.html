@@ -3848,10 +3848,39 @@ async function continueFromPeople() {
   }
 
   let guestHoldRequestId = null;
-    
+  let guestHoldToken = null;
+
   async function checkGuestHoldUnlock() {
     if (!guestHoldRequestId) return true;
-    return false;
+    if (!guestHoldToken) return false;
+
+    try {
+      const browserId = localStorage.getItem("nomad_guest_browser_id");
+      if (!browserId) return false;
+
+      const { data, error } = await supabaseClient.functions.invoke(
+        "guest-hold-unlock",
+        {
+          body: {
+            request_id: guestHoldRequestId,
+            browser_id: browserId,
+            guest_hold_token: guestHoldToken
+          }
+        }
+      );
+
+      if (error || data?.result !== "UNLOCKED") {
+        return false;
+      }
+
+      guestHoldRequestId = null;
+      guestHoldToken = null;
+      return true;
+
+    } catch (error) {
+      console.error("Guest HOLD unlock error:", error);
+      return false;
+    }
   }
     
   async function payDeposit() {
@@ -3948,6 +3977,7 @@ async function continueFromPeople() {
 
     if (data.result === "AVAILABLE") {
       holdCreated = true;
+      guestHoldToken = data.guest_hold_token;
       return;
     }
 
@@ -3964,6 +3994,7 @@ async function continueFromPeople() {
     } finally {
       if (!holdCreated && !alreadyProcessed && !requestOutcomeUnknown) {
         guestHoldRequestId = null;
+        guestHoldToken = null;
         button.disabled = false;
         button.textContent = originalText;
       } else if (alreadyProcessed) {
