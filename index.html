@@ -3957,6 +3957,7 @@ async function continueFromPeople() {
       );
     } finally {
       if (!holdCreated && !alreadyProcessed && !requestOutcomeUnknown) {
+        guestHoldRequestId = null;
         button.disabled = false;
         button.textContent = originalText;
       } else if (alreadyProcessed) {
