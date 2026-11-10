@@ -3793,7 +3793,6 @@ async function continueFromPeople() {
 
   if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
     payDepositButton.disabled = true;
-    payDepositButton.disabled = true;
     payDepositButton.textContent = "BOOKING ATTEMPT IN PROGRESS";
   } else {
     payDepositButton.disabled = false;
