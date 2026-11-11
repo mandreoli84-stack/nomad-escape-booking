@@ -2969,6 +2969,7 @@ async function createAssistedBooking() {
   businessBookingInProgress = false;
 
   booking.bookingCode = null;
+  booking.businessRequestId = null;
   booking.businessPartnerName = "";
   booking.businessTotalAmount = null;
   booking.businessCommissionAmount = null;
@@ -4157,12 +4158,16 @@ We're looking forward to having you with us on the van.
 
   let data;
 let error;
-
 if (booking.accessType === "business") {
   
+if (!booking.businessRequestId) {
+  booking.businessRequestId = crypto.randomUUID();
+}
+
 const result = await supabaseClient.functions.invoke("business-booking", {
   body: {
     token: businessSessionToken,
+    requestId: booking.businessRequestId,
     tripId: booking.tripId,
     passengers: booking.people,
     customerName: booking.name,
@@ -4524,6 +4529,7 @@ function downloadBusinessReceipt() {
    businessCommissionAmount: null,
    businessBalanceAmount: null,
    businessAmountsVerified: false,
+   businessRequestId: null,
 
    pricePerPerson: 0,
    tourTotal: 0,
