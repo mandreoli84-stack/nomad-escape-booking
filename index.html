@@ -1263,8 +1263,6 @@
     >
   </div>
 
-  </div>
-
   <div class="bottom-buttons">
   <button class="secondary" onclick="showScreen('screen-access')">
     BACK
@@ -2965,7 +2963,18 @@ async function createAssistedBooking() {
 
   function selectAccessType(type) {
   booking.accessType = type;
+    
+    // Reset data from any previous Business booking
+  businessSessionToken = null;
+  businessBookingInProgress = false;
 
+  booking.bookingCode = null;
+  booking.businessPartnerName = "";
+  booking.businessTotalAmount = null;
+  booking.businessCommissionAmount = null;
+  booking.businessBalanceAmount = null;
+  booking.businessAmountsVerified = false;
+    
   const businessFields = document.getElementById("business-fields");
   const customerNameLabel = document.getElementById("customer-name-label");
   const customerNameInput = document.getElementById("customer-name");
@@ -3802,10 +3811,29 @@ async function continueFromPeople() {
     showScreen("screen-review");
   }
 
-  async function continueFromReview() {
-    if (booking.accessType === "business") {
-      confirmBooking();
+let businessBookingInProgress = false;
+
+async function continueFromReview() {
+  if (booking.accessType === "business") {
+    if (businessBookingInProgress) return;
+
+    if (booking.bookingCode) {
+      alert(
+        "This booking has already been confirmed.\n" +
+        "Booking code: " + booking.bookingCode
+      );
       return;
+    }
+
+    businessBookingInProgress = true;
+
+    try {
+      await confirmBooking();
+    } finally {
+      businessBookingInProgress = false;
+    }
+
+    return;
   }
 
   const depositAmount = Math.floor(booking.tourTotal * 0.25);
@@ -4148,16 +4176,30 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   data = result.data?.bookingCode;
 
   if (!error && result.data?.ok) {
-    booking.businessTotalAmount = Number(result.data.totalAmount);
-    booking.businessCommissionAmount = Number(result.data.commissionAmount);
-    booking.businessBalanceAmount = Number(result.data.balanceAmount);
+    const receipt = result.data;
+
+  booking.businessAmountsVerified =
+    !receipt.receiptPending &&
+    [receipt.totalAmount, receipt.commissionAmount, receipt.balanceAmount]
+      .every(value => value !== null && value !== undefined && value !== "");
+
+  if (booking.businessAmountsVerified) {
+    booking.businessTotalAmount = Number(receipt.totalAmount);
+    booking.businessCommissionAmount = Number(receipt.commissionAmount);
+    booking.businessBalanceAmount = Number(receipt.balanceAmount);
 
     booking.businessAmountsVerified =
-      !result.data.receiptPending &&
       Number.isFinite(booking.businessTotalAmount) &&
       Number.isFinite(booking.businessCommissionAmount) &&
-      Number.isFinite(booking.businessBalanceAmount);
+      Number.isFinite(booking.businessBalanceAmount) &&
+      booking.businessTotalAmount > 0 &&
+      booking.businessCommissionAmount >= 0 &&
+      booking.businessBalanceAmount >= 0 &&
+      booking.businessCommissionAmount + booking.businessBalanceAmount ===
+        booking.businessTotalAmount;
   }
+}
+
 
   if (error && result.error?.context instanceof Response) {
     try {
@@ -4238,9 +4280,10 @@ document.getElementById("confirmation-total").textContent =
 
 document.getElementById("confirmation-deposit").textContent =
   "€" + depositAmount;
-    document.getElementById("confirmation-balance").textContent =
-  "€" + (booking.tourTotal - depositAmount);
-    
+
+document.getElementById("confirmation-balance").textContent =
+  "€" + balanceAmount;
+
   const whatsappMessage = buildWhatsAppMessage();
   console.log("WhatsApp confirmation message:", whatsappMessage);
   
@@ -4272,7 +4315,8 @@ Date: ${formatDateWithOrdinal(booking.date)}
 Time: ${time}
 People: ${booking.people}
 Tour Total: €${booking.tourTotal}
-25% Deposit: €${depositAmount}
+Partner Commission: €${depositAmount}
+Balance Due to Nomad Escape: €${booking.businessBalanceAmount}
 
 Thank you for booking with Nomad Escape!`;
 
@@ -4389,7 +4433,7 @@ function downloadBusinessReceipt() {
       </div>
 
       <div class="row">
-        <div class="label">Partner Name</div
+        <div class="label">Partner Name</div>
         <div class="value">${safe(booking.businessPartnerName || "")}</div>
       </div>
 
@@ -4429,8 +4473,13 @@ function downloadBusinessReceipt() {
       </div>
 
       <div class="row">
-        <div class="label">25% Deposit</div>
+        <div class="label">Partner Commission</div>
         <div class="value">€${safe(depositAmount)}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Balance Due to Nomad Escape</div>
+        <div class="value">€${safe(booking.businessBalanceAmount)}</div>
       </div>
 
       <div class="thanks">
