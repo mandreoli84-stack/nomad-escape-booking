@@ -4514,9 +4514,17 @@ function downloadBusinessReceipt() {
     const payButton = document.getElementById("pay-deposit-button");
     payButton.disabled = false;
     payButton.textContent = "PAY DEPOSIT";
- 
+    const previousAccessType = booking.accessType;
+    const previousPartnerName = booking.businessPartnerName || "";
+    
    booking = {
-   accessType: "",
+   accessType: previousAccessType === "business" ? "business" : "",
+   businessPartnerName: previousAccessType === "business" ? previousPartnerName : "",
+   businessTotalAmount: null,
+   businessCommissionAmount: null,
+   businessBalanceAmount: null,
+   businessAmountsVerified: false,
+
    pricePerPerson: 0,
    tourTotal: 0,
    bookingCode: "",
