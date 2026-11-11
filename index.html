@@ -4147,6 +4147,18 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   error = result.error;
   data = result.data?.bookingCode;
 
+  if (!error && result.data?.ok) {
+    booking.businessTotalAmount = Number(result.data.totalAmount);
+    booking.businessCommissionAmount = Number(result.data.commissionAmount);
+    booking.businessBalanceAmount = Number(result.data.balanceAmount);
+
+    booking.businessAmountsVerified =
+      !result.data.receiptPending &&
+      Number.isFinite(booking.businessTotalAmount) &&
+      Number.isFinite(booking.businessCommissionAmount) &&
+      Number.isFinite(booking.businessBalanceAmount);
+  }
+
   if (error && result.error?.context instanceof Response) {
     try {
       const errorBody = await result.error.context.clone().json();
@@ -4183,8 +4195,18 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   document.getElementById("confirmation-booking-code").textContent =
     booking.bookingCode;
 
-    const depositAmount = Math.floor(booking.tourTotal * 0.25);
-const balanceAmount = booking.tourTotal - depositAmount;
+    if (!booking.businessAmountsVerified) {
+      alert(
+        "Booking confirmed, but the financial details could not be retrieved. " +
+        "Booking code: " + booking.bookingCode +
+        ". Please contact Nomad Escape."
+      );
+      return;
+    }
+
+    const depositAmount = booking.businessCommissionAmount;
+    const balanceAmount = booking.businessBalanceAmount;
+    booking.tourTotal = booking.businessTotalAmount;
 
 document.getElementById("confirmation-partner").textContent = booking.businessPartnerName || "";
 document.getElementById("confirmation-partner-row").style.display = "flex";
@@ -4233,7 +4255,7 @@ document.getElementById("confirmation-deposit").textContent =
 
   const countryCode = document.getElementById("country-code").value;
   const fullPhone = countryCode + " " + booking.phone;
-  const depositAmount = Math.floor(booking.tourTotal * 0.25);
+  const depositAmount = booking.businessCommissionAmount;
 
   const bookingText =
 `NOMAD ESCAPE FUERTEVENTURA
@@ -4279,7 +4301,7 @@ function downloadBusinessReceipt() {
 
   const countryCode = document.getElementById("country-code").value;
   const fullPhone = countryCode + " " + booking.phone;
-  const depositAmount = Math.floor(booking.tourTotal * 0.25);
+  const depositAmount = booking.businessCommissionAmount;
 
   const safe = escapeReceiptHTML;
   const receiptWindow = window.open("", "_blank");
