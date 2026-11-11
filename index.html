@@ -1238,15 +1238,31 @@
   </div>
 
   <h1>Business access</h1>
-  <p class="subtitle">Enter your password to continue.</p>
+  <p class="subtitle">Enter your credentials to continue.</p>
 
   <div class="field">
-    <label>Password</label>
+    <label for="business-personal-code">Personal Code</label>
+    <input
+      id="business-personal-code"
+      type="text"
+      placeholder="PC1234"
+      maxlength="6"
+      autocomplete="username"
+      autocapitalize="characters"
+      spellcheck="false"
+    >
+  </div>
+
+  <div class="field">
+    <label for="business-password">Password</label>
     <input
       id="business-password"
       type="password"
       placeholder="Password"
+      autocomplete="current-password"
     >
+  </div>
+
   </div>
 
   <div class="bottom-buttons">
@@ -1654,11 +1670,7 @@
     <h1>Your details</h1>
     <p class="subtitle">Enter your contact details for the booking confirmation.</p>
 
-
-  <div id="business-fields" style="display:none;">
-    <label>Partner Name</label>
-    <input id="business-name" type="text" placeholder="Your partner name" oninput="capitalizeName(this)">
-  </div>
+  <div id="business-fields" style="display:none;"></div>
 
   <label id="customer-name-label">Guest Name</label>
   <input id="customer-name" type="text" maxlength="40" placeholder="Guest full name" oninput="capitalizeName(this)">
@@ -2976,34 +2988,53 @@ async function createAssistedBooking() {
 
   let businessSessionToken = null;
   
-  async function checkBusinessPassword() {
+async function checkBusinessPassword() {
+  const codeInput = document.getElementById("business-personal-code");
   const passwordInput = document.getElementById("business-password");
+
+  const personalCode = codeInput.value.trim().toUpperCase();
   const password = passwordInput.value;
 
+  if (!/^PC[0-9]{4}$/.test(personalCode)) {
+    alert("Enter a valid personal code (PC1234).");
+    return;
+  }
+
   if (!password) {
-    alert("Enter your password.");
+    alert("Enter your group password.");
     return;
   }
 
   try {
-    const { data, error } = await supabaseClient.functions.invoke("business-login", {
-      body: { password }
-    });
+    const { data, error } = await supabaseClient.functions.invoke(
+      "business-login",
+      {
+        body: { personalCode, password }
+      }
+    );
 
-    if (error || !data?.ok) {
-      alert("Incorrect password.");
+    if (data?.status === "LOCKED") {
+      alert("Too many attempts. Please try again later.");
+      passwordInput.value = "";
+      return;
+    }
+
+    if (error || !data?.ok || !data?.token) {
+      alert("Invalid personal code or group password.");
       passwordInput.value = "";
       return;
     }
 
     businessSessionToken = data.token;
 
+    codeInput.value = "";
     passwordInput.value = "";
+
     showScreen("screen-tour");
 
   } catch (error) {
     console.error("Business login error:", error);
-    alert("Unable to verify password. Please try again.");
+    alert("Unable to log in. Please try again.");
   }
 }
   
@@ -3705,16 +3736,6 @@ async function continueFromPeople() {
     booking.name = document.getElementById("customer-name").value.trim();
     booking.phone = document.getElementById("customer-phone").value.trim();
     booking.pickup = document.getElementById("pickup-location").value.trim();
-    if (booking.accessType === "business") {
-      const partnerName =
-        document.getElementById("business-name").value.trim();
-
-      if (partnerName.length < 2) {
-        alert("Please enter the Partner Name before continuing.");
-        document.getElementById("business-name").focus();
-        return;
-      }
-    }
     
     if (booking.name.length < 2) {
       alert("Please enter your name.");
@@ -3761,9 +3782,7 @@ async function continueFromPeople() {
 
     partnerRow.style.display = isPartner ? "flex" : "none";
 
-    document.getElementById("review-partner").textContent = isPartner
-      ? document.getElementById("business-name").value.trim()
-      : "";
+    document.getElementById("review-partner").textContent = "";
 
     const countryCode = document.getElementById("country-code").value;
 
@@ -4099,21 +4118,10 @@ We're looking forward to having you with us on the van.
 }
   
   async function confirmBooking() {
-  if (booking.accessType === "business") {
-    const partnerName =
-      document.getElementById("business-name").value.trim();
-
-    if (partnerName.length < 2) {
-      alert("Partner Name is required to confirm this booking.");
-      showScreen("screen-details");
-      document.getElementById("business-name").focus();
+    if (!booking.tripId) {
+      alert("Tour information is missing. Please select the tour again.");
       return;
     }
-  }
-  if (!booking.tripId) {
-    alert("Tour information is missing. Please select the tour again.");
-    return;
-  }
 
   const countryCode = document.getElementById("country-code").value;
   const fullPhone = countryCode + " " + booking.phone;
@@ -4122,17 +4130,18 @@ We're looking forward to having you with us on the van.
 let error;
 
 if (booking.accessType === "business") {
-  const result = await supabaseClient.functions.invoke("business-booking", {
-    body: {
-      token: businessSessionToken,
-      tripId: booking.tripId,
-      passengers: booking.people,
-      customerName: booking.name,
-      customerPhone: fullPhone,
-      companyName: document.getElementById("business-name").value.trim(),
-      pickupLocation: booking.pickup
-    }
-  });
+  
+const result = await supabaseClient.functions.invoke("business-booking", {
+  body: {
+    token: businessSessionToken,
+    tripId: booking.tripId,
+    passengers: booking.people,
+    customerName: booking.name,
+    customerPhone: fullPhone,
+    pickupLocation: booking.pickup,
+    notes: null
+  }
+});
 
   error = result.error;
   data = result.data?.bookingCode;
@@ -4176,9 +4185,7 @@ if (booking.accessType === "business") {
     const depositAmount = Math.floor(booking.tourTotal * 0.25);
 const balanceAmount = booking.tourTotal - depositAmount;
 
-document.getElementById("confirmation-partner").textContent =
-  document.getElementById("business-name").value.trim();
-
+document.getElementById("confirmation-partner").textContent = "";
 document.getElementById("confirmation-partner-row").style.display = "flex";
 
 document.getElementById("confirmation-customer").textContent =
@@ -4232,7 +4239,7 @@ document.getElementById("confirmation-deposit").textContent =
 
 Booking Code: ${booking.bookingCode}
 
-Partner Name: ${document.getElementById("business-name").value.trim()}
+Partner Name: ${booking.businessPartnerName || ""}
 Guest Name: ${booking.name}
 WhatsApp: ${fullPhone}
 Pickup Location: ${booking.pickup}
@@ -4359,8 +4366,8 @@ function downloadBusinessReceipt() {
       </div>
 
       <div class="row">
-        <div class="label">Partner Name</div>
-        <div class="value">${safe(document.getElementById("business-name").value.trim())}</div>
+        <div class="label">Partner Name</div
+        <div class="value">${safe(booking.businessPartnerName || "")}</div>
       </div>
 
       <div class="row">
