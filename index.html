@@ -3026,6 +3026,7 @@ async function checkBusinessPassword() {
     }
 
     businessSessionToken = data.token;
+    booking.businessPartnerName = data.partnerName;
 
     codeInput.value = "";
     passwordInput.value = "";
@@ -3782,7 +3783,7 @@ async function continueFromPeople() {
 
     partnerRow.style.display = isPartner ? "flex" : "none";
 
-    document.getElementById("review-partner").textContent = "";
+    document.getElementById("review-partner").textContent = booking.businessPartnerName || "";
 
     const countryCode = document.getElementById("country-code").value;
 
@@ -4185,7 +4186,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     const depositAmount = Math.floor(booking.tourTotal * 0.25);
 const balanceAmount = booking.tourTotal - depositAmount;
 
-document.getElementById("confirmation-partner").textContent = "";
+document.getElementById("confirmation-partner").textContent = booking.businessPartnerName || "";
 document.getElementById("confirmation-partner-row").style.display = "flex";
 
 document.getElementById("confirmation-customer").textContent =
