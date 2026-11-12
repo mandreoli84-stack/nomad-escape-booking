@@ -3288,7 +3288,9 @@ async function checkBusinessPassword() {
     }
 
     businessSessionToken = data.token;
-    booking.businessPartnerName = data.partnerName || "";
+    booking.businessPartnerName = (data.partnerName || "")
+      .toLocaleLowerCase()
+      .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 
     localStorage.setItem(
       "nomad_business_session_token",
