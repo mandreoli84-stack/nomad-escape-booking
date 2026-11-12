@@ -923,6 +923,22 @@
     <option value="25">25%</option>
   </select>
 
+  <label for="partner-private-4h">Private Experience 4h — Commission (€) *</label>
+  <input id="partner-private-4h"
+         type="number"
+         min="0"
+         max="299"
+         step="1"
+         placeholder="Commission in euros">
+
+  <label for="partner-private-8h">Private Experience 8h — Commission (€) *</label>
+  <input id="partner-private-8h"
+         type="number"
+         min="0"
+         max="449"
+         step="1"
+         placeholder="Commission in euros">
+  
   <p id="partner-registration-message" role="status"></p>
 
   <div class="bottom-buttons">
@@ -932,9 +948,11 @@
     </button>
 
     <button class="primary"
+            id="partner-register-button"
             onclick="registerBusinessPartner()">
       REGISTER PARTNER
     </button>
+    
   </div>
 
 </section>
@@ -4778,51 +4796,81 @@ Thank you for booking with Nomad Escape!`;
       button.textContent = "SAVE NEW PASSWORD";
     }
   }
+  
     function openBusinessPartnerRegistration() {
       document.getElementById("partner-name").value = "";
-      document.getElementById("partner-whatsapp").value = "";
+      ocument.getElementById("partner-whatsapp").value = "";
       document.getElementById("partner-email").value = "";
       document.getElementById("partner-commission").value = "15";
+      document.getElementById("partner-private-4h").value = "";
+      document.getElementById("partner-private-8h").value = "";
       document.getElementById("partner-registration-message").textContent = "";
 
       showScreen("screen-admin-business-partner");
     }
   
-  function validateBusinessPartnerForm() {
-    const name = document.getElementById("partner-name").value.trim();
-    const whatsapp = document.getElementById("partner-whatsapp").value.trim();
-    const email = document.getElementById("partner-email").value.trim();
-    const commission = Number(
-      document.getElementById("partner-commission").value
-    );
+    function validateBusinessPartnerForm() {
+      const name = document.getElementById("partner-name").value.trim();
+      const whatsapp = document.getElementById("partner-whatsapp").value.trim();
+      const email = document.getElementById("partner-email").value.trim();
+      const commission = Number(
+        document.getElementById("partner-commission").value
+      );
 
-    const message = document.getElementById("partner-registration-message");
+      const private4hInput = document.getElementById("partner-private-4h").value.trim();
+      const private8hInput = document.getElementById("partner-private-8h").value.trim();
 
-    message.style.color = "#b42318";
-    message.textContent = "";
+      const private4h = Number(private4hInput);
+      const private8h = Number(private8hInput);
 
-    if (!name || !whatsapp || !email) {
-      message.textContent = "Please complete all required fields.";
-      return null;
+      const message = document.getElementById("partner-registration-message");
+
+      message.style.color = "#b42318";
+      message.textContent = "";
+
+      if (!name || !whatsapp || !email) {
+        message.textContent = "Please complete all required fields.";
+        return null;
+      }
+
+      if (!/^\+?[0-9\s()-]{7,20}$/.test(whatsapp)) {
+        message.textContent = "Enter a valid WhatsApp number.";
+        return null;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        message.textContent = "Enter a valid email address.";
+        return null;
+      }
+
+      if (![15, 20, 25].includes(commission)) {
+        message.textContent = "Invalid commission group.";
+        return null;
+      }
+
+      if (
+        private4hInput === "" ||
+        private8hInput === "" ||
+        !Number.isInteger(private4h) ||
+        !Number.isInteger(private8h) ||
+        private4h < 0 ||
+        private4h > 299 ||
+        private8h < 0 ||
+        private8h > 449
+      ) {
+        message.textContent = "Enter valid Private Experience commissions in euros.";
+        return null;
+      }
+
+      return {
+        name,
+        whatsapp,
+        email,
+        commission,
+        private4h,
+        private8h
+      };
     }
-
-    if (!/^\+?[0-9\s()-]{7,20}$/.test(whatsapp)) {
-      message.textContent = "Enter a valid WhatsApp number.";
-      return null;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      message.textContent = "Enter a valid email address.";
-      return null;
-    }
-
-    if (![15, 20, 25].includes(commission)) {
-      message.textContent = "Invalid commission group.";
-      return null;
-    }
-
-    return { name, whatsapp, email, commission };
-  }
   
 </script>
 
