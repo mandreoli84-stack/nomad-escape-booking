@@ -4871,6 +4871,75 @@ Thank you for booking with Nomad Escape!`;
         private8h
       };
     }
+
+    async function registerBusinessPartner() {
+      const form = validateBusinessPartnerForm();
+      if (!form) return;
+
+      const message = document.getElementById("partner-registration-message");
+      const button = document.getElementById("partner-register-button");
+
+      button.disabled = true;
+      button.textContent = "REGISTERING...";
+      message.textContent = "";
+
+      try {
+        const { data: isAdmin, error: roleError } =
+          await supabaseClient.rpc("is_vanbooking_admin");
+
+        if (roleError || isAdmin !== true) {
+          throw new Error("Admin access denied.");
+        }
+
+        const commissions = {
+          north_fuerteventura: {
+            type: "percentage",
+            value: form.commission
+          },
+          sotavento: {
+            type: "percentage",
+            value: form.commission
+          },
+          private_4h: {
+            type: "fixed",
+            value: form.private4h
+          },
+          private_8h: {
+            type: "fixed",
+            value: form.private8h
+          }
+        };
+
+        const { data, error } = await supabaseClient.rpc(
+          "admin_register_business_partner_v2",
+          {
+            p_partner_name: form.name,
+            p_whatsapp: form.whatsapp,
+            p_email: form.email,
+            p_group_percent: form.commission,
+            p_personal_code: "",
+            p_default_pickup_location: "",
+            p_commissions: commissions
+          }
+        );
+
+        if (error) throw error;
+        if (!data) throw new Error("Partner registration not confirmed.");
+
+        message.style.color = "#167a80";
+        message.textContent =
+          "Business Partner registered successfully. Partner ID: " + data;
+
+      } catch (error) {
+        message.style.color = "#b42318";
+        message.textContent =
+          "Registration failed: " + error.message;
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "REGISTER PARTNER";
+      }
+    }
   
 </script>
 
