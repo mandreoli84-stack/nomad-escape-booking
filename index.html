@@ -4301,63 +4301,81 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "Do NOT submit another booking.\n" +
       "Please contact Nomad Escape."
     );
+   
+    const confirmationFields = {
+      "confirmation-booking-code": booking.bookingCode,
+      "confirmation-partner": booking.businessPartnerName || "",
+      "confirmation-customer": booking.name,
+      "confirmation-phone": fullPhone,
+      "confirmation-pickup": booking.pickup,
+      "confirmation-tour": booking.tour,
+      "confirmation-date-time":
+        formatDateWithOrdinal(booking.date) + " · " +
+        (booking.tour === "North Fuerteventura"
+          ? "09:30 – 13:30"
+          : "09:30 – 17:00"),
+      "confirmation-people":
+        booking.people + (booking.people === 1 ? " person" : " people"),
+      "confirmation-total": "Pending verification",
+      "confirmation-deposit": "Pending verification",
+      "confirmation-balance": "Pending verification"
+    };
 
-    document.getElementById("confirmation-booking-code").textContent =
-      booking.bookingCode;
-
-    document.querySelectorAll(".screen").forEach(screen => {
-      screen.classList.remove("active");
+    Object.entries(confirmationFields).forEach(([id, value]) => {
+      document.getElementById(id).textContent = value;
     });
 
-    document.getElementById("screen-confirmation").classList.add("active");
-    window.scrollTo(0, 0);
+    document.getElementById("confirmation-partner-row").style.display =
+      "flex";
 
+    showScreen("screen-confirmation");
     return;
+
   }
 
     const depositAmount = booking.businessCommissionAmount;
     const balanceAmount = booking.businessBalanceAmount;
     booking.tourTotal = booking.businessTotalAmount;
 
-document.getElementById("confirmation-partner").textContent = booking.businessPartnerName || "";
-document.getElementById("confirmation-partner-row").style.display = "flex";
+    document.getElementById("confirmation-partner").textContent = booking.businessPartnerName || "";
+    document.getElementById("confirmation-partner-row").style.display = "flex";
 
-document.getElementById("confirmation-customer").textContent =
-  booking.name;
+    document.getElementById("confirmation-customer").textContent =
+      booking.name;
 
-document.getElementById("confirmation-phone").textContent =
-  fullPhone;
+    document.getElementById("confirmation-phone").textContent =
+      fullPhone;
 
-document.getElementById("confirmation-pickup").textContent =
-  booking.pickup;
+    document.getElementById("confirmation-pickup").textContent =
+      booking.pickup;
 
-document.getElementById("confirmation-tour").textContent =
-  booking.tour;
+    document.getElementById("confirmation-tour").textContent =
+      booking.tour;
 
 
-document.getElementById("confirmation-date-time").textContent =
-  formatDateWithOrdinal(booking.date) + " · " +
-  (booking.tour === "North Fuerteventura"
-    ? "09:30 – 13:30"
-    : "09:30 – 17:00");
+    document.getElementById("confirmation-date-time").textContent =
+      formatDateWithOrdinal(booking.date) + " · " +
+      (booking.tour === "North Fuerteventura"
+        ? "09:30 – 13:30"
+        : "09:30 – 17:00");
 
-document.getElementById("confirmation-people").textContent =
-  booking.people + (booking.people === 1 ? " person" : " people");
+    document.getElementById("confirmation-people").textContent =
+      booking.people + (booking.people === 1 ? " person" : " people");
 
-document.getElementById("confirmation-total").textContent =
-  "€" + booking.tourTotal;
+    document.getElementById("confirmation-total").textContent =
+      "€" + booking.tourTotal;
 
-document.getElementById("confirmation-deposit").textContent =
-  "€" + depositAmount;
+    document.getElementById("confirmation-deposit").textContent =
+      "€" + depositAmount;
 
-document.getElementById("confirmation-balance").textContent =
-  "€" + balanceAmount;
+    document.getElementById("confirmation-balance").textContent =
+      "€" + balanceAmount;
 
-  const whatsappMessage = buildWhatsAppMessage();
-  console.log("WhatsApp confirmation message:", whatsappMessage);
+      const whatsappMessage = buildWhatsAppMessage();
+      console.log("WhatsApp confirmation message:", whatsappMessage);
   
-  showScreen("screen-confirmation");
-}
+      showScreen("screen-confirmation");
+    }
   
   async function copyBusinessBooking() {
     if (!booking.businessAmountsVerified) {
