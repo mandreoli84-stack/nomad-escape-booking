@@ -1410,6 +1410,27 @@
 
 </section>
 
+  <!-- BUSINESS SESSION LOADING -->
+  <section class="screen" id="screen-business-loading">
+
+    <div class="logo">
+      <div class="logo-art">
+        <div class="sun"></div>
+        <div class="mountain-one"></div>
+        <div class="mountain-two"></div>
+        <div class="sea"></div>
+      </div>
+      <div class="brand">NOMAD ESCAPE</div>
+      <div class="destination">FUERTEVENTURA</div>
+    </div>
+
+    <p class="subtitle"
+       style="text-align:center; margin-top:65px;">
+      Checking your access...
+    </p>
+
+  </section>
+
   <!-- BUSINESS LOGIN -->
 <section class="screen" id="screen-business-login">
 
@@ -3178,9 +3199,7 @@ async function createAssistedBooking() {
       showScreen("screen-tour");
       return;
     }
-
-    showScreen("screen-business-login");
-
+    
     const savedToken = localStorage.getItem(
       "nomad_business_session_token"
     );
@@ -3188,27 +3207,32 @@ async function createAssistedBooking() {
     if (!savedToken || !/^[a-f0-9]{64}$/i.test(savedToken)) {
       localStorage.removeItem("nomad_business_session_token");
       localStorage.removeItem("nomad_business_partner_name");
+      showScreen("screen-business-login");
       return;
     }
 
+    showScreen("screen-business-loading");
+
     try {
-      const { data, error } = await supabaseClient.rpc( 
+      const { data, error } = await supabaseClient.rpc(
         "verify_business_partner_session_public",
         { p_token: savedToken }
       );
 
+      if (booking.accessType !== "business") return;
+
       if (error) {
         console.error("Business session verification:", error);
+        showScreen("screen-business-login");
         return;
       }
 
       if (!data) {
         localStorage.removeItem("nomad_business_session_token");
         localStorage.removeItem("nomad_business_partner_name");
+        showScreen("screen-business-login");
         return;
       }
-
-      if (booking.accessType !== "business") return;
 
       businessSessionToken = savedToken;
       booking.businessPartnerName =
@@ -3218,6 +3242,9 @@ async function createAssistedBooking() {
 
     } catch (error) {
       console.error("Business session verification:", error);
+      if (booking.accessType === "business") {
+        showScreen("screen-business-login");
+      }
     }
   }
 
