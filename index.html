@@ -3191,8 +3191,8 @@ async function createAssistedBooking() {
     }
 
     try {
-      const { data, error } = await supabaseClient.rpc(
-        "verify_business_partner_session",
+      const { data, error } = await supabaseClient.rpc( 
+        "verify_business_partner_session_public",
         { p_token: savedToken }
       );
 
