@@ -4301,7 +4301,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "Do NOT submit another booking.\n" +
       "Please contact Nomad Escape."
     );
-   
+  
+  document.getElementById("confirmation-deposit-label").textContent =
+    "Partner Commission";
+
     const confirmationFields = {
       "confirmation-booking-code": booking.bookingCode,
       "confirmation-partner": booking.businessPartnerName || "",
@@ -4366,10 +4369,11 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "€" + booking.tourTotal;
 
     document.getElementById("confirmation-deposit-label").textContent =
-    booking.accessType === "business"
-      ? "Partner Commission"
-      : "Deposit";
+      booking.accessType === "business"
+        ? "Partner Commission"
+        : "Deposit";
 
+    document.getElementById("confirmation-deposit").textContent =
       "€" + depositAmount;
 
     document.getElementById("confirmation-balance").textContent =
