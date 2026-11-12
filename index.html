@@ -4055,8 +4055,10 @@ async function continueFromPeople() {
     const partnerRow = document.getElementById("review-partner-row");
 
     partnerRow.style.display = isPartner ? "flex" : "none";
-
-    document.getElementById("review-partner").textContent = booking.businessPartnerName || "";
+    document.getElementById("review-partner").textContent =
+      (booking.businessPartnerName || "")
+        .toLocaleLowerCase()
+        .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 
     const countryCode = document.getElementById("country-code").value;
 
