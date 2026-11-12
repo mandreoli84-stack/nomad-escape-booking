@@ -4301,6 +4301,17 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "Do NOT submit another booking.\n" +
       "Please contact Nomad Escape."
     );
+
+    document.getElementById("confirmation-booking-code").textContent =
+      booking.bookingCode;
+
+    document.querySelectorAll(".screen").forEach(screen => {
+      screen.classList.remove("active");
+    });
+
+    document.getElementById("screen-confirmation").classList.add("active");
+    window.scrollTo(0, 0);
+
     return;
   }
 
@@ -4349,6 +4360,15 @@ document.getElementById("confirmation-balance").textContent =
 }
   
   async function copyBusinessBooking() {
+    if (!booking.businessAmountsVerified) {
+      alert(
+        "Booking confirmed, but financial details are not yet available.\n\n" +
+        "Booking code: " + (booking.bookingCode || "Unavailable") +
+        "\n\nPlease contact Nomad Escape."
+      );
+      return;
+    }
+
   const time =
     booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
@@ -4395,7 +4415,16 @@ Thank you for booking with Nomad Escape!`;
     .replace(/'/g, "&#39;");
 }
   
-function downloadBusinessReceipt() {
+  function downloadBusinessReceipt() {
+    if (!booking.businessAmountsVerified) {
+      alert(
+        "Financial details are temporarily unavailable.\n\n" +
+        "Booking code: " + (booking.bookingCode || "Unavailable") +
+        "\n\nPlease contact Nomad Escape for your receipt."
+      );
+      return;
+    }
+
   const time =
     booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
