@@ -895,6 +895,50 @@
 
 </section>
   
+  <!-- ADMIN - REGISTER BUSINESS PARTNER -->
+<section class="screen" id="screen-admin-business-partner">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Register Business Partner</h1>
+  <p class="subtitle">Create a new Business Partner account.</p>
+
+  <label for="partner-name">Partner Name *</label>
+  <input id="partner-name" type="text" maxlength="100">
+
+  <label for="partner-whatsapp">WhatsApp *</label>
+  <input id="partner-whatsapp" type="tel" placeholder="+34 600 000 000">
+
+  <label for="partner-email">Email *</label>
+  <input id="partner-email" type="email">
+
+  <label for="partner-commission">Commission Group *</label>
+  <select id="partner-commission"
+          style="width:100%; padding:13px;">
+    <option value="15">15%</option>
+    <option value="20">20%</option>
+    <option value="25">25%</option>
+  </select>
+
+  <p id="partner-registration-message" role="status"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            onclick="registerBusinessPartner()">
+      REGISTER PARTNER
+    </button>
+  </div>
+
+</section>
+  
 <!-- ADMIN - CREATE GUEST ASSISTED BOOKING -->
 <section class="screen" id="screen-admin-assisted">
 
@@ -4734,7 +4778,15 @@ Thank you for booking with Nomad Escape!`;
       button.textContent = "SAVE NEW PASSWORD";
     }
   }
+    function openBusinessPartnerRegistration() {
+      document.getElementById("partner-name").value = "";
+      document.getElementById("partner-whatsapp").value = "";
+      document.getElementById("partner-email").value = "";
+      document.getElementById("partner-commission").value = "15";
+      document.getElementById("partner-registration-message").textContent = "";
 
+      showScreen("screen-admin-business-partner");
+    }
 </script>
 
 </body>
