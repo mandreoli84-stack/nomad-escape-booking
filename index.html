@@ -1030,21 +1030,30 @@
     <option value="25">25%</option>
   </select>
 
-  <label for="partner-private-4h">Private Experience 4h — Commission (€) *</label>
-  <input id="partner-private-4h"
-         type="number"
-         min="0"
-         max="299"
-         step="1"
-         placeholder="Commission in euros">
+  <p class="helper">
+    Optional fixed commissions. Leave empty to use the
+    Commission Group percentage. Enter 0 for no commission.
+  </p>
 
-  <label for="partner-private-8h">Private Experience 8h — Commission (€) *</label>
-  <input id="partner-private-8h"
-         type="number"
-         min="0"
-         max="449"
-         step="1"
-         placeholder="Commission in euros">
+  <label for="partner-north-fixed">North Fuerteventura — Fixed (€ per person)</label>
+  <input id="partner-north-fixed" type="number"
+         min="0" max="49" step="0.01"
+         placeholder="Optional">
+
+  <label for="partner-sotavento-fixed">Sotavento — Fixed (€ per person)</label>
+  <input id="partner-sotavento-fixed" type="number"
+         min="0" max="69" step="0.01"
+         placeholder="Optional">
+
+  <label for="partner-private-4h">Private Experience 4h — Fixed (€ per booking)</label>
+  <input id="partner-private-4h" type="number"
+         min="0" max="299" step="0.01"
+         placeholder="Optional">
+
+  <label for="partner-private-8h">Private Experience 8h — Fixed (€ per booking)</label>
+  <input id="partner-private-8h" type="number"
+         min="0" max="449" step="0.01"
+         placeholder="Optional">
   
   <p id="partner-registration-message" role="status"></p>
 
@@ -4949,12 +4958,6 @@ Thank you for booking with Nomad Escape!`;
         document.getElementById("partner-commission").value
       );
 
-      const private4hInput = document.getElementById("partner-private-4h").value.trim();
-      const private8hInput = document.getElementById("partner-private-8h").value.trim();
-
-      const private4h = Number(private4hInput);
-      const private8h = Number(private8hInput);
-
       const message = document.getElementById("partner-registration-message");
 
       message.style.color = "#b42318";
@@ -5004,19 +5007,41 @@ Thank you for booking with Nomad Escape!`;
         message.textContent = "Invalid commission group.";
         return null;
       }
+      
+      const fixedFields = [
+        ["northFixed", "partner-north-fixed", 49],
+        ["sotaventoFixed", "partner-sotavento-fixed", 69],
+        ["private4h", "partner-private-4h", 299],
+        ["private8h", "partner-private-8h", 449]
+      ];
 
-      if (
-        private4hInput === "" ||
-        private8hInput === "" ||
-        !Number.isInteger(private4h) ||
-        !Number.isInteger(private8h) ||
-        private4h < 0 ||
-        private4h > 299 ||
-        private8h < 0 ||
-        private8h > 449
-      ) {
-        message.textContent = "Enter valid Private Experience commissions in euros.";
-        return null;
+      const fixedValues = {};
+
+      for (const [key, id, max] of fixedFields) {
+        const input = document.getElementById(id);
+
+        if (!input) {
+          message.textContent = "Commission field missing: " + id;
+          return null;
+        }
+
+        const raw = input.value.trim();
+        const value = raw === "" ? null : Number(raw);
+
+        if (
+          value !== null &&
+          (
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > max ||
+            Math.round(value * 100) !== value * 100
+          )
+        ) {
+          message.textContent = "Invalid fixed commission: " + id;
+          return null;
+        }
+
+        fixedValues[key] = value;
       }
 
       return {
@@ -5028,8 +5053,7 @@ Thank you for booking with Nomad Escape!`;
         email,
         website,
         commission,
-        private4h,
-        private8h
+        ...fixedValues
       };
     }
 
@@ -5053,28 +5077,9 @@ Thank you for booking with Nomad Escape!`;
         if (roleError || isAdmin !== true) {
           throw new Error("Admin access denied.");
         }
-
-        const commissions = {
-          north_fuerteventura: {
-            type: "percentage",
-            value: form.commission
-          },
-          sotavento: {
-            type: "percentage",
-            value: form.commission
-          },
-          private_4h: {
-            type: "fixed",
-            value: form.private4h
-          },
-          private_8h: {
-            type: "fixed",
-            value: form.private8h
-          }
-        };
-
+        
         const { data, error } = await supabaseClient.rpc(
-          "admin_register_business_partner_v3",
+          "admin_register_business_partner_v4",
           {
             p_partner_name: form.name,
             p_whatsapp: form.whatsapp,
@@ -5082,11 +5087,14 @@ Thank you for booking with Nomad Escape!`;
             p_group_percent: form.commission,
             p_personal_code: "",
             p_default_pickup_location: "",
-            p_commissions: commissions,
             p_contact_name_1: form.contactName1,
-            p_whatsapp_2: form.whatsapp2,
-            p_contact_name_2: form.contactName2,
-            p_website: form.website
+            p_whatsapp_2: form.whatsapp2 || null,
+            p_contact_name_2: form.contactName2 || null,
+            p_website: form.website || null,
+            p_north_fixed_eur: form.northFixed,
+            p_sotavento_fixed_eur: form.sotaventoFixed,
+            p_private_4h_fixed_eur: form.private4h,
+            p_private_8h_fixed_eur: form.private8h
           }
         );
 
