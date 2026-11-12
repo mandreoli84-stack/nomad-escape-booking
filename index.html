@@ -867,7 +867,17 @@
     <div class="tour-arrow">›</div>
   </div>
 </div>
-
+  
+  <div class="tour-card" onclick="openBusinessGroupPasswords()">
+    <div class="tour-info">
+      <div class="tour-title">Business Group Passwords</div>
+      <div class="tour-meta">
+        Manage passwords for the 15%, 20% and 25% groups
+      </div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+  
   <div class="tour-card" onclick="openAssistedBookingForm()">
     <div class="tour-info">
       <div class="tour-title">Guest Assisted Booking</div>
@@ -890,6 +900,62 @@
   <div class="bottom-buttons">
     <button class="secondary" onclick="adminLogout()">
       LOGOUT
+    </button>
+  </div>
+
+</section>
+  
+  <!-- ADMIN - BUSINESS GROUP PASSWORDS -->
+<section class="screen" id="screen-admin-business-passwords">
+
+  <div class="logo">
+    <div class="brand">NOMAD ESCAPE</div>
+    <div class="destination">FUERTEVENTURA</div>
+  </div>
+
+  <h1>Business Group Passwords</h1>
+  <p class="subtitle">
+    Set a separate password for each commission group.
+  </p>
+
+  <label for="business-group-select">Commission Group</label>
+  <select id="business-group-select"
+          style="width:100%; padding:13px;">
+    <option value="15">15%</option>
+    <option value="20">20%</option>
+    <option value="25">25%</option>
+  </select>
+
+  <label for="business-group-new-password">New Password</label>
+  <input id="business-group-new-password"
+         type="password"
+         minlength="12"
+         maxlength="128"
+         autocomplete="new-password"
+         placeholder="Minimum 12 characters">
+
+  <label for="business-group-confirm-password">Confirm Password</label>
+  <input id="business-group-confirm-password"
+         type="password"
+         minlength="12"
+         maxlength="128"
+         autocomplete="new-password"
+         placeholder="Repeat the new password">
+
+  <p id="business-group-password-message"
+     role="status"
+     style="font-size:14px; margin-top:16px;"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            id="business-group-save-button"
+            onclick="saveBusinessGroupPassword()">
+      SAVE PASSWORD
     </button>
   </div>
 
@@ -4813,6 +4879,19 @@ Thank you for booking with Nomad Escape!`;
       showScreen("screen-admin-business-partner");
     }
   
+    function openBusinessGroupPasswords() {
+      document.getElementById("business-group-select").value = "15";
+      document.getElementById("business-group-new-password").value = "";
+      document.getElementById("business-group-confirm-password").value = "";
+      document.getElementById("business-group-password-message").textContent = "";
+
+      const button = document.getElementById("business-group-save-button");
+      button.disabled = false;
+       button.textContent = "SAVE PASSWORD";
+
+       showScreen("screen-admin-business-passwords");
+    }
+  
     function validateBusinessPartnerForm() {
       const name = document.getElementById("partner-name").value.trim();
       const whatsapp = document.getElementById("partner-whatsapp").value.trim();
@@ -4973,6 +5052,70 @@ Thank you for booking with Nomad Escape!`;
             : "REGISTER PARTNER";
         }
       }
+
+    async function saveBusinessGroupPassword() {
+      const group = Number(
+        document.getElementById("business-group-select").value
+      );
+      const password = document.getElementById("business-group-new-password").value;
+      const confirmation = document.getElementById("business-group-confirm-password").value;
+      const message = document.getElementById("business-group-password-message");
+      const button = document.getElementById("business-group-save-button");
+
+      message.textContent = "";
+      message.style.color = "#b42318";
+
+      if (![15, 20, 25].includes(group)) {
+        message.textContent = "Invalid commission group.";
+        return;
+      }
+
+      if (password.length < 12 || password.length > 128) {
+        message.textContent = "Password must contain 12 to 128 characters.";
+        return;
+      }
+
+      if (password !== confirmation) {
+        message.textContent = "Passwords do not match.";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "SAVING...";
+
+      try {
+        const { data: isAdmin, error: roleError } =
+          await supabaseClient.rpc("is_vanbooking_admin");
+
+        if (roleError || isAdmin !== true) {
+          throw new Error("Admin access denied.");
+        }
+
+        const { data, error } = await supabaseClient.rpc(
+          "admin_set_business_group_password",
+          {
+            p_commission_percent: group,
+            p_password: password
+          }
+        );
+
+        if (error) throw error;
+        if (data !== true) throw new Error("Password update not confirmed.");
+
+        document.getElementById("business-group-new-password").value = "";
+        document.getElementById("business-group-confirm-password").value = "";
+
+       message.style.color = "#167a80";
+        message.textContent = "Group " + group + "% password updated successfully.";
+
+      } catch (error) {
+        message.textContent = "Password update failed: " + error.message;
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "SAVE PASSWORD";
+      }
+    }
   
 </script>
 
