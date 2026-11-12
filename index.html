@@ -1959,7 +1959,7 @@
 
 <div class="review-row">
   <div class="review-content">
-    <div class="review-label">Deposit</div>
+    <div class="review-label" id="confirmation-deposit-label">Deposit</div>
     <div id="confirmation-deposit"></div>
   </div>
 </div>
@@ -4365,7 +4365,11 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     document.getElementById("confirmation-total").textContent =
       "€" + booking.tourTotal;
 
-    document.getElementById("confirmation-deposit").textContent =
+    document.getElementById("confirmation-deposit-label").textContent =
+    booking.accessType === "business"
+      ? "Partner Commission"
+      : "Deposit";
+
       "€" + depositAmount;
 
     document.getElementById("confirmation-balance").textContent =
