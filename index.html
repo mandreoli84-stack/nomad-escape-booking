@@ -4149,6 +4149,19 @@ We're looking forward to having you with us on the van.
 }
   
   async function confirmBooking() {
+    
+    if (
+    booking.accessType === "business" &&
+      (!businessSessionToken || !/^[a-f0-9]{64}$/i.test(businessSessionToken))
+    ) {
+      alert(
+        "Your Business session is unavailable.\n\n" +
+        "Please log in again before confirming a booking."
+      );
+      showScreen("screen-business-login");
+      return;
+    }
+
     if (!booking.tripId) {
       alert("Tour information is missing. Please select the tour again.");
       return;
@@ -4176,6 +4189,11 @@ if (
   booking.businessRequestId = crypto.randomUUID();
   booking.businessRequestFingerprint = businessRequestFingerprint;
 }
+  
+  booking.businessAmountsVerified = false;
+  booking.businessTotalAmount = null;
+  booking.businessCommissionAmount = null;
+  booking.businessBalanceAmount = null;
 
 const result = await supabaseClient.functions.invoke("business-booking", {
   body: {
@@ -4192,6 +4210,19 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
   error = result.error;
   data = result.data?.bookingCode;
+
+  if (!error && (!result.data?.ok || !data)) {
+    error = new Error(
+      "Booking confirmation could not be verified. " +
+      "Please retry without changing the booking details."
+    );
+  }
+
+  if (!error && !/^VB-\d{4}-[A-F0-9]{8}$/.test(data)) {
+    error = new Error(
+      "Invalid Business booking code received."
+    );
+  }
 
   if (!error && result.data?.ok) {
     const receipt = result.data;
@@ -4218,7 +4249,6 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   }
 }
 
-
   if (error && result.error?.context instanceof Response) {
     try {
       const errorBody = await result.error.context.clone().json();
@@ -4244,25 +4274,38 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   return;
 }
 
+    
   if (error) {
     console.error("Booking error:", error);
-    alert(error.message || "Unable to complete the booking. Please try again.");
-    return;
-  }
 
+  alert(
+    "We could not verify the booking result.\n\n" +
+    "If your connection was interrupted, your booking " +
+    "may already be confirmed.\n\n" +
+    "Please try again without changing the booking details. " +
+    "The system will check the same request to prevent duplicates.\n\n" +
+    "If the problem continues, contact Nomad Escape."
+  );
+
+  return;
+}
+
+    
   booking.bookingCode = data;
     
   document.getElementById("confirmation-booking-code").textContent =
     booking.bookingCode;
 
-    if (!booking.businessAmountsVerified) {
-      alert(
-        "Booking confirmed, but the financial details could not be retrieved. " +
-        "Booking code: " + booking.bookingCode +
-        ". Please contact Nomad Escape."
-      );
-      return;
-    }
+  if (!booking.businessAmountsVerified) {
+    alert(
+      "Booking confirmed successfully.\n\n" +
+      "Booking code: " + booking.bookingCode +
+      "\n\nFinancial details are temporarily unavailable.\n" +
+      "Do NOT submit another booking.\n" +
+      "Please contact Nomad Escape."
+    );
+    return;
+  }
 
     const depositAmount = booking.businessCommissionAmount;
     const balanceAmount = booking.businessBalanceAmount;
