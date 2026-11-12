@@ -4806,6 +4806,10 @@ Thank you for booking with Nomad Escape!`;
       document.getElementById("partner-private-8h").value = "";
       document.getElementById("partner-registration-message").textContent = "";
 
+      const registerButton = document.getElementById("partner-register-button");
+      registerButton.disabled = false;
+      registerButton.textContent = "REGISTER PARTNER";
+
       showScreen("screen-admin-business-partner");
     }
   
@@ -4883,6 +4887,8 @@ Thank you for booking with Nomad Escape!`;
       button.textContent = "REGISTERING...";
       message.textContent = "";
 
+      let partnerCreated = false;
+
       try {
         const { data: isAdmin, error: roleError } =
           await supabaseClient.rpc("is_vanbooking_admin");
@@ -4925,6 +4931,8 @@ Thank you for booking with Nomad Escape!`;
 
         if (error) throw error;
         if (!data) throw new Error("Partner registration not confirmed.");
+        
+        partnerCreated = true;
 
         const { data: partners, error: listError } =
           await supabaseClient.rpc("admin_list_business_partners");
@@ -4946,16 +4954,25 @@ Thank you for booking with Nomad Escape!`;
           " | Personal Code: " + registeredPartner.personal_code +
           " | Commission Group: " + registeredPartner.commission_percent + "%";
 
-      } catch (error) {
-        message.style.color = "#b42318";
-        message.textContent =
-          "Registration failed: " + error.message;
+        } catch (error) {
+          if (partnerCreated) {
+            message.style.color = "#b45309";
+            message.textContent =
+              "Partner registered successfully, but the personal code could not be retrieved. " +
+              "Do not register again. Check the Admin partner list.";
+          } else {
+            message.style.color = "#b42318";
+            message.textContent =
+              "Registration failed: " + error.message;
+          }
 
-      } finally {
-        button.disabled = false;
-        button.textContent = "REGISTER PARTNER";
+        } finally {
+          button.disabled = partnerCreated;
+          button.textContent = partnerCreated
+            ? "PARTNER REGISTERED"
+            : "REGISTER PARTNER";
+        }
       }
-    }
   
 </script>
 
