@@ -4926,9 +4926,25 @@ Thank you for booking with Nomad Escape!`;
         if (error) throw error;
         if (!data) throw new Error("Partner registration not confirmed.");
 
+        const { data: partners, error: listError } =
+          await supabaseClient.rpc("admin_list_business_partners");
+
+        if (listError) throw listError;
+
+        const registeredPartner = partners.find(
+          partner => partner.id === data
+        );
+
+        if (!registeredPartner) {
+          throw new Error("Partner created, but personal code not found.");
+        }
+
         message.style.color = "#167a80";
         message.textContent =
-          "Business Partner registered successfully. Partner ID: " + data;
+          "Business Partner registered successfully! " +
+          "Name: " + registeredPartner.partner_name +
+          " | Personal Code: " + registeredPartner.personal_code +
+          " | Commission Group: " + registeredPartner.commission_percent + "%";
 
       } catch (error) {
         message.style.color = "#b42318";
