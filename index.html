@@ -975,11 +975,51 @@
   <label for="partner-name">Partner Name *</label>
   <input id="partner-name" type="text" maxlength="100">
 
-  <label for="partner-whatsapp">WhatsApp *</label>
-  <input id="partner-whatsapp" type="tel" placeholder="+34 600 000 000">
+  <div style="display:flex; gap:10px; align-items:flex-start;">
+    <div style="flex:1; min-width:0;">
+      <label for="partner-whatsapp">WhatsApp 1 *</label>
+      <input
+        id="partner-whatsapp"
+        type="tel"
+        placeholder="+34 600 000 000">
+    </div>
+
+    <div style="flex:1; min-width:0;">
+      <label for="partner-contact-name-1">Contact Name 1 *</label>
+      <input
+        id="partner-contact-name-1"
+        type="text"
+        maxlength="100"
+        placeholder="Contact person">
+    </div>
+  </div>
 
   <label for="partner-email">Email *</label>
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+      <div style="flex:1; min-width:0;">
+      <label for="partner-whatsapp-2">WhatsApp 2</label>
+      <input
+        id="partner-whatsapp-2"
+        type="tel"
+        placeholder="+34 600 000 000">
+    </div>
+
+  <div style="flex:1; min-width:0;">
+    <label for="partner-contact-name-2">Contact Name 2</label>
+    <input
+      id="partner-contact-name-2"
+      type="text"
+      maxlength="100"
+      placeholder="Contact person">
+  </div>
+</div>
   <input id="partner-email" type="email">
+  <label for="partner-website">Website (optional)</label>
+  <input
+    id="partner-website"
+    type="url"
+    maxlength="500"
+    placeholder="https://www.example.com">
 
   <label for="partner-commission">Commission Group *</label>
   <select id="partner-commission"
@@ -4867,6 +4907,10 @@ Thank you for booking with Nomad Escape!`;
       document.getElementById("partner-name").value = "";
       document.getElementById("partner-whatsapp").value = "";
       document.getElementById("partner-email").value = "";
+      document.getElementById("partner-contact-name-1").value = "";
+      document.getElementById("partner-whatsapp-2").value = "";
+      document.getElementById("partner-contact-name-2").value = "";
+      document.getElementById("partner-website").value = "";
       document.getElementById("partner-commission").value = "15";
       document.getElementById("partner-private-4h").value = "";
       document.getElementById("partner-private-8h").value = "";
@@ -4896,6 +4940,10 @@ Thank you for booking with Nomad Escape!`;
       const name = document.getElementById("partner-name").value.trim();
       const whatsapp = document.getElementById("partner-whatsapp").value.trim();
       const email = document.getElementById("partner-email").value.trim();
+      const contactName1 = document.getElementById("partner-contact-name-1").value.trim();
+      const whatsapp2 = document.getElementById("partner-whatsapp-2").value.trim();
+      const contactName2 = document.getElementById("partner-contact-name-2").value.trim();
+      const website = document.getElementById("partner-website").value.trim();
       const commission = Number(
         document.getElementById("partner-commission").value
       );
@@ -4911,7 +4959,7 @@ Thank you for booking with Nomad Escape!`;
       message.style.color = "#b42318";
       message.textContent = "";
 
-      if (!name || !whatsapp || !email) {
+      if (!name || !whatsapp || !contactName1 || !email) {
         message.textContent = "Please complete all required fields.";
         return null;
       }
@@ -4926,6 +4974,31 @@ Thank you for booking with Nomad Escape!`;
         return null;
       }
 
+      if (contactName1.length > 100) {
+        message.textContent = "Contact Name 1 is too long.";
+        return null;
+      }
+
+      if (whatsapp2 && !/^\+?[0-9\s()-]{7,20}$/.test(whatsapp2)) {
+        message.textContent = "Enter a valid WhatsApp 2 number.";
+        return null;
+      }
+
+      if (whatsapp2 && !contactName2) {
+        message.textContent = "Contact Name 2 is required for WhatsApp 2.";
+        return null;
+      }
+
+      if (contactName2 && !whatsapp2) {
+        message.textContent = "Enter WhatsApp 2 for Contact Name 2.";
+        return null;
+      }
+
+      if (contactName2.length > 100 || website.length > 500) {
+        message.textContent = "Contact name or website is too long.";
+      return null;
+      } 
+      
       if (![15, 20, 25].includes(commission)) {
         message.textContent = "Invalid commission group.";
         return null;
@@ -4948,7 +5021,11 @@ Thank you for booking with Nomad Escape!`;
       return {
         name,
         whatsapp,
+        contactName1,
+        whatsapp2,
+        contactName2,
         email,
+        website,
         commission,
         private4h,
         private8h
@@ -4996,7 +5073,7 @@ Thank you for booking with Nomad Escape!`;
         };
 
         const { data, error } = await supabaseClient.rpc(
-          "admin_register_business_partner_v2",
+          "admin_register_business_partner_v3",
           {
             p_partner_name: form.name,
             p_whatsapp: form.whatsapp,
@@ -5004,7 +5081,11 @@ Thank you for booking with Nomad Escape!`;
             p_group_percent: form.commission,
             p_personal_code: "",
             p_default_pickup_location: "",
-            p_commissions: commissions
+            p_commissions: commissions,
+            p_contact_name_1: form.contactName1,
+            p_whatsapp_2: form.whatsapp2,
+            p_contact_name_2: form.contactName2,
+            p_website: form.website
           }
         );
 
