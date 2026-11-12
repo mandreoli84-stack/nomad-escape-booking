@@ -4274,22 +4274,19 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   return;
 }
 
-    
   if (error) {
     console.error("Booking error:", error);
 
-  alert(
-    "We could not verify the booking result.\n\n" +
-    "If your connection was interrupted, your booking " +
-    "may already be confirmed.\n\n" +
-    "Please try again without changing the booking details. " +
-    "The system will check the same request to prevent duplicates.\n\n" +
-    "If the problem continues, contact Nomad Escape."
-  );
+    alert(
+      "We could not complete or verify your booking.\n\n" +
+      "Your booking may already be confirmed.\n\n" +
+      "Please retry without changing the booking details. " +
+      "The system will check the same request to prevent duplicates.\n\n" +
+      "If the problem continues, contact Nomad Escape."
+    );
 
-  return;
-}
-
+    return;
+  }
     
   booking.bookingCode = data;
     
