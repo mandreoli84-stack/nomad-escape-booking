@@ -4787,6 +4787,43 @@ Thank you for booking with Nomad Escape!`;
 
       showScreen("screen-admin-business-partner");
     }
+  
+  function validateBusinessPartnerForm() {
+    const name = document.getElementById("partner-name").value.trim();
+    const whatsapp = document.getElementById("partner-whatsapp").value.trim();
+    const email = document.getElementById("partner-email").value.trim();
+    const commission = Number(
+      document.getElementById("partner-commission").value
+    );
+
+    const message = document.getElementById("partner-registration-message");
+
+    message.style.color = "#b42318";
+    message.textContent = "";
+
+    if (!name || !whatsapp || !email) {
+      message.textContent = "Please complete all required fields.";
+      return null;
+    }
+
+    if (!/^\+?[0-9\s()-]{7,20}$/.test(whatsapp)) {
+      message.textContent = "Enter a valid WhatsApp number.";
+      return null;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      message.textContent = "Enter a valid email address.";
+      return null;
+    }
+
+    if (![15, 20, 25].includes(commission)) {
+      message.textContent = "Invalid commission group.";
+      return null;
+    }
+
+    return { name, whatsapp, email, commission };
+  }
+  
 </script>
 
 </body>
