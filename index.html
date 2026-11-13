@@ -821,31 +821,44 @@
   <h1>Admin Access</h1>
   <p class="subtitle">Authorized personnel only.</p>
 
-  <label for="admin-email">Email</label>
-  <input id="admin-email"
-         type="email"
-         autocomplete="username"
-         placeholder="Admin email">
+  <form id="admin-login-form"
+        autocomplete="on"
+        onsubmit="event.preventDefault(); adminLogin();">
 
-  <label for="admin-password">Password</label>
-  <input id="admin-password"
-         type="password"
-         autocomplete="current-password"
-         placeholder="Password">
+    <label for="admin-email">Email</label>
+    <input id="admin-email"
+           name="username"
+           type="email"
+           autocomplete="username"
+           autocapitalize="none"
+           spellcheck="false"
+           required
+           placeholder="Admin email">
 
-  <p id="admin-message"
-     style="color:#b42318; font-size:14px;"></p>
+    <label for="admin-password">Password</label>
+    <input id="admin-password"
+           name="password"
+           type="password"
+           autocomplete="current-password"
+           required
+           placeholder="Password">
 
-  <div class="bottom-buttons">
-    <button class="secondary"
-            onclick="showScreen('screen-access')">
-      BACK
-    </button>
+    <p id="admin-message"
+       style="color:#b42318; font-size:14px;"></p>
 
-    <button class="primary" onclick="adminLogin()">
-      LOGIN
-    </button>
-  </div>
+    <div class="bottom-buttons">
+      <button class="secondary"
+              type="button"
+              onclick="showScreen('screen-access')">
+        BACK
+      </button>
+
+      <button class="primary" type="submit">
+        LOGIN
+      </button>
+    </div>
+
+  </form>
 
 </section>
 
