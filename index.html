@@ -4571,7 +4571,9 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
     const confirmationFields = {
       "confirmation-booking-code": booking.bookingCode,
-      "confirmation-partner": booking.businessPartnerName || "",
+      "confirmation-partner": (booking.businessPartnerName || "")
+        .toLocaleLowerCase()
+        .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase()),
       "confirmation-customer": booking.name,
       "confirmation-phone": fullPhone,
       "confirmation-pickup": booking.pickup,
@@ -4604,7 +4606,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     const balanceAmount = booking.businessBalanceAmount;
     booking.tourTotal = booking.businessTotalAmount;
 
-    document.getElementById("confirmation-partner").textContent = booking.businessPartnerName || "";
+    document.getElementById("confirmation-partner").textContent =
+      (booking.businessPartnerName || "")
+        .toLocaleLowerCase()
+        .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
     document.getElementById("confirmation-partner-row").style.display = "flex";
 
     document.getElementById("confirmation-customer").textContent =
