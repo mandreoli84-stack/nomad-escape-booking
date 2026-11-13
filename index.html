@@ -976,16 +976,16 @@
   <label for="business-group-new-password">New Password</label>
   <input id="business-group-new-password"
          type="password"
-         minlength="12"
-         maxlength="128"
+         minlength="4"
+         maxlength="20"
          autocomplete="new-password"
-         placeholder="Minimum 12 characters">
+         placeholder="4 to 20 characters">
 
   <label for="business-group-confirm-password">Confirm Password</label>
   <input id="business-group-confirm-password"
          type="password"
-         minlength="12"
-         maxlength="128"
+         minlength="4"
+         maxlength="20"
          autocomplete="new-password"
          placeholder="Repeat the new password">
 
@@ -5329,8 +5329,8 @@ Thank you for booking with Nomad Escape!`;
         return;
       }
 
-      if (password.length < 12 || password.length > 128) {
-        message.textContent = "Password must contain 12 to 128 characters.";
+      if (password.length < 4 || password.length > 20) {
+        message.textContent = "Password must contain 4 to 20 characters.";
         return;
       }
 
