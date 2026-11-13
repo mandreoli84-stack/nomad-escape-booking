@@ -3807,9 +3807,8 @@ function renderCalendar() {
       document.getElementById("date-continue").disabled = true;
       return;
     }
-
-  // Adjust passengers only when continuing from the calendar.
-  booking.people = Math.min(booking.people, seats, 8);
+  
+  // Preserve passenger selection during normal navigation.
   booking.people = Math.max(1, booking.people);
 
   document.getElementById("people-count").textContent =
@@ -3900,13 +3899,13 @@ booking.endsAt = selectedTrip.ends_at;
         month: "long"
       });
 
-    // Nuova selezione volontaria della data
-    if (booking.people > booking.seatsAvailable) {
-      booking.people = booking.seatsAvailable;
-    }
-
-    if (booking.people < 1) {
-      booking.people = 1;
+    // Reduce passengers only after insufficient availability popup.
+    if (booking.limitPeopleAfterInsufficient) {
+      booking.people = Math.max(
+        1,
+        Math.min(booking.people, booking.seatsAvailable, 8)
+      );
+      booking.limitPeopleAfterInsufficient = false;
     }
 
     document.getElementById("people-count").textContent = booking.people;
@@ -3958,10 +3957,12 @@ async function continueFromPeople() {
           "Please choose another available date."
         );
       }
-
+      
+      booking.limitPeopleAfterInsufficient = true;
       showScreen("screen-date");
       await refreshLiveSeatsCalendar();
       return;
+
     }
 
     showScreen("screen-details");
@@ -4156,11 +4157,11 @@ async function continueFromReview() {
 
     button.disabled = true;
     button.textContent = "UPDATING AVAILABILITY...";
-
+    
     try {
-      await refreshLiveSeatsCalendar();
       popup.style.display = "none";
       showScreen("screen-date");
+      await refreshLiveSeatsCalendar();
     } catch (error) {
       console.error("Unable to refresh Live Seats:", error);
       alert(
