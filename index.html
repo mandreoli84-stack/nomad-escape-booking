@@ -3631,9 +3631,15 @@ document.getElementById("calendar-month").textContent =
         trip => trip.id === booking.tripId
       );
 
-      const seats = selectedTrip
+      const available = selectedTrip
         ? Number(selectedTrip.seats_available)
         : 0;
+
+      if (!Number.isFinite(available) || available < 0) {
+        throw new Error("Invalid Live Seats refresh data");
+      }
+
+      const seats = available;
 
       booking.seatsAvailable = seats;
 
@@ -3807,7 +3813,11 @@ function renderCalendar() {
 
       if (error) throw error;
 
-      const seats = data ? Number(data.seats_available) : 0;
+      const available = data ? Number(data.seats_available) : 0;
+      if (!Number.isFinite(available) || available < 0) {
+        throw new Error("Invalid calendar availability");
+      }
+      const seats = available;
       booking.seatsAvailable = seats;
 
       document.getElementById("date-seats").textContent =
@@ -3959,7 +3969,11 @@ async function continueFromPeople() {
 
     if (error) throw error;
 
-    const seats = Number(data.seats_available);
+    const available = Number(data.seats_available);
+    if (!Number.isFinite(available) || available < 0) {
+      throw new Error("Invalid Live Seats availability");
+    }
+    const seats = available;
     booking.seatsAvailable = seats;
 
     document.getElementById("seats-left").textContent =
@@ -3979,7 +3993,7 @@ async function continueFromPeople() {
         );
       }
       
-      booking.limitPeopleAfterInsufficient = true;
+      booking.limitPeopleAfterInsufficient = seats > 0;
       showScreen("screen-date");
       await refreshLiveSeatsCalendar();
       return;
