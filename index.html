@@ -3165,6 +3165,7 @@ async function createAssistedBooking() {
     date: "",
     people: 2,
     seatsAvailable: 8,
+    limitPeopleAfterInsufficient: false,
     name: "",
     phone: "",
     pickup: ""
@@ -3550,6 +3551,7 @@ async function checkBusinessPassword() {
   booking.tripId = "";
   booking.date = "";
   booking.seatsAvailable = 0;
+  booking.limitPeopleAfterInsufficient = false;
 
   document.getElementById("selected-date-text").textContent = "Select a date";
   document.getElementById("date-seats").textContent = "";
@@ -3790,39 +3792,64 @@ function renderCalendar() {
   renderCalendar();
 };
   
-  function continueFromDate() {
-    const seats = Number(booking.seatsAvailable);
+  async function continueFromDate() {
+    const button = document.getElementById("date-continue");
+    if (button.disabled || !booking.tripId || !booking.date) return;
 
-    const selectedTrip = booking.availableTrips.find(
-      trip => trip.id === booking.tripId
-    );
+    button.disabled = true;
 
-    if (
-      !selectedTrip ||
-      selectedTrip.title !== booking.tour ||
-      !booking.date ||
-      !Number.isFinite(seats) ||
-      seats <= 0
-    ) {
-      document.getElementById("date-continue").disabled = true;
-      return;
+    try {
+      const { data, error } = await supabaseClient
+        .from("public_trip_availability")
+        .select("id, title, seats_available")
+        .eq("id", booking.tripId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      const seats = data ? Number(data.seats_available) : 0;
+      booking.seatsAvailable = seats;
+
+      document.getElementById("date-seats").textContent =
+        seats + (seats === 1 ? " seat left" : " seats left");
+
+      if (!data || data.title !== booking.tour || seats <= 0) {
+        alert(
+          "Unfortunately, this date is now fully booked. " +
+          "Please choose another available date."
+        );
+        await refreshLiveSeatsCalendar();
+        return;
+      }
+      
+    if (booking.limitPeopleAfterInsufficient) {
+      booking.people = Math.max(
+        1,
+        Math.min(booking.people, seats, 8)
+      );
+      booking.limitPeopleAfterInsufficient = false;
+    } else {
+      booking.people = Math.max(1, booking.people);
     }
-  
-  // Preserve passenger selection during normal navigation.
-  booking.people = Math.max(1, booking.people);
 
-  document.getElementById("people-count").textContent =
-    booking.people;
+    booking.tourTotal = booking.pricePerPerson * booking.people;
 
-  booking.tourTotal =
-    booking.pricePerPerson * booking.people;
+      document.getElementById("people-count").textContent = booking.people;
+      document.getElementById("seats-left").textContent =
+        seats + (seats === 1 ? " seat left" : " seats left");
 
-  document.getElementById("seats-left").textContent =
-    seats + (seats === 1 ? " seat left" : " seats left");
+      showScreen("screen-people");
 
-  showScreen("screen-people");
-}
-  
+    } catch (error) {
+      console.error("Date availability validation:", error);
+      alert("Unable to verify availability. Please try again.");
+    } finally {
+      if (document.getElementById("screen-date").classList.contains("active")) {
+        button.disabled = booking.seatsAvailable <= 0;
+      }
+    }
+  }
+
   async function chooseDate(day) {
   
   if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
@@ -3898,15 +3925,9 @@ booking.endsAt = selectedTrip.ends_at;
         day: "numeric",
         month: "long"
       });
-
-    // Reduce passengers only after insufficient availability popup.
-    if (booking.limitPeopleAfterInsufficient) {
-      booking.people = Math.max(
-        1,
-        Math.min(booking.people, booking.seatsAvailable, 8)
-      );
-      booking.limitPeopleAfterInsufficient = false;
-    }
+    
+    // Preserve passengers when selecting a date.
+    // Apply the new limit when entering the People screen.
 
     document.getElementById("people-count").textContent = booking.people;
     booking.tourTotal = booking.pricePerPerson * booking.people;
@@ -3953,8 +3974,8 @@ async function continueFromPeople() {
       } else {
         alert(
           "Unfortunately, only " + seats +
-          " seats are now available for this date. " +
-          "Please choose another available date."
+          (seats === 1 ? " seat is" : " seats are") +
+          " now available for this date."
         );
       }
       
@@ -4918,7 +4939,8 @@ Thank you for booking with Nomad Escape!`;
    duration: "",
    date: "",
    people: 2,
-   seatsAvailable: 8,
+   seatsAvailable: 8,   
+   limitPeopleAfterInsufficient: false,
    name: "",
    phone: ""
  };
