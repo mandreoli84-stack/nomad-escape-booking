@@ -4933,7 +4933,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       showScreen("screen-confirmation");
     }
   
-  async function copyBusinessBooking() {
+  async function copyBusinessBooking(receiptWindow) {
     if (!booking.businessAmountsVerified) {
       alert("Receipt financial details are unavailable.");
       return;
@@ -4966,11 +4966,32 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "Thank you for booking with Nomad Escape!"
     ].join("\n");
 
+    const targetWindow = receiptWindow || window;
+    const targetDocument = targetWindow.document;
+
     try {
-      await navigator.clipboard.writeText(bookingText);
-      alert("Receipt copied!");
+      if (!targetWindow.navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API unavailable");
+      }
+
+      await targetWindow.navigator.clipboard.writeText(bookingText);
+      targetWindow.alert("Receipt copied!");
     } catch (error) {
-      alert("Unable to copy the receipt.");
+      const textarea = targetDocument.createElement("textarea");
+      textarea.value = bookingText;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      targetDocument.body.appendChild(textarea);
+
+      textarea.focus();
+      textarea.select();
+
+      const copied = targetDocument.execCommand("copy");
+      textarea.remove();
+
+      targetWindow.alert(
+        copied ? "Receipt copied!" : "Unable to copy the receipt."
+      );
     }
   }
   
@@ -5144,7 +5165,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         <button class="print-button" onclick="window.opener.shareBusinessReceipt()">
           SHARE
         </button>
-        <button class="print-button" onclick="window.opener.copyBusinessBooking()">
+        <button class="print-button" onclick="window.opener.copyBusinessBooking(window)">
           COPY
         </button>
       </div>
