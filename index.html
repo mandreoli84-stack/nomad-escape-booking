@@ -2301,8 +2301,8 @@
 </div>
 
 <div class="bottom-buttons">
-  <button class="secondary" onclick="copyBusinessBooking()">
-    COPY
+  <button class="secondary" onclick="resetApp()">
+    BACK
   </button>
 
   <button class="primary" onclick="downloadBusinessReceipt()">
@@ -5091,8 +5091,28 @@ Thank you for booking with Nomad Escape!`;
       </div>
 
       <div class="row">
-        <div class="label">Partner Name</div>
-        <div class="value">${safe(booking.businessPartnerName || "")}</div>
+        <div class="label">Tour</div>
+        <div class="value">${safe(booking.tour)}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Date / Time</div>
+        <div class="value">${safe(formatDateWithOrdinal(booking.date))} · ${safe(time)}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">People</div>
+        <div class="value">${safe(booking.people)}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Partner Commission</div>
+        <div class="value">€${safe(depositAmount)}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Tour Total</div>
+        <div class="value">€${safe(booking.tourTotal)}</div>
       </div>
 
       <div class="row">
@@ -5111,43 +5131,21 @@ Thank you for booking with Nomad Escape!`;
       </div>
 
       <div class="row">
-        <div class="label">Tour</div>
-        <div class="value">${safe(booking.tour)}</div>
+        <div class="label">Partner Name</div>
+        <div class="value">${safe(booking.businessPartnerName || "")}</div>
       </div>
-
-      <div class="row">
-        <div class="label">Date / Time</div>
-        <div class="value">${safe(formatDateWithOrdinal(booking.date))} · ${safe(time)}</div>
-      </div>
-
-      <div class="row">
-        <div class="label">People</div>
-        <div class="value">${safe(booking.people)}</div>
-      </div>
-
-      <div class="row">
-        <div class="label">Tour Total</div>
-        <div class="value">€${safe(booking.tourTotal)}</div>
-      </div>
-
-      <div class="row">
-        <div class="label">Partner Commission</div>
-        <div class="value">€${safe(depositAmount)}</div>
-      </div>
-
-      <div class="row">
-        <div class="label">Balance Due to Nomad Escape</div>
-        <div class="value">€${safe(booking.businessBalanceAmount)}</div>
-      </div>
-
+      
       <div class="thanks">
         <strong>Thank you for booking with Nomad Escape!</strong><br>
         We appreciate your partnership.
       </div>
 
-      <div style="text-align:center; margin-top:30px;">
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:30px; flex-wrap:wrap;">
         <button class="print-button" onclick="window.print()">
-          SAVE / PRINT RECEIPT
+          SAVE / PRINT
+        </button>
+        <button class="print-button" onclick="window.opener.shareBusinessReceipt()">
+          SHARE
         </button>
       </div>
     </body>
