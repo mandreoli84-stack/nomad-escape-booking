@@ -1978,8 +1978,43 @@
     <div class="helper">
       We'll use this number for your booking confirmation.
     </div>
+    
     <label>Pickup location</label>
-    <input id="pickup-location" type="text" placeholder="Hotel / Accommodation" oninput="capitalizeName(this)">
+
+    <div id="business-pickup-options"
+         style="display:none; margin:12px 0;">
+
+      <label style="display:flex; align-items:center; gap:10px;">
+        <input
+          type="radio"
+          id="pickup-partner"
+          name="business-pickup-choice"
+          value="partner"
+          checked
+          onchange="changeBusinessPickup('partner')"
+          style="width:auto;">
+        Partner premises / pickup
+      </label>
+
+      <label style="display:flex; align-items:center; gap:10px;">
+        <input
+          type="radio"
+          id="pickup-other"
+          name="business-pickup-choice"
+          value="other"
+          onchange="changeBusinessPickup('other')"
+          style="width:auto;">
+        Other Address
+      </label>
+
+    </div>
+
+    <input
+      id="pickup-location"
+      type="text"
+      maxlength="50"
+      placeholder="Hotel / Accommodation"
+      oninput="capitalizeName(this)">
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-people')">BACK</button>
       <button class="primary" onclick="openReview()">CONTINUE</button>
@@ -3197,7 +3232,12 @@ async function createAssistedBooking() {
     booking.accessType = type;
 
     businessSessionToken = null;
+    businessDefaultPickup = "";
     businessBookingInProgress = false;
+
+    document.getElementById("pickup-partner").checked = true;
+    document.getElementById("pickup-other").checked = false;
+    document.getElementById("pickup-location").value = "";
 
     booking.bookingCode = null;
     booking.businessRequestId = null;
@@ -3237,32 +3277,40 @@ async function createAssistedBooking() {
     showScreen("screen-business-loading");
 
     try {
-      const { data, error } = await supabaseClient.rpc(
-        "verify_business_partner_session_public",
-        { p_token: savedToken }
+      const { data, error } = await supabaseClient.functions.invoke(
+        "business-login",
+        {
+          body: {
+            action: "restoreSession",
+            token: savedToken
+          }
+        }
       );
 
       if (booking.accessType !== "business") return;
 
-      if (error) {
-        console.error("Business session verification:", error);
-        showScreen("screen-business-login");
-        return;
-      }
-
-      if (!data) {
+      if (error || !data?.ok || data?.status !== "SUCCESS") {
         localStorage.removeItem("nomad_business_session_token");
         localStorage.removeItem("nomad_business_partner_name");
+        businessDefaultPickup = "";
         showScreen("screen-business-login");
         return;
       }
 
       businessSessionToken = savedToken;
-      booking.businessPartnerName =
-        localStorage.getItem("nomad_business_partner_name") || "";
+      businessDefaultPickup = data.defaultPickupLocation || "";
+
+      booking.businessPartnerName = (data.partnerName || "")
+        .toLocaleLowerCase()
+        .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
+
+      localStorage.setItem(
+        "nomad_business_partner_name",
+        data.partnerName || ""
+      );
 
       showScreen("screen-tour");
-
+      
     } catch (error) {
       console.error("Business session verification:", error);
       if (booking.accessType === "business") {
@@ -3272,6 +3320,38 @@ async function createAssistedBooking() {
   }
 
   let businessSessionToken = null;
+  let businessDefaultPickup = "";
+
+  function prepareBusinessPickup() {
+    const options = document.getElementById("business-pickup-options");
+    const partnerRadio = document.getElementById("pickup-partner");
+    const otherRadio = document.getElementById("pickup-other");
+    const pickupInput = document.getElementById("pickup-location");
+
+    const isBusiness = booking.accessType === "business";
+    options.style.display = isBusiness ? "block" : "none";
+
+    if (!isBusiness) return;
+
+    if (!partnerRadio.checked && !otherRadio.checked) {
+      partnerRadio.checked = true;
+    }
+
+    if (partnerRadio.checked) {
+      pickupInput.value = businessDefaultPickup;
+    }
+  }
+
+  function changeBusinessPickup(mode) {
+    const pickupInput = document.getElementById("pickup-location");
+
+    if (mode === "partner") {
+      pickupInput.value = businessDefaultPickup;
+    } else {
+      pickupInput.value = "";
+      pickupInput.focus();
+    }
+  }
   
 async function checkBusinessPassword() {
   const codeInput = document.getElementById("business-personal-code");
@@ -3311,6 +3391,7 @@ async function checkBusinessPassword() {
     }
 
     businessSessionToken = data.token;
+    businessDefaultPickup = data.defaultPickupLocation || "";
     booking.businessPartnerName = (data.partnerName || "")
       .toLocaleLowerCase()
       .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
@@ -4022,6 +4103,7 @@ async function continueFromPeople() {
 
     }
 
+    prepareBusinessPickup();
     showScreen("screen-details");
 
   } catch (error) {
