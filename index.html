@@ -3337,7 +3337,7 @@ async function createAssistedBooking() {
       partnerRadio.checked = true;
     }
 
-    if (partnerRadio.checked) {
+    if (partnerRadio.checked && !pickupInput.value.trim()) {
       pickupInput.value = businessDefaultPickup;
     }
   }
