@@ -3385,7 +3385,10 @@ async function createAssistedBooking() {
     const isBusiness = booking.accessType === "business";
     options.style.display = isBusiness ? "block" : "none";
 
-    if (!isBusiness) return;
+    if (!isBusiness) {
+      pickupInput.readOnly = false;
+      return;
+    }
 
     if (!partnerRadio.checked && !otherRadio.checked) {
       partnerRadio.checked = true;
