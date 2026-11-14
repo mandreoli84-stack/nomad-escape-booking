@@ -1069,6 +1069,13 @@
     maxlength="500"
     placeholder="https://www.example.com">
 
+  <label for="partner-default-pickup">Default Pickup Location (optional)</label>
+  <input
+    id="partner-default-pickup"
+    type="text"
+    maxlength="50"
+    placeholder="Hotel / Partner premises">
+
   <label for="partner-commission">Commission Group *</label>
   <select id="partner-commission"
           style="width:100%; padding:13px;">
@@ -5091,6 +5098,7 @@ Thank you for booking with Nomad Escape!`;
       const whatsapp2 = document.getElementById("partner-whatsapp-2").value.trim();
       const contactName2 = document.getElementById("partner-contact-name-2").value.trim();
       const website = document.getElementById("partner-website").value.trim();
+      const defaultPickupLocation = document.getElementById("partner-default-pickup").value.trim();
       const commission = Number(
         document.getElementById("partner-commission").value
       );
@@ -5189,6 +5197,7 @@ Thank you for booking with Nomad Escape!`;
         contactName2,
         email,
         website,
+        defaultPickupLocation,
         commission,
         ...fixedValues
       };
@@ -5223,7 +5232,7 @@ Thank you for booking with Nomad Escape!`;
             p_email: form.email,
             p_group_percent: form.commission,
             p_personal_code: "",
-            p_default_pickup_location: "",
+            p_default_pickup_location: form.defaultPickupLocation,
             p_contact_name_1: form.contactName1,
             p_whatsapp_2: form.whatsapp2 || null,
             p_contact_name_2: form.contactName2 || null,
