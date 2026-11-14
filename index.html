@@ -1993,7 +1993,7 @@
           checked
           onchange="changeBusinessPickup('partner')"
           style="width:auto;">
-        Partner premises / pickup
+        Default pickup
       </label>
 
       <label style="display:flex; align-items:center; gap:10px;">
@@ -3337,8 +3337,17 @@ async function createAssistedBooking() {
       partnerRadio.checked = true;
     }
 
-    if (partnerRadio.checked && !pickupInput.value.trim()) {
-      pickupInput.value = businessDefaultPickup;
+    if (partnerRadio.checked) {
+      if (!pickupInput.value.trim()) {
+        pickupInput.value = businessDefaultPickup;
+      }
+      pickupInput.readOnly = true;
+    } else {
+      pickupInput.readOnly = false;
+    }
+
+    if (pickupInput.value.trim()) {
+      capitalizeName(pickupInput);
     }
   }
 
@@ -3347,8 +3356,11 @@ async function createAssistedBooking() {
 
     if (mode === "partner") {
       pickupInput.value = businessDefaultPickup;
+      capitalizeName(pickupInput);
+      pickupInput.readOnly = true;
     } else {
       pickupInput.value = "";
+      pickupInput.readOnly = false;
       pickupInput.focus();
     }
   }
