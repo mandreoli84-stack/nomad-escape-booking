@@ -4929,54 +4929,49 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   
       showScreen("screen-confirmation");
     }
+  }
   
   async function copyBusinessBooking() {
     if (!booking.businessAmountsVerified) {
-      alert(
-        "Booking confirmed, but financial details are not yet available.\n\n" +
-        "Booking code: " + (booking.bookingCode || "Unavailable") +
-        "\n\nPlease contact Nomad Escape."
-      );
+      alert("Receipt financial details are unavailable.");
       return;
     }
 
-  const time =
-    booking.tour === "North Fuerteventura"
+    const time = booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
       : "09:30 – 17:00";
 
-  const countryCode = document.getElementById("country-code").value;
-  const fullPhone = countryCode + " " + booking.phone;
-  const depositAmount = booking.businessCommissionAmount;
+    const countryCode =
+      document.getElementById("country-code").value;
 
-  const bookingText =
-`NOMAD ESCAPE FUERTEVENTURA
+    const fullPhone = countryCode + " " + booking.phone;
 
-Booking Code: ${booking.bookingCode}
+    const bookingText = [
+      "NOMAD ESCAPE FUERTEVENTURA",
+      "BOOKING RECEIPT",
+      "",
+      "Booking Code: " + booking.bookingCode,
+      "Tour: " + booking.tour,
+      "Date / Time: " + formatDateWithOrdinal(booking.date) + " / " + time,
+      "People: " + booking.people,
+      "Partner Commission: €" + booking.businessCommissionAmount,
+      "Tour Total: €" + booking.tourTotal,
+      "Guest Name: " + booking.name,
+      "WhatsApp: " + fullPhone,
+      "Pickup Location: " + booking.pickup,
+      "Partner Name: " + (booking.businessPartnerName || ""),
+      "",
+      "Thank you for booking with Nomad Escape!"
+    ].join("\n");
 
-Partner Name: ${booking.businessPartnerName || ""}
-Guest Name: ${booking.name}
-WhatsApp: ${fullPhone}
-Pickup Location: ${booking.pickup}
-
-Tour: ${booking.tour}
-Date: ${formatDateWithOrdinal(booking.date)}
-Time: ${time}
-People: ${booking.people}
-Tour Total: €${booking.tourTotal}
-Partner Commission: €${depositAmount}
-Balance Due to Nomad Escape: €${booking.businessBalanceAmount}
-
-Thank you for booking with Nomad Escape!`;
-
-  try {
-    await navigator.clipboard.writeText(bookingText);
-    alert("Booking copied!");
-  } catch (error) {
-    alert("Unable to copy the booking.");
+    try {
+      await navigator.clipboard.writeText(bookingText);
+      alert("Receipt copied!");
+    } catch (error) {
+      alert("Unable to copy the receipt.");
+    }
   }
-
-}
+  
   function escapeReceiptHTML(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -5147,6 +5142,9 @@ Thank you for booking with Nomad Escape!`;
         <button class="print-button" onclick="window.opener.shareBusinessReceipt()">
           SHARE
         </button>
+        <button class="print-button" onclick="window.opener.copyBusinessBooking()">
+          COPY
+        </button>
       </div>
     </body>
     </html>
@@ -5155,6 +5153,121 @@ Thank you for booking with Nomad Escape!`;
   receiptWindow.document.close();
 }
   
+  async function shareBusinessReceipt() {
+    if (!booking.businessAmountsVerified) {
+      alert("Receipt financial details are unavailable.");
+      return;
+    }
+
+    if (!window.jspdf?.jsPDF) {
+      alert("PDF library unavailable. Please use SAVE / PRINT.");
+      return;
+    }
+
+    const time = booking.tour === "North Fuerteventura"
+      ? "09:30 – 13:30"
+      : "09:30 – 17:00";
+
+    const countryCode =
+      document.getElementById("country-code").value;
+
+    const fullPhone = countryCode + " " + booking.phone;
+
+    const doc = new window.jspdf.jsPDF();
+    let y = 22;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(19);
+    doc.text("NOMAD ESCAPE", 105, y, { align: "center" });
+
+    y += 8;
+    doc.setFontSize(10);
+    doc.text("FUERTEVENTURA", 105, y, { align: "center" });
+
+    y += 18;
+    doc.setFontSize(16);
+    doc.text("BOOKING RECEIPT", 105, y, { align: "center" });
+
+    y += 16;
+
+    const rows = [
+      ["Booking Code", booking.bookingCode],
+      ["Tour", booking.tour],
+      ["Date / Time", formatDateWithOrdinal(booking.date) + " / " + time],
+      ["People", booking.people],
+      ["Partner Commission", "EUR " + booking.businessCommissionAmount],
+      ["Tour Total", "EUR " + booking.tourTotal],
+      ["Guest Name", booking.name],
+      ["WhatsApp", fullPhone],
+      ["Pickup Location", booking.pickup],
+      ["Partner Name", booking.businessPartnerName || ""]
+    ];
+
+    rows.forEach(([label, value]) => {
+      const lines = doc.splitTextToSize(String(value ?? ""), 165);
+      const rowHeight = Math.max(15, lines.length * 6 + 9);
+
+      if (y + rowHeight > 265) {
+        doc.addPage();
+        y = 22;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(105, 117, 133);
+      doc.text(label, 20, y);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(23, 40, 63);
+      doc.text(lines, 20, y + 7);
+
+      y += rowHeight;
+    });
+
+    if (y + 20 > 275) {
+      doc.addPage();
+      y = 22;
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(23, 40, 63);
+    doc.text("Thank you for booking with Nomad Escape!", 105, y + 8, {
+      align: "center"
+    });
+    doc.text("We appreciate your partnership.", 105, y + 14, {
+      align: "center"
+    });
+
+    const filename = "Nomad-Escape-" +
+      String(booking.bookingCode || "Receipt")
+        .replace(/[^a-zA-Z0-9_-]/g, "-") + ".pdf";
+
+    const pdfBlob = doc.output("blob");
+    const pdfFile = new File([pdfBlob], filename, {
+      type: "application/pdf"
+    });
+
+    try {
+      if (navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: "Nomad Escape Booking Receipt"
+        });
+      } else {
+        doc.save(filename);
+        alert("PDF saved. You can now attach it to WhatsApp or email.");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        doc.save(filename);
+        alert("Sharing unavailable. PDF saved instead.");
+      }
+    }
+  }
   async function resetApp() {
     if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
       alert(
