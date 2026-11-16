@@ -5827,7 +5827,38 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       message.textContent = error.message;
       return;
     }
+      
+      const changes = [];
 
+    const compare = (id, label, newValue) => {
+      const oldValue = get(id).dataset.original ?? "";
+
+      if (String(oldValue) !== String(newValue ?? "")) {
+        changes.push(
+          label + ": " +
+          (oldValue === "" ? "Group %" : oldValue) +
+          " → " +
+          (newValue === null ? "Group %" : newValue)
+        );
+      }
+    };
+
+    compare("edit-partner-group", "Commission Group", group + "%");
+    compare("edit-partner-north", "North (€)", north);
+    compare("edit-partner-sotavento", "Sotavento (€)", sotavento);
+    compare("edit-partner-private-4h", "Private 4h (€)", private4h);
+    compare("edit-partner-private-8h", "Private 8h (€)", private8h);
+
+    if (changes.length > 0) {
+      const approved = confirm(
+        "CONFIRM COMMISSION CHANGES\n\n" +
+        changes.join("\n") +
+        "\n\nApply these changes to the partner?"
+      );
+
+      if (!approved) return;
+    }
+      
     button.disabled = true;
     button.textContent = "SAVING...";
 
@@ -5940,6 +5971,18 @@ const result = await supabaseClient.functions.invoke("business-booking", {
           fixedValue("private_8h", partner.private_8h_fixed_eur)
         );
 
+        get("edit-partner-group").dataset.original =
+          String(partner.commission_percent) + "%";
+
+        [
+          "edit-partner-north",
+          "edit-partner-sotavento",
+          "edit-partner-private-4h",
+          "edit-partner-private-8h"
+        ].forEach(id => {
+          get(id).dataset.original = get(id).value;
+        });
+        
         get("edit-partner-active").checked = partner.active === true;
 
         get("edit-partner-new-code").value = "";
