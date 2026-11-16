@@ -2567,10 +2567,10 @@
     BACK
   </button>
 
-  <button class="primary" onclick="downloadBusinessReceipt()">
-    DOWNLOAD
+  <button class="primary" onclick="downloadConfirmedBooking()">
+    DOWNLOAD PDF
   </button>
-</div>
+  </div>
 
     </div>
 
@@ -5576,7 +5576,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(105, 117, 133);
-    doc.text("Issued: " + issuedAt + " (Canary Islands)", 20, 13);
+    doc.text(issuedAt + " (Canary Islands)", 20, 13);
 
     let y = 20;
 
