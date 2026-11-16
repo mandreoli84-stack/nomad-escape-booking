@@ -5927,7 +5927,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       }
     };
 
-    compare("edit-partner-group", "Commission Group", group + "%");
+    compare("edit-partner-group", "Commission Group", group);
     compare("edit-partner-north", "North (€)", north);
     compare("edit-partner-sotavento", "Sotavento (€)", sotavento);
     compare("edit-partner-private-4h", "Private 4h (€)", private4h);
@@ -6055,7 +6055,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         );
 
         get("edit-partner-group").dataset.original =
-          String(partner.commission_percent) + "%";
+          String(partner.commission_percent);
 
         [
           "edit-partner-north",
