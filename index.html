@@ -1257,11 +1257,24 @@
          type="tel"
          value="+34"
          aria-label="Country code">
-  <input id="edit-partner-whatsapp"
+    <input id="edit-partner-whatsapp"
          type="tel"
          placeholder="600 000 000">
 </div>
-      
+
+<div style="display:flex; gap:8px; margin-top:8px;">
+  <button type="button" class="secondary"
+    style="min-width:0; flex:1;"
+    onclick="openPartnerPhone('edit-partner-prefix-1','edit-partner-whatsapp','call')">
+    Call
+  </button>
+  <button type="button" class="secondary"
+    style="min-width:0; flex:1;"
+    onclick="openPartnerPhone('edit-partner-prefix-1','edit-partner-whatsapp','whatsapp')">
+    WhatsApp
+  </button>
+</div>
+
     </div>
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-contact-1">Contact Name 1 *</label>
@@ -1283,7 +1296,20 @@
          type="tel"
          placeholder="600 000 000">
 </div>
-      
+
+<div style="display:flex; gap:8px; margin-top:8px;">
+  <button type="button" class="secondary"
+    style="min-width:0; flex:1;"
+    onclick="openPartnerPhone('edit-partner-prefix-2','edit-partner-whatsapp-2','call')">
+    Call
+  </button>
+  <button type="button" class="secondary"
+    style="min-width:0; flex:1;"
+    onclick="openPartnerPhone('edit-partner-prefix-2','edit-partner-whatsapp-2','whatsapp')">
+    WhatsApp
+  </button>
+</div>
+
     </div>
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-contact-2">Contact Name 2</label>
@@ -6205,6 +6231,32 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       return full;
     }
 
+    function openPartnerPhone(prefixId, numberId, mode) {
+      let phone;
+
+      try {
+        phone = getPartnerPhone(prefixId, numberId);
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
+      if (!phone) {
+        alert("Please enter a phone number.");
+        return;
+      }
+
+      if (mode === "call") {
+        window.location.href = "tel:" + phone;
+      } else if (mode === "whatsapp") {
+        window.open(
+          "https://wa.me/" + phone.replace(/\D/g, ""),
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+    }
+  
     function setPartnerPhone(prefixId, numberId, phone) {
       const prefix = document.getElementById(prefixId);
       const number = document.getElementById(numberId);
