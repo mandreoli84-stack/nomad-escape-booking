@@ -7217,13 +7217,6 @@ async function downloadGuestBookingPDF() {
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || b.checked_in_at || driverActionBusy) return;
-
-      const passengers = Number(b.passengers);
-
-      if (!Number.isInteger(passengers) || passengers < 1) {
-        alert("Invalid passenger count. Please contact Admin.");
-        return;
-      }
     
       if (!confirm(
         `CONFIRM CHECK IN\n\n` +
