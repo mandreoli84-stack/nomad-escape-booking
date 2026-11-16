@@ -5264,7 +5264,19 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
+  }
+  
+  function downloadConfirmedBooking() {
+    if (booking.accessType === "business") {
+      return downloadBusinessReceipt();
+    }
+
+    if (booking.accessType === "guest") {
+      return;
+    }
+
+    alert("Booking type unavailable.");
+  }
   
   function downloadBusinessReceipt() {
     if (!booking.businessAmountsVerified) {
