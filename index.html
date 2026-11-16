@@ -5972,9 +5972,20 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       throw new Error("Partner update was not confirmed.");
       }
 
+      get("edit-partner-group").dataset.original = String(group);
+
+      [
+        "edit-partner-north",
+        "edit-partner-sotavento",
+        "edit-partner-private-4h",
+        "edit-partner-private-8h"
+      ].forEach(id => {
+        get(id).dataset.original = get(id).value;
+      });
+
       message.style.color = "#167a80";
       message.textContent = "Partner changes saved successfully.";
-
+      
     } catch (error) {
       console.error("Save Business Partner:", error);
       message.textContent = "Unable to save changes: " + error.message;
