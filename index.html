@@ -5712,6 +5712,8 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   
     function openBusinessPartnerRegistration() {
       document.getElementById("partner-name").value = "";
+      document.getElementById("partner-prefix-1").value = "+34";
+      document.getElementById("partner-prefix-2").value = "+34";
       document.getElementById("partner-whatsapp").value = "";
       document.getElementById("partner-email").value = "";
       document.getElementById("partner-contact-name-1").value = "";
@@ -5806,11 +5808,20 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
       const partnerId = get("edit-partner-id").value;
       const name = get("edit-partner-name").value.trim();
-      const whatsapp = get("edit-partner-whatsapp").value.trim();
-      const contact1 = get("edit-partner-contact-1").value.trim();
-      const whatsapp2 = get("edit-partner-whatsapp-2").value.trim();
-      const contact2 = get("edit-partner-contact-2").value.trim();
-      const email = get("edit-partner-email").value.trim();
+      const name = formatPartnerName(get("edit-partner-name").value);
+      const contact1 = formatPartnerName(get("edit-partner-contact-1").value);
+      const contact2 = formatPartnerName(get("edit-partner-contact-2").value);
+
+      let whatsapp, whatsapp2;
+      try {
+        whatsapp = getPartnerPhone("edit-partner-prefix-1", "edit-partner-whatsapp");
+        whatsapp2 = getPartnerPhone("edit-partner-prefix-2", "edit-partner-whatsapp-2");
+      } catch (error) {
+         message.style.color = "#b42318";
+        message.textContent = error.message;
+        return;
+      }
+      
       const website = get("edit-partner-website").value.trim();
       const pickup = get("edit-partner-pickup").value.trim();
       const group = Number(get("edit-partner-group").value);
@@ -5968,10 +5979,9 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         setValue("edit-partner-id", partner.id);
         setValue("edit-partner-name", partner.partner_name);
         setValue("edit-partner-code", partner.personal_code);
-        setValue("edit-partner-whatsapp", partner.whatsapp);
+        setPartnerPhone("edit-partner-prefix-1", "edit-partner-whatsapp", partner.whatsapp);
         setValue("edit-partner-contact-1", partner.contact_name_1);
-        setValue("edit-partner-whatsapp-2", partner.whatsapp_2);
-        setValue("edit-partner-contact-2", partner.contact_name_2);
+        setPartnerPhone("edit-partner-prefix-2", "edit-partner-whatsapp-2", partner.whatsapp_2);
         setValue("edit-partner-email", partner.email);
         setValue("edit-partner-website", partner.website);
         setValue("edit-partner-pickup", partner.default_pickup_location);
@@ -6167,7 +6177,58 @@ const result = await supabaseClient.functions.invoke("business-booking", {
             separator + letter.toLocaleUpperCase()
         );
     }
+  
+    function getPartnerPhone(prefixId, numberId) {
+      const name = formatPartnerName(document.getElementById("partner-name").value);
+      const email = document.getElementById("partner-email").value.trim();
+      const contactName1 = formatPartnerName(document.getElementById("partner-contact-name-1").value);
+      const contactName2 = formatPartnerName(document.getElementById("partner-contact-name-2").value);
 
+      let whatsapp, whatsapp2;
+      try {
+        whatsapp = getPartnerPhone("partner-prefix-1", "partner-whatsapp");
+        whatsapp2 = getPartnerPhone("partner-prefix-2", "partner-whatsapp-2");
+      } catch (error) {
+        const message = document.getElementById("partner-registration-message");
+        message.style.color = "#b42318";
+        message.textContent = error.message;
+        return null;
+      }
+
+      // Permette di conservare un numero internazionale già completo.
+      const full = !code && rawNumber.startsWith("+")
+        ? "+" + number
+        : "+" + code + number;
+
+      if (!/^\+[1-9]\d{6,14}$/.test(full)) {
+        throw new Error("Please enter a valid international WhatsApp number.");
+      }
+
+      return full;
+    }
+
+    function setPartnerPhone(prefixId, numberId, phone) {
+      const prefix = document.getElementById(prefixId);
+      const number = document.getElementById(numberId);
+      const value = String(phone || "").trim();
+      const digits = value.replace(/\D/g, "");
+
+      prefix.value = "+34";
+      number.value = "";
+
+      if (!digits) return;
+
+      if (digits.startsWith("34") && digits.length === 11) {
+        number.value = digits.slice(2);
+      } else if (digits.length === 9) {
+        number.value = digits;
+      } else {
+        // Non indovinare il prefisso dei numeri internazionali.
+        prefix.value = "";
+        number.value = value.startsWith("+") ? value : "+" + digits;
+      }
+    }
+  
     function validateBusinessPartnerForm() {
       const name = document.getElementById("partner-name").value.trim();
       const whatsapp = document.getElementById("partner-whatsapp").value.trim();
