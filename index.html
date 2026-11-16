@@ -423,10 +423,17 @@
     .phone-row {
       display: flex;
       gap: 8px;
+      min-width: 0;
+    }
+
+    .phone-row input[type="tel"]:not(.country-code) {
+       flex: 1;
+       min-width: 0;
+       width: 100%;
     }
 
     .country-code {
-      width: 90px;
+      width: 65px;
       flex: none;
     }
 
