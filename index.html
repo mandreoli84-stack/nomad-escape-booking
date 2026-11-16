@@ -1028,7 +1028,9 @@
   </div>
 
   <h1>Driver Dashboard</h1>
-  <p class="subtitle">Today's guest management</p>
+  <p class="subtitle">
+    Pickups · Check-in · Balance collection
+  </p>
 
   <label for="driver-date">Tour Date</label>
   <input id="driver-date" type="date"
@@ -7085,7 +7087,10 @@ async function downloadGuestBookingPDF() {
       } catch (e) {
         driverBookings = [];
         renderDriverDashboard();
-        message.textContent = "Loading failed: " + e.message;
+        message.textContent =
+          "Unable to load bookings. Check your connection " +
+          "and Admin session, then press REFRESH. " +
+          "Details: " + e.message;
       } finally {
         driverLoading = false;
       }
@@ -7110,7 +7115,8 @@ async function downloadGuestBookingPDF() {
         pax(onboard);
     
       document.getElementById("driver-remaining-count").textContent =
-        pax(remaining) + " passengers remaining";
+        `${pax(remaining)} passengers remaining · ` +
+        `${pax(bookings)} passengers total`;
     
       document.getElementById("driver-pickups").innerHTML =
         remaining.map(b => `
@@ -7123,24 +7129,34 @@ async function downloadGuestBookingPDF() {
             <p><strong>Passengers:</strong>
               ${Number(b.passengers || 0)}
             </p>
-            <button class="primary" style="width:100%"
+            <button class="primary"
+              type="button"
+              style="width:100%"
               onclick="driverCheckIn('${b.booking_id}')">
-              CHECK IN
+              CHECK IN — ${Number(b.passengers || 0)} PAX
             </button>
           </div>
         `).join("") ||
         '<p class="helper">No remaining pickups.</p>';
     
-      const unpaid = bookings.filter(b =>
-        !b.balance_paid_at && Number(b.balance_amount || 0) > 0
-      );
+      const unpaid = bookings.filter(b => {
+        const amount = Number(b.balance_amount);
+        return !b.balance_paid_at &&
+          Number.isFinite(amount) &&
+          amount > 0;
+      });
     
       const paid = bookings.filter(b =>
         b.balance_paid_at || Number(b.balance_amount || 0) <= 0
       );
     
+      const byPickup = (a, b) =>
+        String(a.pickup_location || "").localeCompare(
+          String(b.pickup_location || "")
+        );
+
       document.getElementById("driver-collections").innerHTML =
-        [...unpaid, ...paid].map(b => {
+        [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
           const isPaid = !!b.balance_paid_at ||
             Number(b.balance_amount || 0) <= 0;
     
@@ -7152,7 +7168,13 @@ async function downloadGuestBookingPDF() {
                 ${isPaid ? "€0.00 DUE" :
                   driverMoney(b.balance_amount) + " DUE"}
               </p>
-              <strong>${isPaid ? "PAID" : "UNPAID"}</strong>
+              <strong>${
+                b.balance_paid_at
+                  ? "PAID"
+                  : isPaid
+                    ? "NO BALANCE DUE"
+                    : "UNPAID"
+              }</strong>
               ${b.balance_paid_at ? `
                 <div class="helper">
                   Received by ${driverEscape(
@@ -7195,6 +7217,20 @@ async function downloadGuestBookingPDF() {
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || b.checked_in_at || driverActionBusy) return;
+
+      const passengers = Number(b.passengers);
+
+      if (!Number.isInteger(passengers) || passengers < 1) {
+        alert("Invalid passenger count. Please contact Admin.");
+        return;
+      }
+
+      const passengers = Number(b.passengers);
+
+      if (!Number.isInteger(passengers) || passengers < 1) {
+        alert("Invalid passenger count. Please contact Admin.");
+        return;
+      }
     
       if (!confirm(
         `CONFIRM CHECK IN\n\n` +
@@ -7224,7 +7260,14 @@ async function downloadGuestBookingPDF() {
        const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || driverActionBusy) return;
 
-      if (b.balance_paid_at || Number(b.balance_amount) <= 0) {
+      const amount = Number(b.balance_amount);
+
+      if (!Number.isFinite(amount) || amount < 0) {
+        alert("Invalid balance. Please contact Admin.");
+        return;
+      }
+
+      if (b.balance_paid_at || amount === 0) {
         alert("This booking has no outstanding balance.");
         return;
       }
@@ -7234,6 +7277,13 @@ async function downloadGuestBookingPDF() {
       )?.value;
     
       if (!["cash", "card"].includes(method)) return;
+
+      if (method === "card" && !confirm(
+        "CARD TERMINAL CHECK\n\n" +
+        "Has the Santander terminal confirmed " +
+        "that the card payment was APPROVED?\n\n" +
+        "Press OK only after approval."
+      )) return;
     
       if (!confirm(
         `PAYMENT CONFIRMATION\n\n` +
