@@ -5088,7 +5088,12 @@ const result = await supabaseClient.functions.invoke("business-booking", {
           margin-top: 30px;
           text-align: center;
         }
-
+        
+        .print-button {
+          cursor: pointer;
+          touch-action: manipulation;
+        }
+        
         @media print {
           .print-button {
             display: none;
@@ -5162,10 +5167,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         <button class="print-button" onclick="window.print()">
           SAVE / PRINT
         </button>
-        <button class="print-button" onclick="window.opener.shareBusinessReceipt()">
+        <button class="print-button" onclick="window.shareReceiptOnDevice()">
           SHARE
         </button>
-        <button class="print-button" onclick="window.opener.copyBusinessBooking(window)">
+        <button class="print-button" onclick="window.copyReceiptOnDevice()">
           COPY
         </button>
       </div>
@@ -5174,9 +5179,57 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   `);
 
   receiptWindow.document.close();
+
+  receiptWindow.shareReceiptOnDevice = function () {
+    return shareBusinessReceipt(receiptWindow);
+  };
+
+  receiptWindow.copyReceiptOnDevice = async function () {
+    const doc = receiptWindow.document;
+    const rows = Array.from(doc.querySelectorAll(".row"))
+      .map(row => {
+        const label = row.querySelector(".label")?.textContent || "";
+        const value = row.querySelector(".value")?.textContent || "";
+        return label + ": " + value;
+      });
+
+    const text = [
+      "NOMAD ESCAPE FUERTEVENTURA",
+      "BOOKING RECEIPT",
+      "",
+      ...rows,
+      "",
+      "Thank you for booking with Nomad Escape!"
+    ].join("\n");
+
+    try {
+      if (!receiptWindow.navigator.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+
+      await receiptWindow.navigator.clipboard.writeText(text);
+      receiptWindow.alert("Receipt copied!");
+    } catch (error) {
+      const textarea = doc.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      doc.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      const copied = doc.execCommand("copy");
+      textarea.remove();
+
+      receiptWindow.alert(
+        copied ? "Receipt copied!" : "Unable to copy the receipt."
+      );
+    }
+  };
 }
   
-  async function shareBusinessReceipt() {
+  async function shareBusinessReceipt(receiptWindow) {
     if (!booking.businessAmountsVerified) {
       alert("Receipt financial details are unavailable.");
       return;
@@ -5272,11 +5325,13 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       type: "application/pdf"
     });
 
+    const shareNavigator = receiptWindow?.navigator || navigator;
+
     try {
-      if (navigator.share &&
-          navigator.canShare &&
-          navigator.canShare({ files: [pdfFile] })) {
-        await navigator.share({
+      if (shareNavigator.share &&
+          shareNavigator.canShare &&
+          shareNavigator.canShare({ files: [pdfFile] })) {
+        await shareNavigator.share({
           files: [pdfFile],
           title: "Nomad Escape Booking Receipt"
         });
