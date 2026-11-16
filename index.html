@@ -5807,7 +5807,6 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       const button = get("edit-partner-save-button");
 
       const partnerId = get("edit-partner-id").value;
-      const name = get("edit-partner-name").value.trim();
       const name = formatPartnerName(get("edit-partner-name").value);
       const contact1 = formatPartnerName(get("edit-partner-contact-1").value);
       const contact2 = formatPartnerName(get("edit-partner-contact-2").value);
@@ -5821,7 +5820,8 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         message.textContent = error.message;
         return;
       }
-      
+
+      const email = get("edit-partner-email").value.trim();
       const website = get("edit-partner-website").value.trim();
       const pickup = get("edit-partner-pickup").value.trim();
       const group = Number(get("edit-partner-group").value);
@@ -6179,23 +6179,14 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     }
   
     function getPartnerPhone(prefixId, numberId) {
-      const name = formatPartnerName(document.getElementById("partner-name").value);
-      const email = document.getElementById("partner-email").value.trim();
-      const contactName1 = formatPartnerName(document.getElementById("partner-contact-name-1").value);
-      const contactName2 = formatPartnerName(document.getElementById("partner-contact-name-2").value);
+      const prefix = document.getElementById(prefixId).value.trim();
+      const rawNumber = document.getElementById(numberId).value.trim();
 
-      let whatsapp, whatsapp2;
-      try {
-        whatsapp = getPartnerPhone("partner-prefix-1", "partner-whatsapp");
-        whatsapp2 = getPartnerPhone("partner-prefix-2", "partner-whatsapp-2");
-      } catch (error) {
-        const message = document.getElementById("partner-registration-message");
-        message.style.color = "#b42318";
-        message.textContent = error.message;
-        return null;
-      }
+      if (!rawNumber) return "";
 
-      // Permette di conservare un numero internazionale già completo.
+      const number = rawNumber.replace(/\D/g, "");
+      const code = prefix.replace(/\D/g, "");
+
       const full = !code && rawNumber.startsWith("+")
         ? "+" + number
         : "+" + code + number;
@@ -6230,12 +6221,23 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     }
   
     function validateBusinessPartnerForm() {
-      const name = document.getElementById("partner-name").value.trim();
-      const whatsapp = document.getElementById("partner-whatsapp").value.trim();
+      const name = formatPartnerName(document.getElementById("partner-name").value);
       const email = document.getElementById("partner-email").value.trim();
-      const contactName1 = document.getElementById("partner-contact-name-1").value.trim();
-      const whatsapp2 = document.getElementById("partner-whatsapp-2").value.trim();
-      const contactName2 = document.getElementById("partner-contact-name-2").value.trim();
+      const contactName1 = formatPartnerName(document.getElementById("partner-contact-name-1").value);
+      const contactName2 = formatPartnerName(document.getElementById("partner-contact-name-2").value);
+
+      let whatsapp, whatsapp2;
+
+      try {
+        whatsapp = getPartnerPhone("partner-prefix-1", "partner-whatsapp");
+        whatsapp2 = getPartnerPhone("partner-prefix-2", "partner-whatsapp-2");
+      } catch (error) {
+        const message = document.getElementById("partner-registration-message");
+        message.style.color = "#b42318";
+        message.textContent = error.message;
+        return null;
+      }
+      
       const website = document.getElementById("partner-website").value.trim();
       const defaultPickupLocation = document.getElementById("partner-default-pickup").value.trim();
       const commission = Number(
