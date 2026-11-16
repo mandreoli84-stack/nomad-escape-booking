@@ -7067,7 +7067,8 @@ async function downloadGuestBookingPDF() {
       }
     
       driverLoading = true;
-      message.textContent = "Loading bookings...";
+      message.textContent =
+        "Loading bookings for " + date + ". Please wait...";
     
       try {
         const { data, error } = await supabaseClient.rpc(
@@ -7107,9 +7108,12 @@ async function downloadGuestBookingPDF() {
           )
         );
     
-      const pax = rows => rows.reduce(
-        (sum, b) => sum + Number(b.passengers || 0), 0
-      );
+      const pax = rows => rows.reduce((sum, b) => {
+        const count = Number(b.passengers);
+        return sum + (
+          Number.isInteger(count) && count > 0 ? count : 0
+        );
+      }, 0);
     
       document.getElementById("driver-onboard-count").textContent =
         pax(onboard);
@@ -7146,9 +7150,11 @@ async function downloadGuestBookingPDF() {
           amount > 0;
       });
     
-      const paid = bookings.filter(b =>
-        b.balance_paid_at || Number(b.balance_amount || 0) <= 0
-      );
+      const paid = bookings.filter(b => {
+        const amount = Number(b.balance_amount);
+        return !!b.balance_paid_at ||
+          (Number.isFinite(amount) && amount >= 0 && amount === 0);
+      });
     
       const byPickup = (a, b) =>
         String(a.pickup_location || "").localeCompare(
@@ -7156,6 +7162,7 @@ async function downloadGuestBookingPDF() {
         );
 
       document.getElementById("driver-collections").innerHTML =
+        [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
         [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
           const isPaid = !!b.balance_paid_at ||
             Number(b.balance_amount || 0) <= 0;
@@ -7217,6 +7224,15 @@ async function downloadGuestBookingPDF() {
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || b.checked_in_at || driverActionBusy) return;
+
+      const passengers = Number(b.passengers);
+
+      if (!Number.isInteger(passengers) || passengers < 1) {
+        alert("Invalid passenger count. Please contact Admin.");
+        return;
+      }
+
+      if (!confirm(
     
       if (!confirm(
         `CONFIRM CHECK IN\n\n` +
@@ -7235,6 +7251,11 @@ async function downloadGuestBookingPDF() {
     
         if (error) throw error;
         await loadDriverBookings();
+        alert(
+          "Check-in successfully registered.\n\n" +
+          `Guest: ${b.customer_name || b.booking_code}\n` +
+          `Passengers: ${passengers}`
+        );
       } catch (e) {
         alert("Check-in failed: " + e.message);
       } finally {
@@ -7245,6 +7266,11 @@ async function downloadGuestBookingPDF() {
     async function driverPayNow(bookingId) {
        const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || driverActionBusy) return;
+
+      if (!b.booking_code) {
+        alert("Missing booking code. Please contact Admin.");
+        return;
+      }
 
       const amount = Number(b.balance_amount);
 
@@ -7262,7 +7288,10 @@ async function downloadGuestBookingPDF() {
         `input[name="driver-method-${bookingId}"]:checked`
       )?.value;
     
-      if (!["cash", "card"].includes(method)) return;
+      if (!["cash", "card"].includes(method)) {
+        alert("Please select Cash or Card.");
+        return;
+      }
 
       if (method === "card" && !confirm(
         "CARD TERMINAL CHECK\n\n" +
@@ -7281,7 +7310,9 @@ async function downloadGuestBookingPDF() {
       )) return;
     
       driverActionBusy = true;
-    
+      document.getElementById("driver-message").textContent =
+        "Registering payment. Please wait.";
+
       try {
         const { error } = await supabaseClient.rpc(
           "admin_driver_collect_balance",
@@ -7289,7 +7320,13 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
-        await loadDriverBookings();
+         await loadDriverBookings();
+        alert(
+          "Payment successfully registered.\n\n" +
+          `Guest: ${b.customer_name || b.booking_code}\n` +
+          `Amount: ${driverMoney(amount)}\n` +
+          `Method: ${method.toUpperCase()}`
+        );
       } catch (e) {
         alert("Payment registration failed: " + e.message);
       } finally {
