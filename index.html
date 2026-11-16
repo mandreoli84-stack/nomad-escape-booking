@@ -1017,7 +1017,56 @@
   </div>
 
   </section>
+  
+<!-- ADMIN - DRIVER DASHBOARD -->
+<section class="screen" id="screen-admin-driver">
 
+  <div class="logo">
+    <img src="logo.png"
+         alt="Nomad Escape Fuerteventura"
+         class="logo-image">
+  </div>
+
+  <h1>Driver Dashboard</h1>
+  <p class="subtitle">Today's guest management</p>
+
+  <label for="driver-date">Tour Date</label>
+  <input id="driver-date" type="date"
+         onchange="loadDriverBookings()">
+
+  <div class="panel" style="text-align:center">
+    <div class="review-label">PASSENGERS ON BOARD</div>
+    <div id="driver-onboard-count"
+         style="font-size:36px;font-weight:700">0</div>
+    <div id="driver-remaining-count" class="helper">
+      0 passengers remaining
+    </div>
+  </div>
+
+  <h3>Remaining Pickups</h3>
+  <div id="driver-pickups"></div>
+
+  <h3>To Collect</h3>
+  <div id="driver-collections"></div>
+
+  <h3>Drop-offs</h3>
+  <div id="driver-dropoffs"></div>
+
+  <p id="driver-message" role="status"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            onclick="loadDriverBookings()">
+      REFRESH
+    </button>
+  </div>
+
+</section>
 <!-- ADMIN - MANAGE BUSINESS PARTNERS -->
 <section class="screen" id="screen-admin-manage-partners">
 
@@ -6949,7 +6998,229 @@ async function downloadGuestBookingPDF() {
 
       wrapper.appendChild(toggle);
     });
-
+  
+    // ADMIN DRIVER DASHBOARD
+    let driverBookings = [];
+    let driverLoading = false;
+    let driverActionBusy = false;
+    
+    function driverEscape(value) {
+      return String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+    
+    function driverMoney(value) {
+      return "€" + Number(value || 0).toFixed(2);
+    }
+    
+    function driverToday() {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date());
+    
+      const get = type => parts.find(p => p.type === type).value;
+      return `${get("year")}-${get("month")}-${get("day")}`;
+    }
+    
+    async function openDriverDashboard() {
+      try {
+        const { data: { user }, error: authError } =
+          await supabaseClient.auth.getUser();
+    
+        if (authError || !user) {
+          throw new Error("Admin login required.");
+        }
+    
+        const { data, error } =
+          await supabaseClient.rpc("is_vanbooking_admin");
+    
+        if (error || data !== true) {
+          throw new Error("Unauthorized access.");
+        }
+    
+        document.getElementById("driver-date").value = driverToday();
+        showScreen("screen-admin-driver");
+        await loadDriverBookings();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+    
+    async function loadDriverBookings() {
+      if (driverLoading) return;
+    
+      const date = document.getElementById("driver-date").value;
+      const message = document.getElementById("driver-message");
+    
+      if (!date) {
+        message.textContent = "Select a date.";
+        return;
+      }
+    
+      driverLoading = true;
+      message.textContent = "Loading bookings...";
+    
+      try {
+        const { data, error } = await supabaseClient.rpc(
+          "admin_driver_daily_bookings",
+          { p_date: date }
+        );
+    
+        if (error) throw error;
+    
+        driverBookings = data || [];
+        renderDriverDashboard();
+        message.textContent = "";
+      } catch (e) {
+        driverBookings = [];
+        renderDriverDashboard();
+        message.textContent = "Loading failed: " + e.message;
+      } finally {
+        driverLoading = false;
+      }
+    }
+    
+    function renderDriverDashboard() {
+      const bookings = driverBookings;
+      const onboard = bookings.filter(b => !!b.checked_in_at);
+      const remaining = bookings.filter(b => !b.checked_in_at);
+    
+      const pax = rows => rows.reduce(
+        (sum, b) => sum + Number(b.passengers || 0), 0
+      );
+    
+      document.getElementById("driver-onboard-count").textContent =
+        pax(onboard);
+    
+      document.getElementById("driver-remaining-count").textContent =
+        pax(remaining) + " passengers remaining";
+    
+      document.getElementById("driver-pickups").innerHTML =
+        remaining.map(b => `
+          <div class="panel">
+            <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
+            <p>${driverEscape(b.pickup_location || "Pickup not specified")}</p>
+            <p>${Number(b.passengers || 0)} passengers</p>
+            <button class="primary" style="width:100%"
+              onclick="driverCheckIn('${b.booking_id}')">
+              CHECK IN
+            </button>
+          </div>
+        `).join("") ||
+        '<p class="helper">No remaining pickups.</p>';
+    
+      const unpaid = bookings.filter(b =>
+        !b.balance_paid_at && Number(b.balance_amount || 0) > 0
+      );
+    
+      const paid = bookings.filter(b =>
+        b.balance_paid_at || Number(b.balance_amount || 0) <= 0
+      );
+    
+      document.getElementById("driver-collections").innerHTML =
+        [...unpaid, ...paid].map(b => {
+          const isPaid = !!b.balance_paid_at ||
+            Number(b.balance_amount || 0) <= 0;
+    
+          return `
+            <div class="panel">
+              <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
+              <div class="helper">${driverEscape(b.booking_code)}</div>
+              <p style="font-size:22px;font-weight:700">
+                ${driverMoney(b.balance_amount)}
+              </p>
+              <strong>${isPaid ? "PAID" : "UNPAID"}</strong>
+              ${isPaid ? "" : `
+                <div style="display:flex;gap:20px;margin:12px 0">
+                  <label>
+                    <input type="radio"
+                      name="driver-method-${b.booking_id}"
+                      value="cash" checked style="width:auto">
+                    Cash
+                  </label>
+                  <label>
+                    <input type="radio"
+                      name="driver-method-${b.booking_id}"
+                      value="card" style="width:auto">
+                    Card
+                  </label>
+                </div>
+                <button class="primary" style="width:100%"
+                  onclick="driverPayNow('${b.booking_id}')">
+                  PAY NOW
+                </button>
+              `}
+            </div>
+          `;
+        }).join("") ||
+        '<p class="helper">No bookings.</p>';
+    
+      document.getElementById("driver-dropoffs").textContent =
+        "Drop-off locations not yet connected.";
+    }
+    
+    async function driverCheckIn(bookingId) {
+      const b = driverBookings.find(x => x.booking_id === bookingId);
+      if (!b || b.checked_in_at || driverActionBusy) return;
+    
+      if (!confirm(
+        `Confirm CHECK IN for ${b.customer_name || b.booking_code}?`
+      )) return;
+    
+      driverActionBusy = true;
+    
+      try {
+        const { error } = await supabaseClient.rpc(
+          "admin_driver_check_in",
+          { p_booking_id: bookingId }
+        );
+    
+        if (error) throw error;
+        await loadDriverBookings();
+      } catch (e) {
+        alert("Check-in failed: " + e.message);
+      } finally {
+        driverActionBusy = false;
+      }
+    }
+    
+    async function driverPayNow(bookingId) {
+      const b = driverBookings.find(x => x.booking_id === bookingId);
+      if (!b || b.balance_paid_at ||
+          Number(b.balance_amount) <= 0 || driverActionBusy) return;
+    
+      const method = document.querySelector(
+        `input[name="driver-method-${bookingId}"]:checked`
+      )?.value;
+    
+      if (!["cash", "card"].includes(method)) return;
+    
+      if (!confirm(
+        `Confirm ${driverMoney(b.balance_amount)} received by ${method.toUpperCase()}?`
+      )) return;
+    
+      driverActionBusy = true;
+    
+      try {
+        const { error } = await supabaseClient.rpc(
+          "admin_driver_collect_balance",
+          { p_booking_id: bookingId, p_method: method }
+        );
+    
+        if (error) throw error;
+        await loadDriverBookings();
+      } catch (e) {
+        alert("Payment registration failed: " + e.message);
+      } finally {
+        driverActionBusy = false;
+      }
+    }
+  
 </script>
 
 </body>
