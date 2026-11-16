@@ -996,6 +996,20 @@
     </button>
   </div>
 
+  </section>
+
+<!-- ADMIN - MANAGE BUSINESS PARTNERS -->
+<section class="screen" id="screen-admin-manage-partners">
+
+  <div class="logo">
+    <img src="logo.png" alt="Nomad Escape Fuerteventura" class="logo-image">
+  </div>
+
+  <h1>Manage Business Partners</h1>
+  <p class="subtitle">
+    View and manage your registered partners.
+  </p>
+  
   <div id="admin-partners-list"
        role="status"
        style="margin-top:20px;">
@@ -1152,22 +1166,22 @@
 
   <label for="partner-north-fixed">North Fuerteventura — Fixed (€ per person)</label>
   <input id="partner-north-fixed" type="number"
-         min="0" max="49" step="0.01"
+         min="0" max="49" step="1"
          placeholder="Optional">
 
   <label for="partner-sotavento-fixed">Sotavento — Fixed (€ per person)</label>
   <input id="partner-sotavento-fixed" type="number"
-         min="0" max="69" step="0.01"
+         min="0" max="69" step="1"
          placeholder="Optional">
 
   <label for="partner-private-4h">Private Experience 4h — Fixed (€ per booking)</label>
   <input id="partner-private-4h" type="number"
-         min="0" max="299" step="0.01"
+         min="0" max="299" step="1"
          placeholder="Optional">
 
   <label for="partner-private-8h">Private Experience 8h — Fixed (€ per booking)</label>
   <input id="partner-private-8h" type="number"
-         min="0" max="449" step="0.01"
+         min="0" max="449" step="1"
          placeholder="Optional">
   
   <p id="partner-registration-message" role="status"></p>
@@ -1280,8 +1294,8 @@
 
   <label style="display:flex; align-items:center; gap:10px;">
     <input id="edit-partner-active" type="checkbox"
-           style="width:auto;">
-    Partner Active
+           style="width:auto;" disabled>
+    Partner Active (managed separately)
   </label>
 
   <p id="edit-partner-message" role="status"></p>
@@ -5712,7 +5726,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
           "Unable to load business partners: " + error.message;
       }
     }
-  }
+
     async function saveBusinessPartnerChanges() {
       const get = id => document.getElementById(id);
       const message = get("edit-partner-message");
@@ -5823,6 +5837,93 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       button.textContent = "SAVE CHANGES";
     }
   }
+    async function openEditBusinessPartner(partnerId) {
+      const get = id => document.getElementById(id);
+      const message = get("edit-partner-message");
+      const button = get("edit-partner-save-button");
+
+      showScreen("screen-admin-edit-partner");
+      message.style.color = "#728093";
+      message.textContent = "Loading partner details...";
+      button.disabled = true;
+
+      try {
+        const { data: partner, error } = await supabaseClient.rpc(
+          "admin_get_business_partner_details",
+          { p_partner_id: partnerId }
+        );
+
+        if (error) throw error;
+        if (!partner || partner.id !== partnerId) {
+          throw new Error("Partner not found.");
+        }
+
+        const setValue = (id, value) => {
+          get(id).value = value ?? "";
+        };
+
+        setValue("edit-partner-id", partner.id);
+        setValue("edit-partner-name", partner.partner_name);
+        setValue("edit-partner-code", partner.personal_code);
+        setValue("edit-partner-whatsapp", partner.whatsapp);
+        setValue("edit-partner-contact-1", partner.contact_name_1);
+        setValue("edit-partner-whatsapp-2", partner.whatsapp_2);
+        setValue("edit-partner-contact-2", partner.contact_name_2);
+        setValue("edit-partner-email", partner.email);
+        setValue("edit-partner-website", partner.website);
+        setValue("edit-partner-pickup", partner.default_pickup_location);
+        setValue("edit-partner-group", partner.commission_percent);
+
+        const commissions = partner.service_commissions || {};
+
+        const fixedValue = (key, fallback) => {
+          const service = commissions[key];
+
+          if (service) {
+            return service.commission_type === "fixed"
+              ? service.fixed_amount
+              : "";
+          }
+
+          return fallback ?? "";
+        };
+
+        setValue(
+          "edit-partner-north",
+          fixedValue("north_fuerteventura", partner.north_fixed_eur)
+        );
+
+        setValue(
+          "edit-partner-sotavento",
+          fixedValue("sotavento", partner.sotavento_fixed_eur)
+        );
+
+        setValue(
+          "edit-partner-private-4h",
+          fixedValue("private_4h", partner.private_4h_fixed_eur)
+        );
+
+        setValue(
+          "edit-partner-private-8h",
+          fixedValue("private_8h", partner.private_8h_fixed_eur)
+        );
+
+        get("edit-partner-active").checked = partner.active === true;
+
+        get("edit-partner-subtitle").textContent =
+          "Editing: " + partner.partner_name;
+
+        message.textContent = "";
+        button.disabled = false;
+
+      } catch (error) {
+        console.error("Load Business Partner:", error);
+        message.style.color = "#b42318";
+        message.textContent =
+          "Unable to load partner: " + error.message;
+      }
+    }
+  
     function openBusinessGroupPasswords() {
       document.getElementById("business-group-select").value = "15";
       document.getElementById("business-group-new-password").value = "";
@@ -5925,7 +6026,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
             !Number.isFinite(value) ||
             value < 0 ||
             value > max ||
-            Math.round(value * 100) !== value * 100
+            !Number.isInteger(value)
           )
         ) {
           message.textContent = "Invalid fixed commission: " + id;
