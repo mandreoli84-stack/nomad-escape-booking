@@ -951,6 +951,16 @@
   </div>
 </div>
   
+  <div class="tour-card" onclick="openManageBusinessPartners()">
+    <div class="tour-info">
+      <div class="tour-title">Manage Business Partners</div>
+      <div class="tour-meta">
+        View, edit and manage registered partners
+      </div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+
   <div class="tour-card" onclick="openBusinessGroupPasswords()">
     <div class="tour-info">
       <div class="tour-title">Business Group Passwords</div>
@@ -986,8 +996,25 @@
     </button>
   </div>
 
+  <div id="admin-partners-list"
+       role="status"
+       style="margin-top:20px;">
+  </div>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+
+    <button class="primary"
+            onclick="openManageBusinessPartners()">
+      REFRESH
+    </button>
+  </div>
+
 </section>
-  
+
   <!-- ADMIN - BUSINESS GROUP PASSWORDS -->
 <section class="screen" id="screen-admin-business-passwords">
 
@@ -1160,7 +1187,120 @@
   </div>
 
 </section>
-  
+
+<!-- ADMIN - EDIT BUSINESS PARTNER -->
+<section class="screen" id="screen-admin-edit-partner">
+
+  <div class="logo">
+    <img src="logo.png" alt="Nomad Escape Fuerteventura" class="logo-image">
+  </div>
+
+  <h1>Edit Business Partner</h1>
+  <p class="subtitle" id="edit-partner-subtitle">
+    Update partner information and commissions.
+  </p>
+
+  <input type="hidden" id="edit-partner-id">
+
+  <label for="edit-partner-name">Partner Name *</label>
+  <input id="edit-partner-name" type="text" maxlength="100">
+
+  <label for="edit-partner-code">Personal Code</label>
+  <input id="edit-partner-code" type="text"
+         maxlength="6" readonly>
+
+  <div style="display:flex; gap:10px;">
+    <div style="flex:1; min-width:0;">
+      <label for="edit-partner-whatsapp">WhatsApp 1 *</label>
+      <input id="edit-partner-whatsapp" type="tel">
+    </div>
+    <div style="flex:1; min-width:0;">
+      <label for="edit-partner-contact-1">Contact Name 1 *</label>
+      <input id="edit-partner-contact-1" type="text" maxlength="100">
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <div style="flex:1; min-width:0;">
+      <label for="edit-partner-whatsapp-2">WhatsApp 2</label>
+      <input id="edit-partner-whatsapp-2" type="tel">
+    </div>
+    <div style="flex:1; min-width:0;">
+      <label for="edit-partner-contact-2">Contact Name 2</label>
+      <input id="edit-partner-contact-2" type="text" maxlength="100">
+    </div>
+  </div>
+
+  <label for="edit-partner-email">Email *</label>
+  <input id="edit-partner-email" type="email">
+
+  <label for="edit-partner-website">Website (optional)</label>
+  <input id="edit-partner-website" type="url" maxlength="500">
+
+  <label for="edit-partner-pickup">Default Pickup Location</label>
+  <input id="edit-partner-pickup" type="text" maxlength="50">
+
+  <label for="edit-partner-group">Commission Group *</label>
+  <select id="edit-partner-group"
+          style="width:100%; padding:13px;">
+    <option value="15">15%</option>
+    <option value="20">20%</option>
+    <option value="25">25%</option>
+  </select>
+
+  <p class="helper">
+    Optional fixed commissions in whole euros.
+    Leave empty for the group percentage.
+    Enter 0 for no commission.
+  </p>
+
+  <label for="edit-partner-north">
+    North Fuerteventura — Fixed (€ per person)
+  </label>
+  <input id="edit-partner-north" type="number"
+         min="0" max="49" step="1">
+
+  <label for="edit-partner-sotavento">
+    Sotavento — Fixed (€ per person)
+  </label>
+  <input id="edit-partner-sotavento" type="number"
+         min="0" max="69" step="1">
+
+  <label for="edit-partner-private-4h">
+    Private Experience 4h — Fixed (€ per booking)
+  </label>
+  <input id="edit-partner-private-4h" type="number"
+         min="0" max="299" step="1">
+
+  <label for="edit-partner-private-8h">
+    Private Experience 8h — Fixed (€ per booking)
+  </label>
+  <input id="edit-partner-private-8h" type="number"
+         min="0" max="449" step="1">
+
+  <label style="display:flex; align-items:center; gap:10px;">
+    <input id="edit-partner-active" type="checkbox"
+           style="width:auto;">
+    Partner Active
+  </label>
+
+  <p id="edit-partner-message" role="status"></p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="openManageBusinessPartners()">
+      BACK
+    </button>
+
+    <button class="primary"
+            id="edit-partner-save-button"
+            onclick="saveBusinessPartnerChanges()">
+      SAVE CHANGES
+    </button>
+  </div>
+
+</section>
+
 <!-- ADMIN - CREATE GUEST ASSISTED BOOKING -->
 <section class="screen" id="screen-admin-assisted">
 
@@ -5507,6 +5647,182 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       showScreen("screen-admin-business-partner");
     }
   
+    async function openManageBusinessPartners() {
+      const list = document.getElementById("admin-partners-list");
+
+      showScreen("screen-admin-manage-partners");
+
+      list.textContent = "Loading business partners...";
+
+      try {
+        const { data: isAdmin, error: adminError } =
+          await supabaseClient.rpc("is_vanbooking_admin");
+
+        if (adminError || isAdmin !== true) {
+          throw new Error("Admin access denied.");
+        }
+
+        const { data: partners, error } =
+          await supabaseClient.rpc("admin_list_business_partners");
+
+        if (error) throw error;
+
+        list.replaceChildren();
+
+        if (!partners || partners.length === 0) {
+          list.textContent = "No business partners registered.";
+          return;
+        }
+
+        partners.forEach(partner => {
+          const card = document.createElement("div");
+          card.className = "tour-card";
+
+          const info = document.createElement("div");
+          info.className = "tour-info";
+
+          const name = document.createElement("div");
+          name.className = "tour-title";
+          name.textContent = partner.partner_name;
+
+          const details = document.createElement("div");
+          details.className = "tour-meta";
+          details.textContent =
+            "Code: " + partner.personal_code +
+            " | Group: " + partner.commission_percent + "%" +
+            " | " + (partner.active ? "Active" : "Inactive");
+
+          const arrow = document.createElement("div");
+          arrow.className = "tour-arrow";
+          arrow.textContent = "›";
+
+          info.append(name, details, arrow);
+          card.appendChild(info);
+
+          card.onclick = () => {
+            openEditBusinessPartner(partner.id);
+          };
+
+          list.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error("Manage Business Partners:", error);
+        list.textContent =
+          "Unable to load business partners: " + error.message;
+      }
+    }
+  }
+    async function saveBusinessPartnerChanges() {
+      const get = id => document.getElementById(id);
+      const message = get("edit-partner-message");
+      const button = get("edit-partner-save-button");
+
+      const partnerId = get("edit-partner-id").value;
+      const name = get("edit-partner-name").value.trim();
+      const whatsapp = get("edit-partner-whatsapp").value.trim();
+      const contact1 = get("edit-partner-contact-1").value.trim();
+      const whatsapp2 = get("edit-partner-whatsapp-2").value.trim();
+      const contact2 = get("edit-partner-contact-2").value.trim();
+      const email = get("edit-partner-email").value.trim();
+      const website = get("edit-partner-website").value.trim();
+      const pickup = get("edit-partner-pickup").value.trim();
+      const group = Number(get("edit-partner-group").value);
+
+      message.style.color = "#b42318";
+      message.textContent = "";
+
+      if (!partnerId || !name || !whatsapp || !contact1 || !email) {
+        message.textContent = "Please complete all required fields.";
+        return;
+      }
+
+      if (Boolean(whatsapp2) !== Boolean(contact2)) {
+        message.textContent =
+          "WhatsApp 2 and Contact Name 2 must be filled together.";
+        return;
+      }
+
+      if (!get("edit-partner-email").checkValidity() ||
+          (website && !get("edit-partner-website").checkValidity())) {
+        message.textContent = "Please enter a valid email and website.";
+        return;
+      }
+
+      if (![15, 20, 25].includes(group)) {
+        message.textContent = "Invalid commission group.";
+        return;
+      }
+
+      const readFixed = (id, max) => {
+        const value = get(id).value.trim();
+
+      if (value === "") return null;
+
+      const number = Number(value);
+
+      if (!Number.isInteger(number) || number < 0 || number > max) {
+        throw new Error(
+          "Fixed commissions must be whole euros between 0 and €" + max
+        );
+      }
+
+      return number;
+    };
+
+    let north, sotavento, private4h, private8h;
+
+    try {
+      north = readFixed("edit-partner-north", 49);
+      sotavento = readFixed("edit-partner-sotavento", 69);
+      private4h = readFixed("edit-partner-private-4h", 299);
+      private8h = readFixed("edit-partner-private-8h", 449);
+    } catch (error) {
+      message.textContent = error.message;
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "SAVING...";
+
+    try {
+      const { data, error } = await supabaseClient.rpc(
+        "admin_update_business_partner",
+        {
+          p_partner_id: partnerId,
+          p_partner_name: name,
+          p_whatsapp: whatsapp,
+          p_email: email,
+          p_group_percent: group,
+          p_default_pickup_location: pickup,
+          p_contact_name_1: contact1,
+          p_whatsapp_2: whatsapp2 || null,
+          p_contact_name_2: contact2 || null,
+          p_website: website || null,
+          p_north_fixed_eur: north,
+          p_sotavento_fixed_eur: sotavento,
+          p_private_4h_fixed_eur: private4h,
+          p_private_8h_fixed_eur: private8h
+        }
+      );
+
+      if (error) throw error;
+      if (data !== true) {
+      throw new Error("Partner update was not confirmed.");
+      }
+
+      message.style.color = "#167a80";
+      message.textContent = "Partner changes saved successfully.";
+
+    } catch (error) {
+      console.error("Save Business Partner:", error);
+      message.textContent = "Unable to save changes: " + error.message;
+
+    } finally {
+      button.disabled = false;
+      button.textContent = "SAVE CHANGES";
+    }
+  }
     function openBusinessGroupPasswords() {
       document.getElementById("business-group-select").value = "15";
       document.getElementById("business-group-new-password").value = "";
