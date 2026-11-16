@@ -7164,8 +7164,6 @@ async function downloadGuestBookingPDF() {
       document.getElementById("driver-collections").innerHTML =
         [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
           const isPaid = !!b.balance_paid_at ||
-            Number(b.balance_amount || 0) <= 0;
-    
           return `
             <div class="panel">
               <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
