@@ -5280,9 +5280,12 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
     
 async function downloadGuestBookingPDF() {
+  if (booking.accessType !== "guest") return;
+
+  // Guest PDF remains disabled until a verified backend payment
+  // confirmation has been integrated.
   if (
-    booking.accessType !== "guest" ||
-    !booking.guestPaymentVerified ||
+    booking.guestPaymentVerified !== true ||
     !booking.bookingCode
   ) {
     return;
@@ -5329,7 +5332,10 @@ async function downloadGuestBookingPDF() {
     canvas.getContext("2d").drawImage(logo, 0, 0);
 
     const width = 100;
-    const height = width * logo.naturalHeight / logo.naturalWidth;
+    const height = Math.min(
+      42,
+      width * logo.naturalHeight / logo.naturalWidth
+    );
 
     doc.addImage(
       canvas.toDataURL("image/png"),
@@ -5369,6 +5375,11 @@ async function downloadGuestBookingPDF() {
   const deposit = Math.floor(total * 0.25);
   const balance = total - deposit;
 
+  if (!Number.isFinite(total) || total <= 0) {
+    console.error("Invalid Guest booking total:", booking.tourTotal);
+    return;
+  }
+
   const time = booking.tour === "North Fuerteventura"
     ? "09:30 - 13:30"
     : "09:30 - 17:00";
@@ -5381,18 +5392,21 @@ async function downloadGuestBookingPDF() {
     ["Tour", booking.tour],
     ["Date / Time", formatDateWithOrdinal(booking.date) + " / " + time],
     ["People", booking.people],
-    ["Tour Total", "EUR " + total],
-    ["Deposit Paid", "EUR " + deposit],
-    ["Balance Due on Tour Day", "EUR " + balance],
+    ["Tour Total", "EUR " + total.toFixed(2)],
+    ["Deposit Paid", "EUR " + deposit.toFixed(2)],
+    ["Balance Due on Tour Day", "EUR " + balance.toFixed(2)],
     ["Guest Name", booking.name],
-    ["WhatsApp", countryCode + " " + booking.phone],
+    ["WhatsApp",
+      String(booking.phone || "").trim().startsWith("+")
+        ? String(booking.phone).trim()
+        : countryCode + " " + String(booking.phone || "").trim()],
     ["Pickup Location", booking.pickup]
   ];
 
   for (const [label, value] of rows) {
     const highlight = label === "Deposit Paid";
     const lines = doc.splitTextToSize(String(value ?? ""), 82);
-    const height = Math.max(13, lines.length * 5.5 + 7);
+    const height = Math.max(14, lines.length * 6.5 + 8);
 
     if (y + height > 250) {
       doc.addPage();
@@ -5412,7 +5426,9 @@ async function downloadGuestBookingPDF() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(highlight ? 12 : 11);
     doc.setTextColor(...navy);
-    doc.text(lines, 105, y + 2);
+    doc.text(lines, 105, y + 2, {
+      lineHeightFactor: 1.15
+    });
 
     if (!highlight) {
       doc.setDrawColor(210, 231, 232);
@@ -5421,6 +5437,11 @@ async function downloadGuestBookingPDF() {
     }
 
     y += height;
+  }
+
+  if (y + 35 > 285) {
+    doc.addPage();
+    y = 25;
   }
 
   doc.setDrawColor(...turquoise);
@@ -5443,18 +5464,18 @@ async function downloadGuestBookingPDF() {
     { align: "center" }
   );
 
-  doc.text(
-    "Please show your booking QR code to your driver on the day of the tour.",
-    105,
-    y + 25,
-    { align: "center" }
-  );
+  // Secure booking QR will be added after backend verification is ready.
 
   const filename = "Nomad-Escape-" +
     String(booking.bookingCode).replace(/[^a-zA-Z0-9_-]/g, "-") +
     ".pdf";
 
-  doc.save(filename);
+  try {
+    doc.save(filename);
+  } catch (error) {
+    console.error("Guest PDF download failed:", error);
+    alert("Unable to download the PDF. Please try again.");
+  }
 }
 
   function downloadBusinessReceipt() {
