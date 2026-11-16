@@ -5208,7 +5208,21 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       }
 
       await receiptWindow.navigator.clipboard.writeText(text);
-      receiptWindow.alert("Receipt copied!");
+
+      let notice = doc.getElementById("receipt-copy-notice");
+      if (!notice) {
+        notice = doc.createElement("div");
+        notice.id = "receipt-copy-notice";
+        notice.setAttribute("role", "status");
+        notice.style.cssText =
+          "position:fixed;top:12px;left:50%;transform:translateX(-50%);" +
+          "background:#10233b;color:white;padding:12px 20px;" +
+          "border-radius:8px;font:600 14px Arial,sans-serif;" +
+          "z-index:9999;text-align:center;";
+        doc.body.appendChild(notice);
+      }
+      notice.textContent = "Receipt copied!";
+      notice.style.display = "block";
     } catch (error) {
       const textarea = doc.createElement("textarea");
       textarea.value = text;
@@ -5337,12 +5351,16 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         });
       } else {
         doc.save(filename);
-        alert("PDF saved. You can now attach it to WhatsApp or email.");
+        (receiptWindow || window).alert(
+          "PDF saved. You can now attach it to WhatsApp or email."
+        );
       }
     } catch (error) {
       if (error.name !== "AbortError") {
         doc.save(filename);
-        alert("Sharing unavailable. PDF saved instead.");
+        (receiptWindow || window).alert(
+          "Sharing unavailable. PDF saved instead."
+        );
       }
     }
   }
