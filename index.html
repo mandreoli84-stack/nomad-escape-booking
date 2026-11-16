@@ -7052,7 +7052,9 @@ async function downloadGuestBookingPDF() {
     }
     
     async function loadDriverBookings() {
-      if (driverLoading) return;
+      if (driverLoading) {
+        return;
+      }
     
       const date = document.getElementById("driver-date").value;
       const message = document.getElementById("driver-message");
@@ -7073,7 +7075,11 @@ async function downloadGuestBookingPDF() {
     
         if (error) throw error;
     
-        driverBookings = data || [];
+        if (!Array.isArray(data)) {
+          throw new Error("Unexpected bookings response.");
+        }
+
+        driverBookings = data;
         renderDriverDashboard();
         message.textContent = "";
       } catch (e) {
@@ -7088,7 +7094,13 @@ async function downloadGuestBookingPDF() {
     function renderDriverDashboard() {
       const bookings = driverBookings;
       const onboard = bookings.filter(b => !!b.checked_in_at);
-      const remaining = bookings.filter(b => !b.checked_in_at);
+      const remaining = bookings
+        .filter(b => !b.checked_in_at)
+        .sort((a, b) =>
+          String(a.pickup_location || "").localeCompare(
+            String(b.pickup_location || "")
+          )
+        );
     
       const pax = rows => rows.reduce(
         (sum, b) => sum + Number(b.passengers || 0), 0
@@ -7104,8 +7116,13 @@ async function downloadGuestBookingPDF() {
         remaining.map(b => `
           <div class="panel">
             <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
-            <p>${driverEscape(b.pickup_location || "Pickup not specified")}</p>
-            <p>${Number(b.passengers || 0)} passengers</p>
+            <div class="helper">${driverEscape(b.booking_code)}</div>
+            <p><strong>Pickup:</strong>
+              ${driverEscape(b.pickup_location || "Not specified")}
+            </p>
+            <p><strong>Passengers:</strong>
+              ${Number(b.passengers || 0)}
+            </p>
             <button class="primary" style="width:100%"
               onclick="driverCheckIn('${b.booking_id}')">
               CHECK IN
@@ -7132,9 +7149,17 @@ async function downloadGuestBookingPDF() {
               <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
               <div class="helper">${driverEscape(b.booking_code)}</div>
               <p style="font-size:22px;font-weight:700">
-                ${driverMoney(b.balance_amount)}
+                ${isPaid ? "€0.00 DUE" :
+                  driverMoney(b.balance_amount) + " DUE"}
               </p>
               <strong>${isPaid ? "PAID" : "UNPAID"}</strong>
+              ${b.balance_paid_at ? `
+                <div class="helper">
+                  Received by ${driverEscape(
+                    (b.balance_payment_method || "unknown").toUpperCase()
+                  )}
+                </div>
+              ` : ""}
               ${isPaid ? "" : `
                 <div style="display:flex;gap:20px;margin:12px 0">
                   <label>
@@ -7152,7 +7177,7 @@ async function downloadGuestBookingPDF() {
                 </div>
                 <button class="primary" style="width:100%"
                   onclick="driverPayNow('${b.booking_id}')">
-                  PAY NOW
+                  CONFIRM PAYMENT RECEIVED
                 </button>
               `}
             </div>
@@ -7160,8 +7185,11 @@ async function downloadGuestBookingPDF() {
         }).join("") ||
         '<p class="helper">No bookings.</p>';
     
-      document.getElementById("driver-dropoffs").textContent =
-        "Drop-off locations not yet connected.";
+      document.getElementById("driver-dropoffs").innerHTML =
+        '<p class="helper">' +
+        'Drop-off information will appear here once ' +
+        'destination data is connected to Supabase.' +
+        '</p>';
     }
     
     async function driverCheckIn(bookingId) {
@@ -7169,7 +7197,10 @@ async function downloadGuestBookingPDF() {
       if (!b || b.checked_in_at || driverActionBusy) return;
     
       if (!confirm(
-        `Confirm CHECK IN for ${b.customer_name || b.booking_code}?`
+        `CONFIRM CHECK IN\n\n` +
+        `Guest: ${b.customer_name || b.booking_code}\n` +
+        `Passengers: ${Number(b.passengers || 0)}\n` +
+        `Pickup: ${b.pickup_location || "Not specified"}`
       )) return;
     
       driverActionBusy = true;
@@ -7190,9 +7221,13 @@ async function downloadGuestBookingPDF() {
     }
     
     async function driverPayNow(bookingId) {
-      const b = driverBookings.find(x => x.booking_id === bookingId);
-      if (!b || b.balance_paid_at ||
-          Number(b.balance_amount) <= 0 || driverActionBusy) return;
+       const b = driverBookings.find(x => x.booking_id === bookingId);
+      if (!b || driverActionBusy) return;
+
+      if (b.balance_paid_at || Number(b.balance_amount) <= 0) {
+        alert("This booking has no outstanding balance.");
+        return;
+      }
     
       const method = document.querySelector(
         `input[name="driver-method-${bookingId}"]:checked`
@@ -7201,7 +7236,12 @@ async function downloadGuestBookingPDF() {
       if (!["cash", "card"].includes(method)) return;
     
       if (!confirm(
-        `Confirm ${driverMoney(b.balance_amount)} received by ${method.toUpperCase()}?`
+        `PAYMENT CONFIRMATION\n\n` +
+        `Guest: ${b.customer_name || b.booking_code}\n` +
+        `Amount: ${driverMoney(b.balance_amount)}\n` +
+        `Method: ${method.toUpperCase()}\n\n` +
+        `Confirm ONLY after receiving the payment.\n` +
+        `This action cannot be undone here.`
       )) return;
     
       driverActionBusy = true;
