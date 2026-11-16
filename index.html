@@ -7053,8 +7053,8 @@ async function downloadGuestBookingPDF() {
       }
     }
     
-    async function loadDriverBookings() {
-      if (driverLoading) {
+    async function loadDriverBookings(force = false) {
+      if (driverLoading || (driverActionBusy && !force)) {
         return;
       }
     
@@ -7246,7 +7246,7 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
-        await loadDriverBookings();
+        await loadDriverBookings(true);
         alert(
           "Check-in successfully registered.\n\n" +
           `Guest: ${b.customer_name || b.booking_code}\n` +
@@ -7316,7 +7316,7 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
-         await loadDriverBookings();
+         await loadDriverBookings(true);
         alert(
           "Payment successfully registered.\n\n" +
           `Guest: ${b.customer_name || b.booking_code}\n` +
