@@ -7163,7 +7163,6 @@ async function downloadGuestBookingPDF() {
 
       document.getElementById("driver-collections").innerHTML =
         [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
-        [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
           const isPaid = !!b.balance_paid_at ||
             Number(b.balance_amount || 0) <= 0;
     
@@ -7231,8 +7230,6 @@ async function downloadGuestBookingPDF() {
         alert("Invalid passenger count. Please contact Admin.");
         return;
       }
-
-      if (!confirm(
     
       if (!confirm(
         `CONFIRM CHECK IN\n\n` +
