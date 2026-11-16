@@ -5548,7 +5548,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     }
 
     if (!window.jspdf?.jsPDF) {
-      alert("PDF library unavailable. Please use SAVE / PRINT.");
+      alert("PDF library unavailable. Please reload the page and try again.");
       return;
     }
 
@@ -5562,16 +5562,33 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     const fullPhone = countryCode + " " + booking.phone;
 
     const doc = new window.jspdf.jsPDF();
-    let y = 18;
+
+    const issuedAt = new Date().toLocaleString("en-GB", {
+      timeZone: "Atlantic/Canary",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(105, 117, 133);
+    doc.text("Issued: " + issuedAt + " (Canary Islands)", 20, 13);
+
+    let y = 20;
 
     // Original Nomad Escape logo
     try {
+      
       const logo = new Image();
-      logo.src = new URL("logo.png", window.location.href).href;
 
       await new Promise((resolve, reject) => {
         logo.onload = resolve;
         logo.onerror = reject;
+        logo.src = new URL("logo.png", window.location.href).href;
       });
 
       const canvas = document.createElement("canvas");
@@ -5583,7 +5600,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
       const logoData = canvas.toDataURL("image/png");
 
-      const logoWidth = 115;
+      const logoWidth = 100;
       const logoHeight =
         logoWidth * logo.naturalHeight / logo.naturalWidth;
 
@@ -5610,14 +5627,18 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       y += 18;
     }
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(23, 40, 63);
-    doc.text("BOOKING RECEIPT", 105, y, {
-      align: "center"
-    });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(23, 40, 63);
+      doc.text("BOOKING RECEIPT", 105, y, {
+        align: "center"
+      });
 
-    y += 16;
+      doc.setDrawColor(49, 157, 162);
+      doc.setLineWidth(0.7);
+      doc.line(20, y + 6, 190, y + 6);
+
+      y += 14;
     
     const rows = [
       ["Booking Code", booking.bookingCode],
@@ -5633,39 +5654,58 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     ];
 
     rows.forEach(([label, value]) => {
-      const lines = doc.splitTextToSize(String(value ?? ""), 165);
-      const rowHeight = Math.max(15, lines.length * 6 + 9);
+      const isCommission = label === "Partner Commission";
+      const lines = doc.splitTextToSize(String(value ?? ""), 82);
+      const rowHeight = Math.max(13, lines.length * 5.5 + 7);
 
       if (y + rowHeight > 265) {
         doc.addPage();
         y = 22;
       }
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(105, 117, 133);
-      doc.text(label, 20, y);
+      if (isCommission) {
+        doc.setFillColor(232, 247, 247);
+        doc.roundedRect(17, y - 6, 176, rowHeight, 2, 2, "F");
+      }
+
+      doc.setFont("helvetica", isCommission ? "bold" : "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(95, 110, 125);
+      doc.text(label, 20, y + 2);
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      doc.setFontSize(isCommission ? 12 : 11);
       doc.setTextColor(23, 40, 63);
-      doc.text(lines, 20, y + 7);
+      doc.text(lines, 105, y + 2);
+
+      if (!isCommission) {
+        doc.setDrawColor(210, 231, 232);
+        doc.setLineWidth(0.3);
+        doc.line(20, y + rowHeight - 5, 190, y + rowHeight - 5);
+      }
 
       y += rowHeight;
     });
 
-    if (y + 20 > 275) {
+    if (y + 25 > 275) {
       doc.addPage();
       y = 22;
     }
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setDrawColor(49, 157, 162);
+    doc.setLineWidth(0.5);
+    doc.line(20, y + 2, 190, y + 2);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
     doc.setTextColor(23, 40, 63);
-    doc.text("Thank you for booking with Nomad Escape!", 105, y + 8, {
+    doc.text("Thank you for booking with Nomad Escape!", 105, y + 11, {
       align: "center"
     });
-    doc.text("We appreciate your partnership.", 105, y + 14, {
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("We appreciate your partnership.", 105, y + 18, {
       align: "center"
     });
 
