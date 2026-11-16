@@ -1295,9 +1295,41 @@
   <label style="display:flex; align-items:center; gap:10px;">
     <input id="edit-partner-active" type="checkbox"
            style="width:auto;" disabled>
-    Partner Active (managed separately)
+    Partner Active
   </label>
 
+  <div class="panel">
+    <h3>Partner Status</h3>
+
+    <button class="secondary"
+            id="edit-partner-toggle-active-button"
+            style="width:100%;"
+            onclick="toggleBusinessPartnerActive()"
+            disabled>
+      CHANGE STATUS
+    </button>
+  </div>
+
+  <div class="panel">
+    <h3>Change Personal Code</h3>
+
+    <label for="edit-partner-new-code">New Personal Code</label>
+    <input id="edit-partner-new-code"
+           type="text"
+           maxlength="6"
+           placeholder="PC1234"
+           autocapitalize="characters"
+           oninput="this.value=this.value.toUpperCase()">
+
+    <button class="secondary"
+            id="edit-partner-change-code-button"
+            style="width:100%; margin-top:12px;"
+            onclick="changeBusinessPartnerPC()"
+            disabled>
+      CHANGE PERSONAL CODE
+    </button>
+  </div>
+  
   <p id="edit-partner-message" role="status"></p>
 
   <div class="bottom-buttons">
@@ -5910,6 +5942,16 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
         get("edit-partner-active").checked = partner.active === true;
 
+        get("edit-partner-new-code").value = "";
+
+        get("edit-partner-change-code-button").disabled = false;
+
+        const statusButton = get("edit-partner-toggle-active-button");
+        statusButton.disabled = false;
+        statusButton.textContent = partner.active === true
+          ? "DEACTIVATE PARTNER"
+          : "ACTIVATE PARTNER";
+
         get("edit-partner-subtitle").textContent =
           "Editing: " + partner.partner_name;
 
@@ -5921,6 +5963,101 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         message.style.color = "#b42318";
         message.textContent =
           "Unable to load partner: " + error.message;
+      }
+    }
+  
+    async function changeBusinessPartnerPC() {
+      const get = id => document.getElementById(id);
+      const partnerId = get("edit-partner-id").value;
+      const currentCode = get("edit-partner-code").value;
+      const message = get("edit-partner-message");
+      const newCode = get("edit-partner-new-code").value.trim().toUpperCase();
+
+      if (!/^PC[0-9]{4}$/.test(newCode)) {
+        message.style.color = "#b42318";
+        message.textContent = "Use the format PC1234.";
+        return;
+      }
+
+      if (newCode === currentCode) {
+        message.textContent = "The new code must be different.";
+        return;
+      }
+
+      if (!confirm("Change this partner's personal code? Their existing device sessions will be revoked.")) {
+        return;
+      }
+
+      const button = get("edit-partner-change-code-button");
+      button.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.rpc(
+          "admin_change_business_partner_pc",
+          {
+            p_partner_id: partnerId,
+            p_new_personal_code: newCode
+          }
+        );
+
+        if (error) throw error;
+        if (data !== true) throw new Error("Code change not confirmed.");
+
+        get("edit-partner-code").value = newCode;
+        get("edit-partner-new-code").value = "";
+
+        message.style.color = "#167a80";
+        message.textContent =
+          "Personal code updated. Notify the partner of the new code.";
+
+      } catch (error) {
+        message.style.color = "#b42318";
+        message.textContent = "Unable to change code: " + error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function toggleBusinessPartnerActive() {
+      const get = id => document.getElementById(id);
+      const partnerId = get("edit-partner-id").value;
+      const checkbox = get("edit-partner-active");
+      const message = get("edit-partner-message");
+      const newStatus = !checkbox.checked;
+
+      if (!confirm(
+        newStatus
+          ? "Activate this business partner?"
+          : "Deactivate this business partner? Existing device sessions will be revoked."
+      )) return;
+
+      const button = get("edit-partner-toggle-active-button");
+      button.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.rpc(
+          "admin_set_business_partner_active",
+          {
+            p_partner_id: partnerId,
+            p_active: newStatus
+          }
+        );
+
+        if (error) throw error;
+        if (data !== true) throw new Error("Status change not confirmed.");
+
+        checkbox.checked = newStatus;
+        button.textContent = newStatus ? "DEACTIVATE PARTNER" : "ACTIVATE PARTNER";
+
+        message.style.color = "#167a80";
+        message.textContent =
+          newStatus ? "Partner activated." : "Partner deactivated.";
+
+      } catch (error) {
+        message.style.color = "#b42318";
+        message.textContent = "Unable to change status: " + error.message;
+      } finally {
+        button.disabled = false;
       }
     }
   
