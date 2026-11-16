@@ -1095,7 +1095,8 @@
   <p class="subtitle">Create a new Business Partner account.</p>
 
   <label for="partner-name">Partner Name *</label>
-  <input id="partner-name" type="text" maxlength="100">
+  <input id="partner-name" type="text" maxlength="100"
+       onblur="this.value=formatPartnerName(this.value)">
 
   <div style="display:flex; gap:10px; align-items:flex-start;">
     <div style="flex:1; min-width:0;">
@@ -1112,7 +1113,8 @@
         id="partner-contact-name-1"
         type="text"
         maxlength="100"
-        placeholder="Contact person">
+        placeholder="Contact person"
+        onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
@@ -1131,7 +1133,8 @@
         id="partner-contact-name-2"
         type="text"
         maxlength="100"
-        placeholder="Contact person">
+        placeholder="Contact person"
+        onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
@@ -1217,7 +1220,8 @@
   <input type="hidden" id="edit-partner-id">
 
   <label for="edit-partner-name">Partner Name *</label>
-  <input id="edit-partner-name" type="text" maxlength="100">
+  <input id="edit-partner-name" type="text" maxlength="100"
+       onblur="this.value=formatPartnerName(this.value)">
 
   <label for="edit-partner-code">Personal Code</label>
   <input id="edit-partner-code" type="text"
@@ -1230,7 +1234,8 @@
     </div>
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-contact-1">Contact Name 1 *</label>
-      <input id="edit-partner-contact-1" type="text" maxlength="100">
+      <input id="edit-partner-contact-1" type="text" maxlength="100"
+       onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
@@ -1241,7 +1246,8 @@
     </div>
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-contact-2">Contact Name 2</label>
-      <input id="edit-partner-contact-2" type="text" maxlength="100">
+      <input id="edit-partner-contact-2" type="text" maxlength="100"
+       onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
@@ -6116,7 +6122,18 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
        showScreen("screen-admin-business-passwords");
     }
-  
+
+    function formatPartnerName(value) {
+      return value
+        .trim()
+        .toLocaleLowerCase()
+        .replace(
+          /(^|[\s'-])(\p{L})/gu,
+          (match, separator, letter) =>
+            separator + letter.toLocaleUpperCase()
+        );
+    }
+
     function validateBusinessPartnerForm() {
       const name = document.getElementById("partner-name").value.trim();
       const whatsapp = document.getElementById("partner-whatsapp").value.trim();
