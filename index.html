@@ -5459,8 +5459,8 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       </div>
 
       <div style="display:flex; gap:10px; justify-content:center; margin-top:30px; flex-wrap:wrap;">
-        <button class="print-button" onclick="window.print()">
-          SAVE / PRINT
+        <button class="print-button" onclick="window.downloadReceiptPDF()">
+          DOWNLOAD PDF
         </button>
         <button class="print-button" onclick="window.shareReceiptOnDevice()">
           SHARE
@@ -5474,7 +5474,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   `);
 
   receiptWindow.document.close();
-
+  receiptWindow.downloadReceiptPDF = function () {
+    return shareBusinessReceipt(receiptWindow, true);
+  };
+    
   receiptWindow.shareReceiptOnDevice = function () {
     return shareBusinessReceipt(receiptWindow);
   };
@@ -5538,7 +5541,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   };
 }
   
-  async function shareBusinessReceipt(receiptWindow) {
+  async function shareBusinessReceipt(receiptWindow, downloadOnly = false) {
     if (!booking.businessAmountsVerified) {
       alert("Receipt financial details are unavailable.");
       return;
@@ -5559,22 +5562,63 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     const fullPhone = countryCode + " " + booking.phone;
 
     const doc = new window.jspdf.jsPDF();
-    let y = 22;
+    let y = 18;
+
+    // Original Nomad Escape logo
+    try {
+      const logo = new Image();
+      logo.src = new URL("logo.png", window.location.href).href;
+
+      await new Promise((resolve, reject) => {
+        logo.onload = resolve;
+        logo.onerror = reject;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = logo.naturalWidth;
+      canvas.height = logo.naturalHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(logo, 0, 0);
+
+      const logoData = canvas.toDataURL("image/png");
+
+      const logoWidth = 115;
+      const logoHeight =
+        logoWidth * logo.naturalHeight / logo.naturalWidth;
+
+      doc.addImage(
+        logoData,
+        "PNG",
+        (210 - logoWidth) / 2,
+        y,
+        logoWidth,
+        logoHeight
+      );
+
+      y += logoHeight + 12;
+
+    } catch (error) {
+      console.error("PDF logo unavailable:", error);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(19);
+      doc.text("NOMAD ESCAPE FUERTEVENTURA", 105, y, {
+        align: "center"
+      });
+
+      y += 18;
+    }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(19);
-    doc.text("NOMAD ESCAPE", 105, y, { align: "center" });
-
-    y += 8;
-    doc.setFontSize(10);
-    doc.text("FUERTEVENTURA", 105, y, { align: "center" });
-
-    y += 18;
     doc.setFontSize(16);
-    doc.text("BOOKING RECEIPT", 105, y, { align: "center" });
+    doc.setTextColor(23, 40, 63);
+    doc.text("BOOKING RECEIPT", 105, y, {
+      align: "center"
+    });
 
     y += 16;
-
+    
     const rows = [
       ["Booking Code", booking.bookingCode],
       ["Tour", booking.tour],
@@ -5629,6 +5673,11 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       String(booking.bookingCode || "Receipt")
         .replace(/[^a-zA-Z0-9_-]/g, "-") + ".pdf";
 
+    if (downloadOnly) {
+      doc.save(filename);
+      return;
+    }
+    
     const pdfBlob = doc.output("blob");
     const pdfFile = new File([pdfBlob], filename, {
       type: "application/pdf"
