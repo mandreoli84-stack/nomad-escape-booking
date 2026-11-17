@@ -7226,11 +7226,28 @@ async function downloadGuestBookingPDF() {
         }).join("") ||
         '<p class="helper">No payment records for this date.</p>';
     
+      const dropoffs = driverBookings
+        .filter(b => b.checked_in_at)
+        .sort((a, b) =>
+          String(a.destination || "").localeCompare(
+            String(b.destination || "")
+          )
+        );
+
       document.getElementById("driver-dropoffs").innerHTML =
-        '<p class="helper">' +
-        'Drop-off information will appear here once ' +
-        'destination data is connected to Supabase.' +
-        '</p>';
+        dropoffs.map(b => `
+          <div class="panel">
+            <strong>${driverEscape(b.destination || "Destination not specified")}</strong>
+            <div class="helper">
+              ${driverEscape(b.customer_name || "Guest")}
+              · ${Number(b.passengers)} passenger(s)
+            </div>
+            <div class="helper">
+              Booking: ${driverEscape(b.booking_code)}
+            </div>
+          </div>
+        `).join("") ||
+        '<p class="helper">No passengers on board yet.</p>';
     }
     
     async function driverCheckIn(bookingId) {
