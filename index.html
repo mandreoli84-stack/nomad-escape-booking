@@ -7886,11 +7886,42 @@ async function downloadGuestBookingPDF() {
           `Card balances: ${money(data.card_balances)}\n` +
           `Expected deposits: ${money(data.expected_deposits)}\n` +
           `Balances not recorded as paid: ${money(data.outstanding_balances)}`;
+                
+        const { data: partners, error: partnersError } =
+          await supabaseClient.rpc("admin_partner_commissions", {
+            p_period: period,
+            p_reference_date: date
+          });
 
-        get("statistics-partners").textContent =
+        let partnerDetails =
           `Recorded commissions: ${money(data.recorded_commissions)}\n` +
-          `Bookings without commission data: ${data.missing_commissions || 0}\n` +
-          `Individual partner breakdown: coming next`;
+          `Bookings without commission data: ${data.missing_commissions || 0}`;
+
+        if (partnersError) {
+          console.error("Partner commissions:", partnersError);
+          partnerDetails += "\nUnable to load partner breakdown.";
+        } else if (Array.isArray(partners) && partners.length > 0) {
+          partnerDetails += "\n\nBREAKDOWN BY PARTNER";
+
+          partners.forEach(partner => {
+            const commission =
+              partner.recorded_commissions === null
+                ? "Not recorded"
+                : money(partner.recorded_commissions);
+
+            partnerDetails +=
+              `\n\n${partner.partner_name}` +
+              `\nBookings: ${partner.bookings}` +
+              `\nPassengers: ${partner.passengers}` +
+              `\nBooking value: ${money(partner.booking_value)}` +
+              `\nCommissions: ${commission}` +
+              `\nMissing commission records: ${partner.missing_commissions}`;
+          });
+        } else {
+          partnerDetails += "\n\nNo Business bookings for this period.";
+        }
+
+        get("statistics-partners").textContent = partnerDetails;
 
         detailIds.forEach(id => {
           get(id).style.whiteSpace = "pre-line";
