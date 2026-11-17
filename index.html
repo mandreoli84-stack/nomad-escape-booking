@@ -1087,7 +1087,7 @@
     </form>
   </dialog>
 
-  <dialog id="driver-payment-choice-dialog"
+    <dialog id="driver-payment-choice-dialog"
           style="border:1px solid #d9e0e3;
                  border-radius:12px;
                  padding:24px;
@@ -1095,30 +1095,53 @@
                  max-width:390px;
                  color:#10233b;
                  box-shadow:0 12px 40px rgba(0,0,0,.2);">
-
+  
     <h3 style="text-align:center;margin:0 0 16px;">
       CHECK-IN COMPLETED
     </h3>
-
+  
     <p id="driver-payment-choice-details"
        style="text-align:center;font-size:16px;
-              line-height:1.6;"></p>
-
+              white-space:pre-line;line-height:1.6;"></p>
+  
+    <div style="display:flex;justify-content:center;
+                gap:28px;margin:20px 0;">
+  
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input id="driver-popup-cash"
+               type="radio"
+               name="driver-popup-method"
+               value="cash"
+               style="width:auto;"
+               checked>
+        Cash
+      </label>
+  
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="radio"
+               name="driver-popup-method"
+               value="card"
+               style="width:auto;">
+        Card
+      </label>
+  
+    </div>
+  
     <form method="dialog"
           style="display:flex;flex-direction:column;gap:12px;">
-
+  
       <button class="primary" type="submit" value="now">
-        PAY NOW
+        CONFIRM PAYMENT RECEIVED
       </button>
-
+  
       <button class="secondary" type="submit" value="later">
         PAY LATER
       </button>
-
+  
       <button class="secondary" type="submit" value="cancel">
         Cancel
       </button>
-
+  
     </form>
   </dialog>
 
@@ -7271,8 +7294,11 @@ async function downloadGuestBookingPDF() {
     
               <div style="margin-top:10px;line-height:1.7;">
                 <div>👥 <strong>${Number(b.passengers || 0)} PAX</strong></div>
-                <div>📍 Pickup: ${pickup}</div>
-                <div>🏁 Drop-off: ${destination}</div>
+                ${paid ? `
+                  <div>🏁 Drop-off: ${destination}</div>
+                ` : `
+                  <div>📍 Pickup: ${pickup}</div>
+                `}
     
                 ${!checkedIn ? `
                   <div>💶 <strong>${
@@ -7372,108 +7398,64 @@ async function downloadGuestBookingPDF() {
 
     async function driverConfirmDropoff(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
-
+    
       if (!b || !b.checked_in_at || b.dropped_off_at ||
           driverActionBusy || driverLoading) return;
-
-      const passengers = Number(b.passengers);
-
-      if (!Number.isInteger(passengers) || passengers < 1) {
-        alert("Invalid passenger count. Please contact Admin.");
+    
+      if (!b.balance_paid_at && !(b.balance_amount !== null &&
+          Number(b.balance_amount) === 0)) {
+        document.getElementById("driver-message").textContent =
+          "Payment is still pending. Collect payment before drop-off.";
         return;
       }
-
+    
+      const passengers = Number(b.passengers);
+    
+      if (!Number.isInteger(passengers) || passengers < 1) {
+        document.getElementById("driver-message").textContent =
+          "Invalid passenger count. Please contact Admin.";
+        return;
+      }
+    
       const approved = await driverConfirmAction(
         "CONFIRM DROP-OFF",
-        `Location: ${b.pickup_location || "Not specified"}\n` +
-        `Passengers: ${passengers}\n` +
-        `Guest: ${b.customer_name || b.booking_code}`
+        `Guest: ${b.customer_name || b.booking_code}\n` +
+        `Passengers: ${passengers}\n\n` +
+        "Confirm that all passengers have been dropped off?"
       );
-
+    
       if (!approved || driverActionBusy || driverLoading) return;
-
+    
       driverActionBusy = true;
-
+    
       try {
         const { error } = await supabaseClient.rpc(
           "admin_driver_confirm_dropoff",
           { p_booking_id: bookingId }
         );
-
+    
         if (error) throw error;
-
+    
         const refreshed = await loadDriverBookings(true);
-
+    
         document.getElementById("driver-message").textContent =
           refreshed
             ? "Drop-off successfully registered."
             : "Drop-off registered. Press REFRESH to update the list.";
-
-      } catch (e) {
-        document.getElementById("driver-message").textContent =
-          "Drop-off failed: " + e.message;
-        alert("Drop-off failed: " + e.message);
-      } finally {
-        driverActionBusy = false;
-      }
-    }
-  
-    async function driverCheckIn(bookingId) {
-      const b = driverBookings.find(x => x.booking_id === bookingId);
-      if (!b || b.checked_in_at || driverActionBusy || driverLoading) return;
-
-      const passengers = Number(b.passengers);
-
-      if (!Number.isInteger(passengers) || passengers < 1) {
-        alert("Invalid passenger count. Please contact Admin.");
-        return;
-      }
-
-      const approved = await driverConfirmAction(
-        "CONFIRM CHECK IN",
-        `Guest: ${b.customer_name || b.booking_code}\n` +
-        `Passengers: ${passengers}\n` +
-        `Pickup: ${b.pickup_location || "Not specified"}`
-      );
-
-      if (!approved || driverActionBusy || driverLoading) return;
-
-      driverActionBusy = true;
-
-      try {
-        const { error } = await supabaseClient.rpc(
-          "admin_driver_check_in",
-          { p_booking_id: bookingId }
-        );
-
-        if (error) throw error;
-
-        const refreshed = await loadDriverBookings(true);
-
-        document.getElementById("driver-message").textContent =
-          refreshed
-            ? "Check-in successfully registered."
-            : "Check-in registered. Press REFRESH to update the list.";
-        
-        if (
-          refreshed &&
-          Number(b.balance_amount) > 0 &&
-          !b.balance_paid_at &&
-          typeof driverChoosePayment === "function"
-        ) {
-          await driverChoosePayment(bookingId);
-        }
-
-      } catch (e) {
-        document.getElementById("driver-message").textContent =
-          "Check-in failed: " + e.message;
-        alert("Check-in failed: " + e.message);
-      } finally {
-        driverActionBusy = false;
-      }
-    }
     
-    async function driverPayNow(bookingId) {
+      } catch (e) {
+        const message = String(e?.message || "");
+    
+        document.getElementById("driver-message").textContent =
+          message.includes("DROP_OFF_NOT_ALLOWED")
+            ? "Drop-off not allowed. Check payment status or refresh the booking."
+            : "Unable to confirm drop-off. Please refresh and try again.";
+      } finally {
+        driverActionBusy = false;
+      }
+    }
+
+    async function driverPayNow(bookingId, selectedMethod = null) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || driverActionBusy || driverLoading) return;
     
@@ -7490,7 +7472,7 @@ async function downloadGuestBookingPDF() {
         return;
       }
     
-      const method = document.querySelector(
+      const method = selectedMethod || document.querySelector(
         `input[name="driver-method-${bookingId}"]:checked`
       )?.value;
     
@@ -7542,7 +7524,7 @@ async function downloadGuestBookingPDF() {
         driverActionBusy = false;
       }
     }
-    
+       
     async function driverChoosePayment(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
     
@@ -7557,8 +7539,10 @@ async function downloadGuestBookingPDF() {
         "driver-payment-choice-details"
       ).textContent =
         `Guest: ${b.customer_name || b.booking_code}\n` +
-        `Balance due: ${driverMoney(b.balance_amount)}\n\n` +
-        "Would you like to collect payment now or later?";
+        `Balance due: ${driverMoney(b.balance_amount)}`;
+    
+      const cash = document.getElementById("driver-popup-cash");
+      cash.checked = true;
     
       dialog.returnValue = "";
     
@@ -7566,24 +7550,16 @@ async function downloadGuestBookingPDF() {
         dialog.addEventListener("close", function onClose() {
           resolve(dialog.returnValue);
         }, { once: true });
+    
         dialog.showModal();
       });
     
       if (choice === "now") {
-        const methodInput = document.querySelector(
-          `input[name="driver-method-${bookingId}"]`
-        );
+        const method = document.querySelector(
+          'input[name="driver-popup-method"]:checked'
+        )?.value;
     
-        if (methodInput) {
-          methodInput.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-          });
-          methodInput.focus({ preventScroll: true });
-        }
-    
-        document.getElementById("driver-message").textContent =
-          "Select Cash or Card, then confirm payment received.";
+        await driverPayNow(bookingId, method);
       }
     
       if (choice === "later") {
