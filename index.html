@@ -7054,9 +7054,13 @@ async function downloadGuestBookingPDF() {
     }
     
     async function loadDriverBookings(force = false) {
-      if (driverLoading || (driverActionBusy && !force)) {
-        return;
+      if (driverLoading) {
+        if (!force) return false;
+        while (driverLoading) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
+      if (driverActionBusy && !force) return false;
     
       const date = document.getElementById("driver-date").value;
       const message = document.getElementById("driver-message");
@@ -7086,11 +7090,13 @@ async function downloadGuestBookingPDF() {
         driverBookings = data;
         renderDriverDashboard();
         message.textContent = "";
+        return true;
       } catch (e) {
         message.textContent =
           "Unable to load bookings. Check your connection " +
           "and Admin session, then press REFRESH. " +
           "Details: " + e.message;
+        return false;
       } finally {
         document.getElementById("driver-date").disabled = false;
         driverLoading = false;
@@ -7245,7 +7251,11 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
-        await loadDriverBookings(true);
+        const refreshed = await loadDriverBookings(true);
+        if (!refreshed) {
+          document.getElementById("driver-message").textContent =
+            "Check-in registered, but bookings could not be refreshed. Press REFRESH.";
+        }
         alert(
           "Check-in successfully registered.\n\n" +
           `Guest: ${b.customer_name || b.booking_code}\n` +
@@ -7318,7 +7328,11 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
-         await loadDriverBookings(true);
+        const refreshed = await loadDriverBookings(true);
+        if (!refreshed) {
+          document.getElementById("driver-message").textContent =
+            "Payment registered, but bookings could not be refreshed. Press REFRESH.";
+        }
         alert(
           "Payment successfully registered.\n\n" +
           `Guest: ${b.customer_name || b.booking_code}\n` +
