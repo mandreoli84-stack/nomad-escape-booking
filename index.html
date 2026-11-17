@@ -7095,7 +7095,9 @@ async function downloadGuestBookingPDF() {
 
         driverBookings = data;
         renderDriverDashboard();
-        message.textContent = "";
+        message.textContent = data.length === 0
+          ? "No bookings found for the selected date."
+          : "Bookings updated successfully.";
         return true;
       } catch (e) {
         message.textContent =
@@ -7258,10 +7260,10 @@ async function downloadGuestBookingPDF() {
     
         if (error) throw error;
         const refreshed = await loadDriverBookings(true);
-        if (!refreshed) {
-          document.getElementById("driver-message").textContent =
-            "Check-in registered, but bookings could not be refreshed. Press REFRESH.";
-        }
+        document.getElementById("driver-message").textContent =
+          refreshed
+            ? "Check-in successfully registered."
+            : "Check-in registered successfully. Refresh failed. Press REFRESH.";
         alert(
           "Check-in successfully registered.\n\n" +
           `Guest: ${b.customer_name || b.booking_code}\n` +
