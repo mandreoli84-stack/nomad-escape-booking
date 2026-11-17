@@ -7359,7 +7359,7 @@ async function downloadGuestBookingPDF() {
     
               <div style="margin-top:10px;line-height:1.7;">
                 <div>👥 <strong>${Number(b.passengers || 0)} PAX</strong></div>
-                ${paid ? `
+                ${droppedOff || (checkedIn && paid) ? `
                   <div>🏁 Drop-off: ${destination}</div>
                 ` : `
                   <div>📍 Pickup: ${pickup}</div>
@@ -7566,7 +7566,8 @@ async function downloadGuestBookingPDF() {
       const approved = await driverConfirmAction(
         "CONFIRM DROP-OFF",
         `Guest: ${b.customer_name || b.booking_code}\n` +
-        `Passengers: ${passengers}\n\n` +
+        `Passengers: ${passengers}\n` +
+        `Destination: ${b.destination || "Not specified"}\n\n` +
         "Confirm that all passengers have been dropped off?"
       );
     
