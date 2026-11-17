@@ -7067,6 +7067,7 @@ async function downloadGuestBookingPDF() {
       }
     
       driverLoading = true;
+      document.getElementById("driver-date").disabled = true;
       message.textContent =
         "Loading bookings for " + date + ". Please wait...";
     
@@ -7086,13 +7087,12 @@ async function downloadGuestBookingPDF() {
         renderDriverDashboard();
         message.textContent = "";
       } catch (e) {
-        driverBookings = [];
-        renderDriverDashboard();
         message.textContent =
           "Unable to load bookings. Check your connection " +
           "and Admin session, then press REFRESH. " +
           "Details: " + e.message;
       } finally {
+        document.getElementById("driver-date").disabled = false;
         driverLoading = false;
       }
     }
@@ -7210,7 +7210,7 @@ async function downloadGuestBookingPDF() {
             </div>
           `;
         }).join("") ||
-        '<p class="helper">No bookings.</p>';
+        '<p class="helper">No payment records for this date.</p>';
     
       document.getElementById("driver-dropoffs").innerHTML =
         '<p class="helper">' +
@@ -7221,8 +7221,7 @@ async function downloadGuestBookingPDF() {
     
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
-      if (!b || b.checked_in_at || driverActionBusy) return;
-
+      if (!b || b.checked_in_at || driverActionBusy || driverLoading) return;
       const passengers = Number(b.passengers);
 
       if (!Number.isInteger(passengers) || passengers < 1) {
@@ -7252,7 +7251,10 @@ async function downloadGuestBookingPDF() {
           `Guest: ${b.customer_name || b.booking_code}\n` +
           `Passengers: ${passengers}`
         );
+
       } catch (e) {
+        document.getElementById("driver-message").textContent =
+          "Check-in failed: " + e.message;
         alert("Check-in failed: " + e.message);
       } finally {
         driverActionBusy = false;
@@ -7261,7 +7263,7 @@ async function downloadGuestBookingPDF() {
     
     async function driverPayNow(bookingId) {
        const b = driverBookings.find(x => x.booking_id === bookingId);
-      if (!b || driverActionBusy) return;
+      if (!b || driverActionBusy || driverLoading) return;
 
       if (!b.booking_code) {
         alert("Missing booking code. Please contact Admin.");
