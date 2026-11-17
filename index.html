@@ -7543,44 +7543,79 @@ async function downloadGuestBookingPDF() {
         driverActionBusy = false;
       }
     }
-
+    
     async function driverChoosePayment(bookingId) {
       const b = driverBookings.find(
         x => x.booking_id === bookingId
       );
-    
+
       if (!b || b.balance_paid_at ||
           Number(b.balance_amount) <= 0) return;
-    
+
       const dialog = document.getElementById(
         "driver-payment-choice-dialog"
       );
-    
+
       document.getElementById(
         "driver-payment-choice-details"
       ).textContent =
         `Guest: ${b.customer_name || b.booking_code}\n` +
         `Balance due: ${driverMoney(b.balance_amount)}\n\n` +
         "Would you like to collect payment now or later?";
-    
+
+      dialog.returnValue = "";
+
       const choice = await new Promise(resolve => {
         dialog.addEventListener("close", function onClose() {
           resolve(dialog.returnValue);
         }, { once: true });
-    
+
         dialog.showModal();
       });
-    
+
       if (choice === "now") {
+        const approved = await driverConfirmAction(
+          "PAY NOW",
+          `Guest: ${b.customer_name || b.booking_code}\n` +
+          `Balance due: ${driverMoney(b.balance_amount)}\n\n` +
+          "Proceed to Cash or Card selection?"
+        );
+
+        if (!approved) return;
+
+        const methodInput = document.querySelector(
+          `input[name="driver-method-${bookingId}"]`
+        );
+
+        if (methodInput) {
+          methodInput.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+          methodInput.focus({ preventScroll: true });
+        }
+
         document.getElementById("driver-message").textContent =
-          "PAY NOW selected. Choose Cash or Card to register payment.";
+          "Select Cash or Card, then confirm payment received.";
+
+        return;
       }
-    
+
       if (choice === "later") {
+        const approved = await driverConfirmAction(
+          "CONFIRM PAY LATER",
+          `Guest: ${b.customer_name || b.booking_code}\n` +
+          `Balance due: ${driverMoney(b.balance_amount)}\n\n` +
+          "Leave this balance pending for later collection?"
+        );
+
+        if (!approved) return;
+
         document.getElementById("driver-message").textContent =
-          "PAY LATER selected. Payment remains pending.";
+          "PAY LATER confirmed. Payment remains pending.";
       }
     }
+
   
 </script>
 
