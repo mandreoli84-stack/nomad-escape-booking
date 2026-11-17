@@ -7224,7 +7224,11 @@ async function downloadGuestBookingPDF() {
         `${pax(bookings)} passengers total`;
     
       const isPaid = b =>
-        !!b.balance_paid_at || Number(b.balance_amount) === 0;
+        !!b.balance_paid_at ||
+        (b.balance_amount !== null &&
+         b.balance_amount !== undefined &&
+         b.balance_amount !== "" &&
+         Number(b.balance_amount) === 0);
     
       const stage = b => {
         if (b.dropped_off_at) return 3;
@@ -7394,6 +7398,71 @@ async function downloadGuestBookingPDF() {
 
         dialog.showModal();
       });
+    }
+
+    async function driverCheckIn(bookingId) {
+      const b = driverBookings.find(x => x.booking_id === bookingId);
+    
+      if (!b || b.checked_in_at || driverActionBusy || driverLoading) return;
+    
+      const passengers = Number(b.passengers);
+    
+      if (!Number.isInteger(passengers) || passengers < 1) {
+        document.getElementById("driver-message").textContent =
+          "Invalid passenger count. Please contact Admin.";
+        return;
+      }
+    
+      const approved = await driverConfirmAction(
+        "CONFIRM CHECK IN",
+        `Guest: ${b.customer_name || b.booking_code}\n` +
+        `Passengers: ${passengers}\n` +
+        `Pickup: ${b.pickup_location || "Not specified"}`
+      );
+    
+      if (!approved || driverActionBusy || driverLoading) return;
+    
+      driverActionBusy = true;
+      let refreshed = false;
+    
+      try {
+        const { error } = await supabaseClient.rpc(
+          "admin_driver_check_in",
+          { p_booking_id: bookingId }
+        );
+    
+        if (error) throw error;
+    
+        refreshed = await loadDriverBookings(true);
+    
+        document.getElementById("driver-message").textContent =
+          refreshed
+            ? "Check-in successfully registered."
+            : "Check-in registered. Press REFRESH to update the list.";
+    
+      } catch (e) {
+        document.getElementById("driver-message").textContent =
+          "Check-in failed: " + e.message;
+        return;
+      } finally {
+        driverActionBusy = false;
+      }
+    
+      if (refreshed) {
+        const updated = driverBookings.find(
+          x => x.booking_id === bookingId
+        );
+    
+        if (
+          updated &&
+          updated.checked_in_at &&
+          !updated.balance_paid_at &&
+          updated.balance_amount !== null &&
+          Number(updated.balance_amount) > 0
+        ) {
+          await driverChoosePayment(bookingId);
+        }
+      }
     }
 
     async function driverConfirmDropoff(bookingId) {
