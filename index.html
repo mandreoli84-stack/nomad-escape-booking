@@ -1040,7 +1040,8 @@
     <div class="review-label">PASSENGERS ON BOARD</div>
     <div id="driver-onboard-count"
          style="font-size:36px;font-weight:700">0</div>
-    <div id="driver-remaining-count" class="helper">
+    <div id="driver-remaining-count" class="helper"
+     style="font-size:12px;">
       0 passengers remaining
     </div>
   </div>
@@ -1156,6 +1157,29 @@
             onclick="loadDriverBookings()">
       REFRESH
     </button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;
+              gap:10px;margin-top:20px;">
+
+    <div class="panel" style="margin:0;padding:14px 8px;
+                              text-align:center;">
+      <div style="font-size:11px;color:#728093;
+                  font-weight:700;">BALANCE DUE</div>
+      <div id="driver-balance-due"
+           style="font-size:26px;font-weight:700;
+                  color:#e68a00;margin-top:8px;">€0.00</div>
+    </div>
+  
+    <div class="panel" style="margin:0;padding:14px 8px;
+                              text-align:center;">
+      <div style="font-size:11px;color:#728093;
+                  font-weight:700;">BALANCE COLLECTED</div>
+      <div id="driver-balance-collected"
+           style="font-size:26px;font-weight:700;
+                  color:#16834a;margin-top:8px;">€0.00</div>
+    </div>
+  
   </div>
 
 </section>
@@ -7230,6 +7254,34 @@ async function downloadGuestBookingPDF() {
          b.balance_amount !== "" &&
          Number(b.balance_amount) === 0);
     
+      const balanceTotals = bookings.reduce((totals, b) => {
+        const raw = b.balance_amount;
+      
+        if (raw === null || raw === undefined || raw === "") {
+          return totals;
+        }
+      
+        const amount = Number(raw);
+      
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return totals;
+        }
+      
+        if (b.balance_paid_at) {
+          totals.collected += amount;
+        } else {
+          totals.due += amount;
+        }
+      
+        return totals;
+      }, { due: 0, collected: 0 });
+      
+      document.getElementById("driver-balance-due").textContent =
+        driverMoney(balanceTotals.due);
+      
+      document.getElementById("driver-balance-collected").textContent =
+        driverMoney(balanceTotals.collected);
+
       const stage = b => {
         if (b.dropped_off_at) return 3;
         if (!b.checked_in_at) return 0;
@@ -7356,7 +7408,21 @@ async function downloadGuestBookingPDF() {
                   CONFIRM PAYMENT RECEIVED
                 </button>
               ` : ""}
-    
+              
+              ${checkedIn && !droppedOff ? `
+                <div style="color:#16834a;font-weight:700;
+                            font-size:13px;margin-top:8px;">
+                  ✓ CHECK-IN COMPLETED
+                </div>
+              ` : ""}
+              
+              ${paid && !droppedOff ? `
+                <div style="color:#16834a;font-weight:700;
+                            font-size:13px;margin-top:8px;">
+                  ✓ PAYMENT COMPLETED
+                </div>
+              ` : ""}
+
               ${checkedIn && paid && !droppedOff ? `
                 <button class="secondary" type="button"
                         style="width:100%;margin-top:12px;"
@@ -7369,6 +7435,8 @@ async function downloadGuestBookingPDF() {
                 <div style="color:#16834a;font-weight:700;
                             font-size:13px;margin-top:8px;">
                   ✓ DROP-OFF COMPLETED
+                  <div>✓ CHECK-IN COMPLETED</div>
+                  ${paid ? `<div>✓ PAYMENT COMPLETED</div>` : ""}
                 </div>
                 ${!paid ? `
                   <div style="color:#c66a00;font-weight:700;">
