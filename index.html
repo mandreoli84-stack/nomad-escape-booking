@@ -6605,6 +6605,7 @@ async function downloadGuestBookingPDF() {
       
     } catch (error) {
       console.error("Save Business Partner:", error);
+      message.style.color = "#b42318";
       message.textContent = "Unable to save changes: " + error.message;
 
     } finally {
