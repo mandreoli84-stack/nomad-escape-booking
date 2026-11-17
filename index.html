@@ -1039,10 +1039,12 @@
   <div class="panel" style="text-align:center">
     <div class="review-label">PASSENGERS ON BOARD</div>
     <div id="driver-onboard-count"
-         style="font-size:36px;font-weight:700">0</div>
+         style="font-size:36px;font-weight:700;
+                color:#16834a;">0</div>
     <div id="driver-remaining-count" class="helper"
-     style="font-size:12px;">
-      0 passengers remaining
+         style="font-size:13px;font-weight:600;
+                line-height:1.8;">
+      0 waiting · 0 completed · 0 total
     </div>
   </div>
 
@@ -1163,23 +1165,27 @@
               gap:10px;margin-top:20px;">
 
     <div class="panel" style="margin:0;padding:14px 8px;
-                              text-align:center;">
-      <div style="font-size:11px;color:#728093;
+                              text-align:center;
+                              background:#fff3df;
+                              border:1px solid #f0cb8c;">
+      <div style="font-size:11px;color:#a65c00;
                   font-weight:700;">BALANCE DUE</div>
       <div id="driver-balance-due"
            style="font-size:26px;font-weight:700;
-                  color:#e68a00;margin-top:8px;">€0.00</div>
+                  color:#c66a00;margin-top:8px;">€0.00</div>
     </div>
-  
+
     <div class="panel" style="margin:0;padding:14px 8px;
-                              text-align:center;">
-      <div style="font-size:11px;color:#728093;
+                              text-align:center;
+                              background:#e8f6ed;
+                              border:1px solid #a6d8b7;">
+      <div style="font-size:11px;color:#16834a;
                   font-weight:700;">BALANCE COLLECTED</div>
       <div id="driver-balance-collected"
            style="font-size:26px;font-weight:700;
                   color:#16834a;margin-top:8px;">€0.00</div>
     </div>
-  
+
   </div>
 
 </section>
@@ -7243,9 +7249,12 @@ async function downloadGuestBookingPDF() {
       document.getElementById("driver-onboard-count").textContent =
         pax(onboard);
     
+      const completed = bookings.filter(b => !!b.dropped_off_at);
+
       document.getElementById("driver-remaining-count").textContent =
-        `${pax(remaining)} passengers remaining · ` +
-        `${pax(bookings)} passengers total`;
+        `${pax(remaining)} waiting · ` +
+        `${pax(completed)} completed · ` +
+        `${pax(bookings)} total`;
     
       const isPaid = b =>
         !!b.balance_paid_at ||
