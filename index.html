@@ -1215,6 +1215,7 @@
 
   <label for="statistics-period">Reporting Period</label>
   <select id="statistics-period"
+          onchange="loadAdminStatistics()"
           style="width:100%;padding:13px;">
     <option value="day">Daily</option>
     <option value="month" selected>Monthly</option>
@@ -1222,7 +1223,9 @@
   </select>
 
   <label for="statistics-date">Reference Date</label>
-  <input id="statistics-date" type="date">
+  <input id="statistics-date"
+         type="date"
+         onchange="loadAdminStatistics()">
 
   <div style="display:grid;
               grid-template-columns:1fr 1fr;
@@ -1276,8 +1279,13 @@
             onclick="showScreen('screen-admin')">
       BACK
     </button>
-  </div>
 
+    <button class="primary"
+            onclick="loadAdminStatistics()">
+      REFRESH
+    </button>
+  </div>
+  
 </section>
 
 <!-- ADMIN - MANAGE BUSINESS PARTNERS -->
@@ -7805,7 +7813,104 @@ async function downloadGuestBookingPDF() {
           "Payment remains pending for later collection.";
       }
     }
-      
+        
+    async function loadAdminStatistics() {
+      const get = id => document.getElementById(id);
+      const money = value =>
+        "€" + Number(value || 0).toFixed(2);
+
+      const amountIds = [
+        "statistics-booking-value",
+        "statistics-collected",
+        "statistics-outstanding",
+        "statistics-commissions"
+      ];
+
+      const detailIds = [
+        "statistics-bookings",
+        "statistics-payments",
+        "statistics-partners"
+      ];
+
+      const message = get("statistics-message");
+
+      amountIds.concat(detailIds).forEach(id => {
+        get(id).textContent = "—";
+      });
+
+      message.textContent = "Loading accounting data...";
+
+      const period = get("statistics-period").value;
+      const date = get("statistics-date").value;
+
+      if (!date) {
+        message.textContent = "Please select a date.";
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient.rpc(
+          "admin_accounting_summary",
+          {
+            p_period: period,
+            p_reference_date: date
+          }
+        );
+
+        if (error) throw error;
+        if (!data) throw new Error("No accounting data returned.");
+
+        get("statistics-booking-value").textContent =
+          money(data.booking_value);
+
+        get("statistics-collected").textContent =
+          money(
+            Number(data.collected_cash_deposits || 0) +
+            Number(data.collected_balances || 0)
+          );
+
+        get("statistics-outstanding").textContent =
+          money(data.outstanding_balances);
+
+        get("statistics-commissions").textContent =
+          money(data.recorded_commissions);
+
+        get("statistics-bookings").textContent =
+          `Total bookings: ${data.bookings || 0}\n` +
+          `Passengers: ${data.passengers || 0}\n` +
+          `Guest: ${data.guest_bookings || 0}\n` +
+          `Business: ${data.business_bookings || 0}\n` +
+          `Assisted: ${data.assisted_bookings || 0}`;
+
+        get("statistics-payments").textContent =
+          `Cash deposits: ${money(data.collected_cash_deposits)}\n` +
+          `Cash balances: ${money(data.cash_balances)}\n` +
+          `Card balances: ${money(data.card_balances)}\n` +
+          `Expected deposits: ${money(data.expected_deposits)}\n` +
+          `Balances not recorded as paid: ${money(data.outstanding_balances)}`;
+
+        get("statistics-partners").textContent =
+          `Recorded commissions: ${money(data.recorded_commissions)}\n` +
+          `Bookings without commission data: ${data.missing_commissions || 0}\n` +
+          `Individual partner breakdown: coming next`;
+
+        detailIds.forEach(id => {
+          get(id).style.whiteSpace = "pre-line";
+          get(id).style.lineHeight = "1.9";
+        });
+
+        message.textContent =
+          "Reporting by tour date (Atlantic/Canary). " +
+          "Collected amounts are recorded payments, not bank reconciliation.";
+
+      } catch (error) {
+        console.error("Accounting:", error);
+        message.textContent =
+          "Unable to load accounting data: " + error.message;
+      }
+    }
+
+    async function openAdminStatistics() {
     async function openAdminStatistics() {
       try {
         const { data: { user }, error: authError } =
@@ -7823,6 +7928,19 @@ async function downloadGuestBookingPDF() {
         }
   
         showScreen("screen-admin-statistics");
+
+        const dateInput = document.getElementById("statistics-date");
+
+        if (!dateInput.value) {
+          dateInput.value = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Atlantic/Canary",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          }).format(new Date());
+        }
+
+        await loadAdminStatistics();
       } catch (e) {
         alert(e.message || "Unable to open statistics.");
       }
