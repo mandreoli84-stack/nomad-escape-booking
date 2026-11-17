@@ -7349,6 +7349,8 @@ async function downloadGuestBookingPDF() {
           `Method: ${method.toUpperCase()}`
         );
       } catch (e) {
+        document.getElementById("driver-message").textContent =
+          "Payment registration failed: " + e.message;
         alert("Payment registration failed: " + e.message);
       } finally {
         driverActionBusy = false;
