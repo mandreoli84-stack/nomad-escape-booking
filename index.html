@@ -1010,6 +1010,16 @@
     </div>
   </div>
   
+  <div class="tour-card" onclick="openAdminStatistics()">
+    <div class="tour-info">
+      <div class="tour-title">Statistics & Accounting</div>
+      <div class="tour-meta">
+        Revenue, payments, bookings and partner commissions
+      </div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+
   <div class="bottom-buttons">
     <button class="secondary" onclick="adminLogout()">
       LOGOUT
@@ -1189,6 +1199,87 @@
   </div>
 
 </section>
+<!-- ADMIN - STATISTICS & ACCOUNTING -->
+<section class="screen" id="screen-admin-statistics">
+
+  <div class="logo">
+    <img src="logo.png"
+         alt="Nomad Escape Fuerteventura"
+         class="logo-image">
+  </div>
+
+  <h1>Statistics & Accounting</h1>
+  <p class="subtitle">
+    Bookings, revenue, payments and commissions.
+  </p>
+
+  <label for="statistics-period">Reporting Period</label>
+  <select id="statistics-period"
+          style="width:100%;padding:13px;">
+    <option value="day">Daily</option>
+    <option value="month" selected>Monthly</option>
+    <option value="year">Yearly</option>
+  </select>
+
+  <label for="statistics-date">Reference Date</label>
+  <input id="statistics-date" type="date">
+
+  <div style="display:grid;
+              grid-template-columns:1fr 1fr;
+              gap:10px;margin-top:20px;">
+
+    <div class="panel" style="margin:0;text-align:center;">
+      <div class="review-label">BOOKING VALUE</div>
+      <strong id="statistics-booking-value">—</strong>
+    </div>
+
+    <div class="panel" style="margin:0;text-align:center;">
+      <div class="review-label">COLLECTED</div>
+      <strong id="statistics-collected">—</strong>
+    </div>
+
+    <div class="panel" style="margin:0;text-align:center;">
+      <div class="review-label">BALANCE OUTSTANDING</div>
+      <strong id="statistics-outstanding">—</strong>
+    </div>
+
+    <div class="panel" style="margin:0;text-align:center;">
+      <div class="review-label">PARTNER COMMISSIONS</div>
+      <strong id="statistics-commissions">—</strong>
+    </div>
+
+  </div>
+
+  <div class="panel">
+    <h3>Bookings Overview</h3>
+    <div id="statistics-bookings">—</div>
+  </div>
+
+  <div class="panel">
+    <h3>Payment Breakdown</h3>
+    <div id="statistics-payments">—</div>
+  </div>
+
+  <div class="panel">
+    <h3>Partner Commissions</h3>
+    <div id="statistics-partners">—</div>
+  </div>
+
+  <p id="statistics-message"
+     role="status"
+     class="helper">
+    Accounting data connection pending.
+  </p>
+
+  <div class="bottom-buttons">
+    <button class="secondary"
+            onclick="showScreen('screen-admin')">
+      BACK
+    </button>
+  </div>
+
+</section>
+
 <!-- ADMIN - MANAGE BUSINESS PARTNERS -->
 <section class="screen" id="screen-admin-manage-partners">
 
@@ -7714,7 +7805,28 @@ async function downloadGuestBookingPDF() {
           "Payment remains pending for later collection.";
       }
     }
-
+      
+    async function openAdminStatistics() {
+      try {
+        const { data: { user }, error: authError } =
+          await supabaseClient.auth.getUser();
+  
+        if (authError || !user) {
+          throw new Error("Admin login required.");
+        }
+  
+        const { data, error } =
+          await supabaseClient.rpc("is_vanbooking_admin");
+  
+        if (error || data !== true) {
+          throw new Error("Unauthorized access.");
+        }
+  
+        showScreen("screen-admin-statistics");
+      } catch (e) {
+        alert(e.message || "Unable to open statistics.");
+      }
+    }
   
 </script>
 
