@@ -1045,13 +1045,8 @@
     </div>
   </div>
 
-  <h3>Remaining Pickups</h3>
-  <div id="driver-pickups"></div>
-
-  <h3>To Collect</h3>
-  <div id="driver-collections"></div>
-
-  <div id="driver-dropoffs"></div>
+  <h3>Today's Bookings</h3>
+  <div id="driver-bookings"></div>
 
   <p id="driver-message" role="status"></p>
   <dialog id="driver-confirm-dialog"
@@ -1091,7 +1086,44 @@
 
     </form>
   </dialog>
+
+  <dialog id="driver-payment-choice-dialog"
+          style="border:1px solid #d9e0e3;
+                 border-radius:12px;
+                 padding:24px;
+                 width:calc(100% - 32px);
+                 max-width:390px;
+                 color:#10233b;
+                 box-shadow:0 12px 40px rgba(0,0,0,.2);">
+
+    <h3 style="text-align:center;margin:0 0 16px;">
+      CHECK-IN COMPLETED
+    </h3>
+
+    <p id="driver-payment-choice-details"
+       style="text-align:center;font-size:16px;
+              line-height:1.6;"></p>
+
+    <form method="dialog"
+          style="display:flex;flex-direction:column;gap:12px;">
+
+      <button class="primary" type="submit" value="now">
+        PAY NOW
+      </button>
+
+      <button class="secondary" type="submit" value="later">
+        PAY LATER
+      </button>
+
+      <button class="secondary" type="submit" value="cancel">
+        Cancel
+      </button>
+
+    </form>
+  </dialog>
+
   <div class="bottom-buttons">
+    
     <button class="secondary"
             onclick="showScreen('screen-admin')">
       BACK
@@ -7145,19 +7177,9 @@ async function downloadGuestBookingPDF() {
         driverLoading = false;
       }
     }
-    
+      
     function renderDriverDashboard() {
       const bookings = driverBookings;
-      const onboard = bookings.filter(
-        b => !!b.checked_in_at && !b.dropped_off_at
-      );
-      const remaining = bookings
-        .filter(b => !b.checked_in_at)
-        .sort((a, b) =>
-          String(a.pickup_location || "").localeCompare(
-            String(b.pickup_location || "")
-          )
-        );
     
       const pax = rows => rows.reduce((sum, b) => {
         const count = Number(b.passengers);
@@ -7166,6 +7188,14 @@ async function downloadGuestBookingPDF() {
         );
       }, 0);
     
+      const onboard = bookings.filter(
+        b => b.checked_in_at && !b.dropped_off_at
+      );
+    
+      const remaining = bookings.filter(
+        b => !b.checked_in_at
+      );
+    
       document.getElementById("driver-onboard-count").textContent =
         pax(onboard);
     
@@ -7173,148 +7203,147 @@ async function downloadGuestBookingPDF() {
         `${pax(remaining)} passengers remaining · ` +
         `${pax(bookings)} passengers total`;
     
-      document.getElementById("driver-pickups").innerHTML =
-        remaining.map(b => `
-          <div class="panel" style="padding:18px;margin:12px 0;
-               border:1px solid #dce5e7;border-radius:12px;">
-            <div style="font-size:22px;font-weight:700;
-                 line-height:1.3;overflow-wrap:anywhere;">
-              📍 ${driverEscape(b.pickup_location || "Not specified")}
-            </div>
-            <div style="font-size:22px;font-weight:700;margin-top:14px;">
-              👥 ${Number(b.passengers || 0)} PAX
-            </div>
-            <div class="helper" style="font-size:14px;margin:8px 0 16px;">
-              ${driverEscape(b.customer_name || b.booking_code)}
-              · ${driverEscape(b.booking_code)}
-            </div>
-            <button class="primary" type="button"
-              style="width:100%;font-size:16px;min-height:54px;"
-              onclick="driverCheckIn('${b.booking_id}')">
-              CHECK IN — ${Number(b.passengers || 0)} PAX
-            </button>
-          </div>
-        `).join("") ||
-        '<p class="helper">No remaining pickups.</p>';
+      const isPaid = b =>
+        !!b.balance_paid_at ||
+        Number(b.balance_amount) === 0;
     
-      const unpaid = bookings.filter(b => {
-        const amount = Number(b.balance_amount);
-        return !b.balance_paid_at &&
-          Number.isFinite(amount) &&
-          amount > 0;
-      });
+      const stage = b => {
+        if (b.dropped_off_at) return 3;
+        if (!b.checked_in_at) return 0;
+        return isPaid(b) ? 2 : 1;
+      };
     
-      const paid = bookings.filter(b => {
-        const amount = Number(b.balance_amount);
-        return !!b.balance_paid_at ||
-          (Number.isFinite(amount) && amount >= 0 && amount === 0);
-      });
-    
-      const byPickup = (a, b) =>
+      const ordered = [...bookings].sort((a, b) =>
+        stage(a) - stage(b) ||
         String(a.pickup_location || "").localeCompare(
           String(b.pickup_location || "")
-        );
-
-      document.getElementById("driver-collections").innerHTML =
-        [...unpaid.sort(byPickup), ...paid.sort(byPickup)].map(b => {
-          const isPaid = !!b.balance_paid_at ||
-            Number(b.balance_amount || 0) <= 0;
+        )
+      );
+    
+      document.getElementById("driver-bookings").innerHTML =
+        ordered.map(b => {
+          const paid = isPaid(b);
+          const checkedIn = !!b.checked_in_at;
+          const droppedOff = !!b.dropped_off_at;
+          const amount = Number(b.balance_amount);
+          const validBalance = Number.isFinite(amount) && amount >= 0;
+    
+          const dateText = b.starts_at
+            ? new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Atlantic/Canary",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              }).format(new Date(b.starts_at))
+            : "Not specified";
+    
           return `
-            <div class="panel">
-              <strong>${driverEscape(b.customer_name || b.booking_code)}</strong>
-              <div class="helper">${driverEscape(b.booking_code)}</div>
-              <p style="font-size:22px;font-weight:700">
-                ${isPaid ? "€0.00 DUE" :
-                  driverMoney(b.balance_amount) + " DUE"}
-              </p>
-              <strong>${
-                b.balance_paid_at
-                  ? "PAID"
-                  : isPaid
-                    ? "NO BALANCE DUE"
-                    : "UNPAID"
-              }</strong>
-              ${b.balance_paid_at ? `
-                <div class="helper">
-                  Received by ${driverEscape(
-                    (b.balance_payment_method || "unknown").toUpperCase()
-                  )}
-                </div>
-              ` : ""}
-              ${isPaid ? "" : `
-                <div style="display:flex;gap:20px;margin:12px 0">
-                  <label>
-                    <input type="radio"
-                      name="driver-method-${b.booking_id}"
-                      value="cash" checked style="width:auto">
-                    Cash
-                  </label>
-                  <label>
-                    <input type="radio"
-                      name="driver-method-${b.booking_id}"
-                      value="card" style="width:auto">
-                    Card
-                  </label>
-                </div>
-                <button class="primary" style="width:100%"
-                  onclick="driverPayNow('${b.booking_id}')">
-                  CONFIRM PAYMENT RECEIVED
-                </button>
-              `}
+            <div class="panel"
+                 style="padding:16px;margin:12px 0;
+                        border:1px solid #dce5e7;
+                        border-radius:12px;">
+    
+              <div style="font-size:19px;font-weight:700;">
+                ${driverEscape(b.customer_name || b.booking_code)}
+              </div>
+    
+              <div class="helper">
+                ${driverEscape(b.booking_code)}
+              </div>
+    
+              <div style="margin-top:12px;line-height:1.8;">
+                <div>👥 <strong>${Number(b.passengers || 0)} PAX</strong></div>
+                <div>💶 <strong>${
+                  !validBalance
+                    ? "Balance unavailable"
+                    : paid ? "€0.00 DUE" : driverMoney(amount) + " DUE"
+                }</strong></div>
+                <div>📅 ${driverEscape(dateText)}</div>
+                <div>🚐 ${driverEscape(b.service_type || "Tour")}</div>
+                <div>📍 ${driverEscape(b.pickup_location || "Not specified")}</div>
+              </div>
+    
+              <div style="margin-top:14px;">
+    
+                ${!checkedIn ? `
+                  <button class="primary" type="button"
+                          style="width:100%;"
+                          onclick="driverCheckIn('${b.booking_id}')">
+                    CHECK IN
+                  </button>
+                ` : `
+                  <div style="color:#16834a;font-weight:700;
+                              margin-bottom:10px;">
+                    ✓ CHECKED IN
+                  </div>
+                `}
+    
+                ${checkedIn && !paid && !droppedOff ? `
+                  <div style="font-weight:700;margin:10px 0;">
+                    PAYMENT PENDING
+                  </div>
+    
+                  <div style="display:flex;gap:20px;margin:12px 0;">
+                    <label>
+                      <input type="radio"
+                             name="driver-method-${b.booking_id}"
+                             value="cash" checked
+                             style="width:auto;">
+                      Cash
+                    </label>
+                    <label>
+                      <input type="radio"
+                             name="driver-method-${b.booking_id}"
+                             value="card"
+                             style="width:auto;">
+                      Card
+                    </label>
+                  </div>
+    
+                  <button class="primary" type="button"
+                          style="width:100%;"
+                          onclick="driverPayNow('${b.booking_id}')">
+                    CONFIRM PAYMENT RECEIVED
+                  </button>
+                ` : ""}
+    
+                ${checkedIn && paid ? `
+                  <div style="color:#16834a;font-weight:700;
+                              margin:10px 0;">
+                    ✓ PAID
+                    ${b.balance_payment_method
+                      ? " — " + driverEscape(
+                          b.balance_payment_method.toUpperCase()
+                        )
+                      : ""}
+                  </div>
+                ` : ""}
+    
+                ${checkedIn && !droppedOff ? `
+                  <button class="secondary" type="button"
+                          style="width:100%;margin-top:10px;"
+                          ${!paid ? "disabled" : ""}
+                          onclick="driverConfirmDropoff('${b.booking_id}')">
+                    CONFIRM DROP-OFF
+                  </button>
+                ` : ""}
+    
+                ${droppedOff ? `
+                  <div style="color:#16834a;font-weight:700;
+                              margin-top:10px;">
+                    ✓ DROP-OFF COMPLETED
+                  </div>
+                ` : ""}
+    
+              </div>
             </div>
           `;
         }).join("") ||
-        '<p class="helper">No payment records for this date.</p>';
-    
-      const dropoffs = driverBookings
-        .filter(b => !!b.checked_in_at)
-        .sort((a, b) =>
-          Number(!!a.dropped_off_at) - Number(!!b.dropped_off_at) ||
-          String(a.pickup_location || "").localeCompare(
-            String(b.pickup_location || "")
-          )
-        );
-
-      const dropoffCard = b => `
-        <div class="panel" style="padding:18px;margin:12px 0;
-             border:1px solid #dce5e7;border-radius:12px;">
-          <div style="font-size:22px;font-weight:700;
-               line-height:1.3;overflow-wrap:anywhere;">
-            📍 ${driverEscape(b.pickup_location || "Not specified")}
-          </div>
-          <div style="font-size:22px;font-weight:700;margin-top:14px;">
-            👥 ${Number(b.passengers || 0)} PAX
-          </div>
-          <div class="helper" style="font-size:14px;margin:8px 0 16px;">
-            ${driverEscape(b.customer_name || "Guest")}
-            · ${driverEscape(b.booking_code)}
-          </div>
-          ${b.dropped_off_at ? `
-            <div style="color:#16834a;font-weight:700;
-                 font-size:16px;padding:12px 0;">
-              ✓ DROP-OFF COMPLETED
-            </div>
-          ` : `
-            <button class="primary" type="button"
-              style="width:100%;font-size:16px;min-height:54px;"
-              onclick="driverConfirmDropoff('${b.booking_id}')">
-              CONFIRM DROP-OFF — ${Number(b.passengers || 0)} PAX
-            </button>
-          `}
-        </div>
-      `;
-
-      const pendingDropoffs = dropoffs.filter(b => !b.dropped_off_at);
-      const completedDropoffs = dropoffs.filter(b => !!b.dropped_off_at);
-
-      document.getElementById("driver-dropoffs").innerHTML =
-        `<h3>DROP-OFFS REMAINING</h3>` +
-        (pendingDropoffs.map(dropoffCard).join("") ||
-          '<p class="helper">No remaining drop-offs.</p>') +
-        `<h3 style="margin-top:24px;">COMPLETED DROP-OFFS</h3>` +
-        (completedDropoffs.map(dropoffCard).join("") ||
-          '<p class="helper">No completed drop-offs.</p>');
+        '<p class="helper">No bookings for this date.</p>';
     }
+
   
     function driverConfirmAction(title, details) {
       return new Promise(resolve => {
@@ -7417,6 +7446,15 @@ async function downloadGuestBookingPDF() {
           refreshed
             ? "Check-in successfully registered."
             : "Check-in registered. Press REFRESH to update the list.";
+        
+        if (
+          refreshed &&
+          Number(b.balance_amount) > 0 &&
+          !b.balance_paid_at &&
+          typeof driverChoosePayment === "function"
+        ) {
+          await driverChoosePayment(bookingId);
+        }
 
       } catch (e) {
         document.getElementById("driver-message").textContent =
@@ -7428,22 +7466,18 @@ async function downloadGuestBookingPDF() {
     }
     
     async function driverPayNow(bookingId) {
-       const b = driverBookings.find(x => x.booking_id === bookingId);
+      const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || driverActionBusy || driverLoading) return;
-
-      if (!b.booking_code) {
-        alert("Missing booking code. Please contact Admin.");
-        return;
-      }
-
+    
       const amount = Number(b.balance_amount);
-
-      if (!Number.isFinite(amount) || amount < 0) {
-        alert("Invalid balance. Please contact Admin.");
+    
+      if (!b.checked_in_at) {
+        alert("Check-in is required before collecting payment.");
         return;
       }
-
-      if (b.balance_paid_at || amount === 0) {
+    
+      if (!Number.isFinite(amount) || amount <= 0 ||
+          b.balance_paid_at) {
         alert("This booking has no outstanding balance.");
         return;
       }
@@ -7456,52 +7490,95 @@ async function downloadGuestBookingPDF() {
         alert("Please select Cash or Card.");
         return;
       }
-
-      if (method === "card" && !confirm(
-        "CARD TERMINAL CHECK\n\n" +
-        "Has the Santander terminal confirmed " +
-        "that the card payment was APPROVED?\n\n" +
-        "Press OK only after approval."
-      )) return;
     
-      if (!confirm(
-        `PAYMENT CONFIRMATION\n\n` +
+      if (method === "card") {
+        const terminalApproved = await driverConfirmAction(
+          "CARD TERMINAL CHECK",
+          "Has the Santander terminal confirmed that the " +
+          "card payment was APPROVED?\n\n" +
+          "Press OK only after approval."
+        );
+    
+        if (!terminalApproved) return;
+      }
+    
+      const approved = await driverConfirmAction(
+        "CONFIRM PAYMENT RECEIVED",
         `Guest: ${b.customer_name || b.booking_code}\n` +
-        `Amount: ${driverMoney(b.balance_amount)}\n` +
+        `Amount: ${driverMoney(amount)}\n` +
         `Method: ${method.toUpperCase()}\n\n` +
-        `Confirm ONLY after receiving the payment.\n` +
-        `This action cannot be undone here.`
-      )) return;
+        "Confirm ONLY after receiving the payment.\n" +
+        "This action cannot be undone here."
+      );
+    
+      if (!approved || driverActionBusy || driverLoading) return;
     
       driverActionBusy = true;
-      document.getElementById("driver-message").textContent =
-        "Registering payment. Please wait.";
-
+    
+      const message = document.getElementById("driver-message");
+      message.textContent = "Registering payment. Please wait.";
+    
       try {
-        const { error } = await supabaseClient.rpc(
+        const { data, error } = await supabaseClient.rpc(
           "admin_driver_collect_balance",
           { p_booking_id: bookingId, p_method: method }
         );
     
         if (error) throw error;
-
-        const refreshed = await loadDriverBookings(true);
-        if (!refreshed) {
-          document.getElementById("driver-message").textContent =
-            "Payment registered successfully. Refresh failed. Press REFRESH.";
+    
+        if (!data || data.ok !== true || data.status !== "PAID") {
+          throw new Error(data?.status || "Payment not confirmed.");
         }
-        alert(
-          "Payment successfully registered.\n\n" +
-          `Guest: ${b.customer_name || b.booking_code}\n` +
-          `Amount: ${driverMoney(amount)}\n` +
-          `Method: ${method.toUpperCase()}`
-        );
+    
+        const refreshed = await loadDriverBookings(true);
+    
+        message.textContent = refreshed
+          ? "Payment successfully registered."
+          : "Payment registered. Press REFRESH to update the list.";
+    
       } catch (e) {
-        document.getElementById("driver-message").textContent =
-          "Payment registration failed: " + e.message;
+        message.textContent = "Payment registration failed: " + e.message;
         alert("Payment registration failed: " + e.message);
       } finally {
         driverActionBusy = false;
+      }
+    }
+
+    async function driverChoosePayment(bookingId) {
+      const b = driverBookings.find(
+        x => x.booking_id === bookingId
+      );
+    
+      if (!b || b.balance_paid_at ||
+          Number(b.balance_amount) <= 0) return;
+    
+      const dialog = document.getElementById(
+        "driver-payment-choice-dialog"
+      );
+    
+      document.getElementById(
+        "driver-payment-choice-details"
+      ).textContent =
+        `Guest: ${b.customer_name || b.booking_code}\n` +
+        `Balance due: ${driverMoney(b.balance_amount)}\n\n` +
+        "Would you like to collect payment now or later?";
+    
+      const choice = await new Promise(resolve => {
+        dialog.addEventListener("close", function onClose() {
+          resolve(dialog.returnValue);
+        }, { once: true });
+    
+        dialog.showModal();
+      });
+    
+      if (choice === "now") {
+        document.getElementById("driver-message").textContent =
+          "PAY NOW selected. Choose Cash or Card to register payment.";
+      }
+    
+      if (choice === "later") {
+        document.getElementById("driver-message").textContent =
+          "PAY LATER selected. Payment remains pending.";
       }
     }
   
