@@ -1054,7 +1054,43 @@
   <div id="driver-dropoffs"></div>
 
   <p id="driver-message" role="status"></p>
+  <dialog id="driver-confirm-dialog"
+          style="border:1px solid #d9e0e3;
+                 border-radius:12px;
+                 padding:24px;
+                 width:calc(100% - 32px);
+                 max-width:390px;
+                 color:#10233b;
+                 box-shadow:0 12px 40px rgba(0,0,0,.2);">
 
+    <h3 id="driver-confirm-title"
+        style="margin:0 0 18px;
+               text-align:center;"></h3>
+
+    <div id="driver-confirm-details"
+         style="white-space:pre-line;
+                font-size:16px;
+                line-height:1.8;
+                margin-bottom:24px;"></div>
+
+    <form method="dialog"
+          style="display:flex;gap:12px;">
+
+      <button class="secondary"
+              type="submit"
+              value="cancel"
+              style="flex:1;min-width:0;">
+        Cancel
+      </button>
+
+      <button class="primary"
+              type="submit"
+              value="ok">
+        OK
+      </button>
+
+    </form>
+  </dialog>
   <div class="bottom-buttons">
     <button class="secondary"
             onclick="showScreen('screen-admin')">
@@ -7280,6 +7316,23 @@ async function downloadGuestBookingPDF() {
           '<p class="helper">No completed drop-offs.</p>');
     }
   
+    function driverConfirmAction(title, details) {
+      return new Promise(resolve => {
+        const dialog = document.getElementById("driver-confirm-dialog");
+        const titleEl = document.getElementById("driver-confirm-title");
+        const detailsEl = document.getElementById("driver-confirm-details");
+
+        titleEl.textContent = title;
+        detailsEl.textContent = details;
+
+        dialog.addEventListener("close", function onClose() {
+          resolve(dialog.returnValue === "ok");
+        }, { once: true });
+
+        dialog.showModal();
+      });
+    }
+
     async function driverConfirmDropoff(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
 
@@ -7293,13 +7346,14 @@ async function downloadGuestBookingPDF() {
         return;
       }
 
-      if (!confirm(
-        "CONFIRM DROP-OFF\n\n" +
+      const approved = await driverConfirmAction(
+        "CONFIRM DROP-OFF",
         `Location: ${b.pickup_location || "Not specified"}\n` +
         `Passengers: ${passengers}\n` +
-        `Guest: ${b.customer_name || b.booking_code}\n\n` +
-        "Confirm that these passengers have been dropped off?"
-      )) return;
+        `Guest: ${b.customer_name || b.booking_code}`
+      );
+
+      if (!approved || driverActionBusy || driverLoading) return;
 
       driverActionBusy = true;
 
@@ -7318,11 +7372,6 @@ async function downloadGuestBookingPDF() {
             ? "Drop-off successfully registered."
             : "Drop-off registered. Press REFRESH to update the list.";
 
-        alert(
-          "Drop-off successfully registered.\n\n" +
-          `Guest: ${b.customer_name || b.booking_code}\n` +
-          `Passengers: ${passengers}`
-        );
       } catch (e) {
         document.getElementById("driver-message").textContent =
           "Drop-off failed: " + e.message;
@@ -7335,39 +7384,39 @@ async function downloadGuestBookingPDF() {
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
       if (!b || b.checked_in_at || driverActionBusy || driverLoading) return;
+
       const passengers = Number(b.passengers);
 
       if (!Number.isInteger(passengers) || passengers < 1) {
         alert("Invalid passenger count. Please contact Admin.");
         return;
       }
-    
-      if (!confirm(
-        `CONFIRM CHECK IN\n\n` +
+
+      const approved = await driverConfirmAction(
+        "CONFIRM CHECK IN",
         `Guest: ${b.customer_name || b.booking_code}\n` +
-        `Passengers: ${Number(b.passengers || 0)}\n` +
+        `Passengers: ${passengers}\n` +
         `Pickup: ${b.pickup_location || "Not specified"}`
-      )) return;
-    
+      );
+
+      if (!approved || driverActionBusy || driverLoading) return;
+
       driverActionBusy = true;
-    
+
       try {
         const { error } = await supabaseClient.rpc(
           "admin_driver_check_in",
           { p_booking_id: bookingId }
         );
-    
+
         if (error) throw error;
+
         const refreshed = await loadDriverBookings(true);
+
         document.getElementById("driver-message").textContent =
           refreshed
             ? "Check-in successfully registered."
-            : "Check-in registered successfully. Refresh failed. Press REFRESH.";
-        alert(
-          "Check-in successfully registered.\n\n" +
-          `Guest: ${b.customer_name || b.booking_code}\n` +
-          `Passengers: ${passengers}`
-        );
+            : "Check-in registered. Press REFRESH to update the list.";
 
       } catch (e) {
         document.getElementById("driver-message").textContent =
