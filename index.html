@@ -7056,10 +7056,16 @@ async function downloadGuestBookingPDF() {
     async function loadDriverBookings(force = false) {
       if (driverLoading) {
         if (!force) return false;
-        while (driverLoading) {
+
+        const deadline = Date.now() + 10000;
+
+        while (driverLoading && Date.now() < deadline) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
+
+        if (driverLoading) return false;
       }
+      
       if (driverActionBusy && !force) return false;
     
       const date = document.getElementById("driver-date").value;
@@ -7067,7 +7073,7 @@ async function downloadGuestBookingPDF() {
     
       if (!date) {
         message.textContent = "Select a date.";
-        return;
+        return false;
       }
     
       driverLoading = true;
@@ -7328,10 +7334,11 @@ async function downloadGuestBookingPDF() {
         );
     
         if (error) throw error;
+
         const refreshed = await loadDriverBookings(true);
         if (!refreshed) {
           document.getElementById("driver-message").textContent =
-            "Payment registered, but bookings could not be refreshed. Press REFRESH.";
+            "Payment registered successfully. Refresh failed. Press REFRESH.";
         }
         alert(
           "Payment successfully registered.\n\n" +
