@@ -6438,15 +6438,16 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     return shareBusinessReceipt(receiptWindow);
   };
 
-   const text = [
-      "NOMAD ESCAPE FUERTEVENTURA",
-      "PARTNER BOOKING RECEIPT",
-      "",
-      ...rows,
-      "",
-      "Thank you for booking with Nomad Escape!",
-      "Explore - Escape - Be Free"
-    ].join("\n");
+   receiptWindow.copyReceiptOnDevice = async function () {
+    const doc = receiptWindow.document;
+
+    const rows = Array.from(doc.querySelectorAll(".row"))
+      .map(row => {
+        const label = row.querySelector(".label")?.textContent.trim() || "";
+        const value = row.querySelector(".value")?.textContent.trim() || "";
+        return label + ": " + value;
+      })
+      .filter(row => row.trim() !== ":");
 
     const text = [
       "NOMAD ESCAPE FUERTEVENTURA",
