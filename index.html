@@ -5252,13 +5252,13 @@ We're looking forward to having you with us on the van.
 
 *${booking.tour}*
 📅 *${formattedDate}*
-🕘 *09:30*
+🕘 *Departure: 09:30*
 👥 *${peopleText}*
 📍 *${booking.pickup}*
 
 ✌️ *See you soon!*
 
-*Explore ☀️ Escape ☀️ Be free*`;
+🌴 *Explore - Escape - Be Free* 🌴`;
 }
   
   async function confirmBooking() {
@@ -5391,10 +5391,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     console.error("Booking error:", error);
 
     alert(
-      "We could not complete or verify your booking.\n\n" +
+      "We could not verify your booking.\n\n" +
       "Your booking may already be confirmed.\n\n" +
-      "Please retry without changing the booking details. " +
-      "The system will check the same request to prevent duplicates.\n\n" +
+      "Please do not create a new booking.\n" +
+      "Retry with the same details to check the existing request.\n\n" +
       "If the problem continues, contact Nomad Escape."
     );
 
@@ -5416,7 +5416,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     );
   
   document.getElementById("confirmation-deposit-label").textContent =
-    "Partner Commission";
+    "Deposit Paid";
 
     const confirmationFields = {
       "confirmation-booking-code": booking.bookingCode,
@@ -5455,8 +5455,12 @@ const result = await supabaseClient.functions.invoke("business-booking", {
     const balanceAmount = booking.businessBalanceAmount;
     booking.tourTotal = booking.businessTotalAmount;
 
+    const confirmedPartnerName = String(
+      booking.businessPartnerName || ""
+    ).trim();
+
     document.getElementById("confirmation-partner").textContent =
-      (booking.businessPartnerName || "")
+      confirmedPartnerName
         .toLocaleLowerCase()
         .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
     document.getElementById("confirmation-partner-row").style.display = "flex";
@@ -5474,25 +5478,27 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       booking.tour;
 
 
-    document.getElementById("confirmation-date-time").textContent =
-      formatDateWithOrdinal(booking.date) + " · " +
-      (booking.tour === "North Fuerteventura"
+    const confirmedTourTime =
+      booking.tour === "North Fuerteventura"
         ? "09:30 – 13:30"
-        : "09:30 – 17:00");
+        : booking.tour === "Sotavento Experience"
+          ? "09:30 – 17:00"
+          : "Time to be confirmed";
+
+    document.getElementById("confirmation-date-time").textContent =
+      formatDateWithOrdinal(booking.date) + " · " + confirmedTourTime;
 
     document.getElementById("confirmation-people").textContent =
       booking.people + (booking.people === 1 ? " person" : " people");
 
     document.getElementById("confirmation-total").textContent =
-      "€" + booking.tourTotal;
+      "€" + Number(booking.tourTotal).toFixed(2);
 
     document.getElementById("confirmation-deposit-label").textContent =
-      booking.accessType === "business"
-        ? "Partner Commission"
-        : "Deposit";
+      "Deposit Paid";
 
     document.getElementById("confirmation-deposit").textContent =
-      "€" + depositAmount;
+      "€" + Number(depositAmount).toFixed(2);
 
     document.getElementById("confirmation-balance").textContent =
       "€" + balanceAmount;
@@ -5680,6 +5686,9 @@ async function downloadGuestBookingPDF() {
   y += 14;
 
   const total = Number(booking.tourTotal);
+
+  // Guest: 25% deposit, rounded down to whole euros.
+  // Business deposit is calculated separately by the backend.
   const deposit = Math.floor(total * 0.25);
   const balance = total - deposit;
 
@@ -5690,32 +5699,35 @@ async function downloadGuestBookingPDF() {
 
   const time = booking.tour === "North Fuerteventura"
     ? "09:30 - 13:30"
-    : "09:30 - 17:00";
-
+    : booking.tour === "Sotavento Experience"
+      ? "09:30 - 17:00"
+      : "Time to be confirmed";
   const countryCode =
-    document.getElementById("country-code")?.value || "+34";
-
+    String(document.getElementById("country-code")?.value || "+34").trim();
+  
   const rows = [
     ["Booking Code", booking.bookingCode],
-    ["Tour", booking.tour],
-    ["Date / Time", formatDateWithOrdinal(booking.date) + " / " + time],
-    ["People", booking.people],
-    ["Tour Total", "EUR " + total.toFixed(2)],
-    ["Deposit Paid", "EUR " + deposit.toFixed(2)],
-    ["Balance Due on Tour Day", "EUR " + balance.toFixed(2)],
     ["Guest Name", booking.name],
     ["WhatsApp",
       String(booking.phone || "").trim().startsWith("+")
         ? String(booking.phone).trim()
         : countryCode + " " + String(booking.phone || "").trim()],
-    ["Pickup Location", booking.pickup]
+    ["Passengers", booking.people],
+    ["Tour", booking.tour],
+    ["Date", formatDateWithOrdinal(booking.date)],
+    ["Time", time],
+    ["Total Price", "EUR " + total.toFixed(2)],
+    ["Deposit Paid", "EUR " + deposit.toFixed(2)],
+    ["Remaining Balance", "EUR " + balance.toFixed(2)]
   ];
 
   for (const [label, value] of rows) {
-    const highlight = label === "Deposit Paid";
+    const highlight =
+      label === "Deposit Paid" ||
+      label === "Remaining Balance";
+
     const lines = doc.splitTextToSize(String(value ?? ""), 82);
     const height = Math.max(14, lines.length * 6.5 + 8);
-
     if (y + height > 250) {
       doc.addPage();
       y = 22;
@@ -5723,11 +5735,11 @@ async function downloadGuestBookingPDF() {
 
     if (highlight) {
       doc.setFillColor(232, 247, 247);
-      doc.roundedRect(17, y - 6, 176, height, 2, 2, "F");
+      doc.roundedRect(17, y - 6, 176, height, 4, 4, "F");
     }
 
-    doc.setFont("helvetica", highlight ? "bold" : "normal");
-    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
     doc.setTextColor(95, 110, 125);
     doc.text(label, 20, y + 2);
 
@@ -5735,7 +5747,7 @@ async function downloadGuestBookingPDF() {
     doc.setFontSize(highlight ? 12 : 11);
     doc.setTextColor(...navy);
     doc.text(lines, 105, y + 2, {
-      lineHeightFactor: 1.15
+      lineHeightFactor: 1.2
     });
 
     if (!highlight) {
@@ -5759,7 +5771,7 @@ async function downloadGuestBookingPDF() {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...navy);
-  doc.text("Thank you for booking with Nomad Escape!", 105, y + 11, {
+  doc.text("Explore - Escape - Be Free", 105, y + 11, {
     align: "center"
   });
 
@@ -5843,27 +5855,38 @@ async function downloadGuestBookingPDF() {
         h2 {
           text-align: center;
           margin-bottom: 30px;
+          font-size: 24px;
+          font-weight: 700;
+          color: #17283f;
         }
 
         .row {
-          border-bottom: 1px solid #ddd;
-          padding: 12px 0;
+          border-bottom: 1px solid #e1e9ea;
+          padding: 14px 0;
         }
 
         .label {
           font-size: 12px;
+          font-weight: 600;
           color: #667085;
+          letter-spacing: 0.3px;
         }
 
         .value {
           font-size: 17px;
           font-weight: 600;
-          margin-top: 3px;
+          margin-top: 5px;
+          line-height: 1.45;
+          color: #17283f;
+          overflow-wrap: anywhere;
         }
 
         .code {
           font-size: 22px;
           font-weight: 800;
+          color: #319da2;
+          letter-spacing: 0.5px;
+          overflow-wrap: anywhere;
         }
 
         .thanks {
@@ -5872,8 +5895,42 @@ async function downloadGuestBookingPDF() {
         }
         
         .print-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          flex: 1 1 150px;
+          min-height: 54px;
+          padding: 14px 16px;
+          border: none;
+          border-radius: 10px;
+          background: #319da2;
+          color: #ffffff;
+          font-family: Arial, sans-serif;
+          font-size: 13px;
+          font-weight: 700;
           cursor: pointer;
           touch-action: manipulation;
+          box-shadow: 0 3px 8px rgba(49,157,162,.2);
+        }
+
+        .print-button span {
+          font-size: 20px;
+          line-height: 1;
+        }
+
+        .print-button:hover {
+          background: #267f84;
+        }
+
+        .print-button:active {
+          transform: scale(.98);
+        }
+
+        @media (max-width: 420px) {
+          .print-button {
+            flex: 1 1 100%;
+          }
         }
 
         .receipt-print-date {
@@ -5978,15 +6035,15 @@ async function downloadGuestBookingPDF() {
         We appreciate your partnership.
       </div>
 
-      <div style="display:flex; gap:10px; justify-content:center; margin-top:30px; flex-wrap:wrap;">
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:30px; flex-wrap:wrap; width:100%;">
         <button class="print-button" onclick="window.downloadReceiptPDF()">
-          DOWNLOAD PDF
+          <span aria-hidden="true">↓</span> DOWNLOAD PDF
         </button>
         <button class="print-button" onclick="window.shareReceiptOnDevice()">
           SHARE
         </button>
         <button class="print-button" onclick="window.copyReceiptOnDevice()">
-          COPY
+          <span aria-hidden="true">▢</span> COPY
         </button>
       </div>
     </body>
