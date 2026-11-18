@@ -2834,7 +2834,7 @@
     <div>It must be paid in cash on the day of the tour.</div>
   </div>
 </div>
-<div class="whatsapp-box">
+<div class="whatsapp-box" id="confirmation-thanks">
   <strong>🌴</strong>
   <div>
     <strong>Thank you for booking with Nomad Escape!</strong>
@@ -2843,15 +2843,20 @@
 </div>
 
 <div class="bottom-buttons">
-  <button class="secondary" onclick="resetApp()">
+  <button
+    class="secondary"
+    id="confirmation-back-button"
+    onclick="resetApp()">
     BACK
   </button>
 
-  <button class="primary" onclick="downloadConfirmedBooking()">
+  <button
+    class="primary"
+    id="confirmation-action-button"
+    onclick="downloadConfirmedBooking()">
     DOWNLOAD PDF
   </button>
-  </div>
-
+</div>
     </div>
 
   </section>
@@ -4108,8 +4113,31 @@ async function checkBusinessPassword() {
     document.querySelectorAll(".screen").forEach(screen => {
       screen.classList.remove("active");
     });
-
+  
     document.getElementById(id).classList.add("active");
+  
+    if (id === "screen-confirmation") {
+      const isPartner = booking.accessType === "business";
+  
+      document.getElementById("confirmation-back-button").style.display =
+        isPartner ? "none" : "";
+  
+      document.getElementById("confirmation-thanks").style.display =
+        isPartner ? "none" : "";
+  
+      const actionButton =
+        document.getElementById("confirmation-action-button");
+  
+      actionButton.textContent =
+        isPartner ? "SEND TO GUEST" : "DOWNLOAD PDF";
+  
+      // WhatsApp sending will be enabled after backend integration.
+      actionButton.disabled = isPartner;
+      actionButton.title = isPartner
+        ? "WhatsApp delivery integration pending"
+        : "";
+    }
+  
     window.scrollTo(0, 0);
 
     if (liveSeatsTimer !== null) {
@@ -6425,10 +6453,17 @@ async function downloadGuestBookingPDF() {
 
           const details = document.createElement("div");
           details.className = "tour-meta";
+          
           details.textContent =
             "Code: " + partner.personal_code +
-            " | Group: " + partner.commission_percent + "%" +
-            " | " + (partner.active ? "Active" : "Inactive");
+            " | Group: " + partner.commission_percent + "% | ";
+          
+          const status = document.createElement("span");
+          status.textContent = partner.active ? "Active" : "Inactive";
+          status.style.color = partner.active ? "#16834a" : "#b42318";
+          status.style.fontWeight = "700";
+          
+          details.appendChild(status);
 
           const arrow = document.createElement("div");
           arrow.className = "tour-arrow";
