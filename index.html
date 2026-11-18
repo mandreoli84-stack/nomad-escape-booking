@@ -21,6 +21,7 @@
       width: 100%;
       max-width: 430px;
       min-height: 100vh;
+      min-height: 100dvh;
       margin: 0 auto;
       background: #ffffff;
       padding: 18px 18px 24px;
@@ -130,6 +131,12 @@
       margin-bottom: 14px;
       box-shadow: 0 2px 6px rgba(0,0,0,.04);
       cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .tour-card:focus-visible {
+      outline: 3px solid #319da2;
+      outline-offset: 3px;
     }
 
     .tour-photo {
@@ -271,9 +278,22 @@
 
     #calendar-prev,
     #calendar-next {
+      width: 40px;
+      min-height: 40px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #10233b;
       cursor: pointer;
       font-size: 26px;
       font-weight: 700;
+      touch-action: manipulation;
+    }
+
+    #calendar-prev:focus-visible,
+    #calendar-next:focus-visible {
+      outline: 2px solid #319da2;
+      outline-offset: 2px;
     }
 
     .weekdays,
@@ -361,8 +381,15 @@
       color: #218f95;
       font-size: 32px;
       width: 55px;
+      min-height: 48px;
+      border-radius: 8px;
       cursor: pointer;
       touch-action: manipulation;
+    }
+
+    .counter-button:focus-visible {
+      outline: 2px solid #319da2;
+      outline-offset: 2px;
     }
     
     .people-number {
@@ -412,12 +439,18 @@
       padding: 13px;
       border: 1px solid #d9e0e3;
       border-radius: 6px;
-      font-size: 14px;
+      font-size: 16px;
       outline: none;
     }
 
     input:focus {
       border-color: #319da2;
+      box-shadow: 0 0 0 2px rgba(49, 157, 162, 0.18);
+    }
+
+    input:focus-visible {
+      outline: 2px solid #319da2;
+      outline-offset: 2px;
     }
 
     .phone-row {
@@ -438,6 +471,11 @@
       flex: 0 0 105px;
       padding: 10px 8px;
       text-align: center;
+      font-size: 16px;
+      border: 1px solid #d9e0e3;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #10233b;
     }
     
     .helper {
@@ -575,12 +613,19 @@
       opacity: 0.9;
     }
     
-    button.primary,
+     button.primary,
     button.secondary {
       min-height: 48px;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button.primary:focus-visible,
+    button.secondary:focus-visible {
+      outline: 3px solid #10233b;
+      outline-offset: 3px;
     }
 
     button.primary {
@@ -675,10 +720,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 12px;
       color: #617381;
       font-size: 20px;
       line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     .whatsapp-box > strong {
@@ -750,7 +797,9 @@
       width: 40px;
       height: 40px;
       border: none;
+      border-radius: 6px;
       background: transparent;
+      color: #10233b;
       cursor: pointer;
       font-size: 22px;
       display: flex;
@@ -764,6 +813,12 @@
       opacity: 1;
     }
 
+    .password-visibility-toggle:focus-visible {
+      outline: 2px solid #319da2;
+      outline-offset: 2px;
+      opacity: 1;
+    }
+
     .pickup-suggestions[hidden] {
       display: none;
     }
@@ -773,7 +828,10 @@
       border: 1px solid #d9e0e3;
       border-radius: 6px;
       background: #ffffff;
-      overflow: hidden;
+      max-height: 280px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .pickup-suggestion {
@@ -814,7 +872,12 @@
   <h1>Welcome to Nomad Escape!</h1>
   <p class="subtitle">Your Fuerteventura adventure starts here.</p>
 
-  <div class="tour-card" style="margin-top:35px;" onclick="selectAccessType('guest')">
+  <div class="tour-card"
+       style="margin-top:35px;"
+       role="button"
+       tabindex="0"
+       onclick="selectAccessType('guest')"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAccessType('guest');}">
     <div class="tour-info">
       <div class="tour-title">GUEST</div>
       <div class="tour-meta">Book your experience</div>
@@ -823,10 +886,15 @@
   </div>
 
   <div style="margin:32px 0;">
-  <div style="height:1px; background:#9aa5aa; width:100%;"></div>
- </div>
-  
-  <div class="tour-card" style="margin-top: 0;" onclick="selectAccessType('business')">
+    <div style="height:1px; background:#9aa5aa; width:100%;"></div>
+  </div>
+
+  <div class="tour-card"
+       style="margin-top:0;"
+       role="button"
+       tabindex="0"
+       onclick="selectAccessType('business')"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAccessType('business');}">
     <div class="tour-info">
       <div class="tour-title">PARTNER</div>
       <div class="tour-meta">Business access</div>
@@ -862,6 +930,8 @@
     id="admin-new-password"
     type="password"
     autocomplete="new-password"
+    autocapitalize="none"
+    spellcheck="false"
     minlength="12"
     placeholder="Minimum 12 characters"
   >
@@ -871,6 +941,8 @@
     id="admin-confirm-password"
     type="password"
     autocomplete="new-password"
+    autocapitalize="none"
+    spellcheck="false"
     minlength="12"
     placeholder="Repeat your new password"
   >
@@ -1021,7 +1093,9 @@
   </div>
 
   <div class="bottom-buttons">
-    <button class="secondary" onclick="adminLogout()">
+    <button class="secondary"
+            type="button"
+            onclick="adminLogout()">
       LOGOUT
     </button>
   </div>
@@ -1043,7 +1117,9 @@
   </p>
 
   <label for="driver-date">Tour Date</label>
-  <input id="driver-date" type="date"
+  <input id="driver-date"
+         type="date"
+         aria-controls="driver-bookings"
          onchange="loadDriverBookings()">
 
   <div class="panel" style="text-align:center">
@@ -1159,13 +1235,15 @@
   </dialog>
 
   <div class="bottom-buttons">
-    
+
     <button class="secondary"
+            type="button"
             onclick="showScreen('screen-admin')">
       BACK
     </button>
 
     <button class="primary"
+            type="button"
             onclick="loadDriverBookings()">
       REFRESH
     </button>
@@ -1276,11 +1354,13 @@
 
   <div class="bottom-buttons">
     <button class="secondary"
+            type="button"
             onclick="showScreen('screen-admin')">
       BACK
     </button>
 
     <button class="primary"
+            type="button"
             onclick="loadAdminStatistics()">
       REFRESH
     </button>
@@ -1345,6 +1425,8 @@
          minlength="4"
          maxlength="20"
          autocomplete="new-password"
+         autocapitalize="none"
+         spellcheck="false"
          placeholder="4 to 20 characters">
 
   <label for="business-group-confirm-password">Confirm Password</label>
@@ -1353,6 +1435,8 @@
          minlength="4"
          maxlength="20"
          autocomplete="new-password"
+         autocapitalize="none"
+         spellcheck="false"
          placeholder="Repeat the new password">
 
   <p id="business-group-password-message"
@@ -1361,11 +1445,13 @@
 
   <div class="bottom-buttons">
     <button class="secondary"
+            type="button"
             onclick="showScreen('screen-admin')">
       BACK
     </button>
 
     <button class="primary"
+            type="button"
             id="business-group-save-button"
             onclick="saveBusinessGroupPassword()">
       SAVE PASSWORD
@@ -1395,11 +1481,16 @@
   <input id="partner-prefix-1"
          class="country-code"
          type="tel"
+         inputmode="tel"
          value="+34"
          aria-label="Country code">
   <input id="partner-whatsapp"
          type="tel"
-         placeholder="600 000 000">
+         inputmode="tel"
+         autocomplete="off"
+         maxlength="20"
+         placeholder="600 000 000"
+         required>
 </div>
       
     </div>
@@ -1422,10 +1513,14 @@
   <input id="partner-prefix-2"
          class="country-code"
          type="tel"
+         inputmode="tel"
          value="+34"
          aria-label="Country code">
   <input id="partner-whatsapp-2"
          type="tel"
+         inputmode="tel"
+         autocomplete="off"
+         maxlength="20"
          placeholder="600 000 000">
 </div>
       
@@ -1443,11 +1538,17 @@
   </div>
 
   <label for="partner-email">Email *</label>
-  <input id="partner-email" type="email">
+  <input id="partner-email"
+         type="email"
+         autocomplete="email"
+         maxlength="254"
+         required>
+
   <label for="partner-website">Website (optional)</label>
   <input
     id="partner-website"
     type="url"
+    autocomplete="url"
     maxlength="500"
     placeholder="https://www.example.com">
 
@@ -1500,6 +1601,7 @@
     </button>
 
     <button class="primary"
+            type="button"
             id="partner-register-button"
             onclick="registerBusinessPartner()">
       REGISTER PARTNER
@@ -1538,11 +1640,16 @@
   <input id="edit-partner-prefix-1"
          class="country-code"
          type="tel"
+         inputmode="tel"
          value="+34"
          aria-label="Country code">
     <input id="edit-partner-whatsapp"
          type="tel"
-         placeholder="600 000 000">
+         inputmode="tel"
+         autocomplete="off"
+         maxlength="20"
+         placeholder="600 000 000"
+         required>
 </div>
 
 <div style="display:flex; gap:8px; margin-top:8px;">
@@ -1573,10 +1680,14 @@
   <input id="edit-partner-prefix-2"
          class="country-code"
          type="tel"
+         inputmode="tel"
          value="+34"
          aria-label="Country code">
   <input id="edit-partner-whatsapp-2"
          type="tel"
+         inputmode="tel"
+         autocomplete="off"
+         maxlength="20"
          placeholder="600 000 000">
 </div>
 
@@ -1602,10 +1713,18 @@
   </div>
 
   <label for="edit-partner-email">Email *</label>
-  <input id="edit-partner-email" type="email">
+  <input id="edit-partner-email"
+         type="email"
+         autocomplete="email"
+         maxlength="254"
+         required>
 
   <label for="edit-partner-website">Website (optional)</label>
-  <input id="edit-partner-website" type="url" maxlength="500">
+  <input id="edit-partner-website"
+         type="url"
+         autocomplete="url"
+         maxlength="500"
+         placeholder="https://www.example.com">
 
   <label for="edit-partner-pickup">Default Pickup Location</label>
   <input id="edit-partner-pickup" type="text" maxlength="50">
@@ -1657,7 +1776,12 @@
   <div class="panel">
     <h3>Partner Status</h3>
 
+    <p class="helper">
+      Activating or deactivating a partner requires confirmation.
+    </p>
+
     <button class="secondary"
+            type="button"
             id="edit-partner-toggle-active-button"
             style="width:100%;"
             onclick="toggleBusinessPartnerActive()"
@@ -1672,12 +1796,18 @@
     <label for="edit-partner-new-code">New Personal Code</label>
     <input id="edit-partner-new-code"
            type="text"
+           minlength="6"
            maxlength="6"
+           pattern="PC[0-9]{4}"
+           title="PC followed by four digits"
            placeholder="PC1234"
            autocapitalize="characters"
+           autocomplete="off"
+           spellcheck="false"
            oninput="this.value=this.value.toUpperCase()">
 
     <button class="secondary"
+            type="button"
             id="edit-partner-change-code-button"
             style="width:100%; margin-top:12px;"
             onclick="changeBusinessPartnerPC()"
@@ -1695,6 +1825,7 @@
     </button>
 
     <button class="primary"
+            type="button"
             id="edit-partner-save-button"
             onclick="saveBusinessPartnerChanges()">
       SAVE CHANGES
@@ -2066,11 +2197,15 @@
       id="business-personal-code"
       type="text"
       placeholder="PC1234"
+      minlength="6"
       maxlength="6"
+      pattern="PC[0-9]{4}"
+      title="Enter PC followed by four digits, for example PC1234"
       autocomplete="username"
       autocapitalize="characters"
       oninput="this.value = this.value.toUpperCase()"
       spellcheck="false"
+      required
     >
   </div>
 
@@ -2081,15 +2216,20 @@
       type="password"
       placeholder="Password"
       autocomplete="current-password"
+      autocapitalize="none"
+      spellcheck="false"
+      required
     >
   </div>
 
   <div class="bottom-buttons">
-  <button class="secondary" onclick="showScreen('screen-access')">
+  <button class="secondary" type="button"
+          onclick="showScreen('screen-access')">
     BACK
   </button>
 
-  <button class="primary" onclick="checkBusinessPassword()">
+  <button class="primary" type="button"
+          onclick="checkBusinessPassword()">
     CONTINUE
   </button>
 </div>
@@ -2216,46 +2356,56 @@
 
     <label for="private-guest-name">Full Name *</label>
     <input id="private-guest-name" type="text"
+           autocomplete="name"
+           maxlength="80"
            placeholder="Your full name" required>
-
     
     <label for="private-guest-whatsapp">WhatsApp *</label>
     <div class="phone-row">
       <select id="private-guest-country-code" class="country-code"
               aria-label="Country code"></select>
       <input id="private-guest-whatsapp" type="tel"
+             inputmode="tel"
+             autocomplete="tel-national"
+             maxlength="20"
              placeholder="Your phone number" required>
     </div>
 
 
     <label for="private-guest-email">Email *</label>
     <input id="private-guest-email" type="email"
+           autocomplete="email"
+           maxlength="254"
            placeholder="Your email address" required>
 
-    <label for="private-guest-message">Your Message</label>
+    <label for="private-guest-message">Your Message (Optional)</label>
     <textarea id="private-guest-message"
               placeholder="Tell us what you would like to experience..."
               rows="5"
+              maxlength="1000"
               style="width:100%; padding:13px; border:1px solid #d9e0e3;
                      border-radius:6px; font:14px Arial, sans-serif;
                      resize:vertical;"></textarea>
 
     <div class="bottom-buttons">
       <button class="secondary"
+              type="button"
               onclick="showScreen('screen-tour')">
         BACK
       </button>
 
       <button class="primary"
+              type="button"
               id="private-guest-send"
               disabled
+              aria-describedby="private-enquiry-notice"
               onclick="submitPrivateGuestRequest()">
         SEND REQUEST
       </button>
     </div>
 
-    <p class="helper">
-      * Required fields. This is an enquiry, not a booking.
+    <p class="helper" id="private-enquiry-notice">
+      * Required fields. This is an enquiry, not a confirmed booking.
     </p>
 
   </section>
@@ -2293,6 +2443,7 @@
 
       <div class="bottom-buttons">
         <button class="primary"
+                type="button"
                 onclick="showScreen('screen-access')">
           BACK TO HOME
         </button>
@@ -2332,9 +2483,11 @@
     <p class="subtitle" style="font-size:16px;">Select an available date.</p>
 
   <div class="calendar-header">
-    <span id="calendar-prev">‹</span>
-    <span id="calendar-month">October 2026</span>
-    <span id="calendar-next">›</span>
+    <button type="button" id="calendar-prev"
+            aria-label="Previous month">‹</button>
+    <span id="calendar-month" aria-live="polite">October 2026</span>
+    <button type="button" id="calendar-next"
+            aria-label="Next month">›</button>
   </div>
 
     <div class="weekdays">
@@ -2390,8 +2543,11 @@
     </div>
 
     <div class="bottom-buttons">
-      <button class="secondary" onclick="showScreen('screen-tour')">BACK</button>
-      <button class="primary" id="date-continue" disabled onclick="continueFromDate()">
+      <button class="secondary" type="button"
+              onclick="showScreen('screen-tour')">BACK</button>
+      <button class="primary" type="button"
+              id="date-continue" disabled
+              onclick="continueFromDate()">
         CONTINUE
       </button>
     </div>
@@ -2428,9 +2584,15 @@
     <h1>How many people?</h1>
     <p class="subtitle" style="font-size:16px;">Select the number of seats you want to book.</p>
     <div class="people-control">
-      <button class="counter-button" onclick="changePeople(-1)">−</button>
-      <div class="people-number" id="people-count">2</div>
-      <button class="counter-button" onclick="changePeople(1)">+</button>
+      <button class="counter-button"
+              type="button"
+              aria-label="Remove one passenger"
+              onclick="changePeople(-1)">−</button>
+      <span id="people-count" aria-live="polite">1</span>
+      <button class="counter-button"
+              type="button"
+              aria-label="Add one passenger"
+              onclick="changePeople(1)">+</button>
     </div>
 
     <div class="availability">
@@ -2488,8 +2650,13 @@
 
   <div id="business-fields" style="display:none;"></div>
 
-  <label id="customer-name-label">Guest Name</label>
-  <input id="customer-name" type="text" maxlength="40" placeholder="Guest full name" oninput="capitalizeName(this)">
+  <label id="customer-name-label" for="customer-name">Guest Name</label>
+  <input id="customer-name"
+         type="text"
+         maxlength="40"
+         autocomplete="name"
+         placeholder="Guest full name"
+         oninput="capitalizeName(this)">
 
 
     <label>WhatsApp</label>
@@ -2556,7 +2723,12 @@
   <option value="+82">🇰🇷 +82</option>
 </select>
 
-  <input id="customer-phone" type="tel" placeholder="Your phone number">
+  <input id="customer-phone"
+         type="tel"
+         inputmode="tel"
+         autocomplete="tel-national"
+         aria-label="WhatsApp phone number"
+         placeholder="Your phone number">
 </div>
     
     <div class="helper">
@@ -2733,7 +2905,10 @@
 
     </div>
     
-    <button class="primary" style="width:100%" onclick="continueFromReview()">
+    <button class="primary"
+            type="button"
+            style="width:100%"
+            onclick="continueFromReview()">
       CONFIRM BOOKING
     </button>
 
@@ -2823,15 +2998,15 @@
 
 <div class="review-row">
   <div class="review-content">
-    <div class="review-label" id="confirmation-deposit-label">Deposit</div>
+    <div class="review-label" id="confirmation-deposit-label">Deposit Paid</div>
     <div id="confirmation-deposit"></div>
   </div>
 </div>
 <div class="review-row confirmation-balance-box">
   <div class="review-content">
-    <div class="review-label">Remaining balance</div>
+    <div class="review-label">Remaining Balance</div>
     <div id="confirmation-balance"></div>
-    <div>It must be paid in cash on the day of the tour.</div>
+    <div>The remaining balance is payable in cash on the day of the tour.</div>
   </div>
 </div>
 <div class="whatsapp-box" id="confirmation-thanks">
@@ -2845,13 +3020,15 @@
 <div class="bottom-buttons">
   <button
     class="secondary"
+    type="button"
     id="confirmation-back-button"
     onclick="resetApp()">
     BACK
   </button>
-
+  
   <button
     class="primary"
+    type="button"
     id="confirmation-action-button"
     onclick="downloadConfirmedBooking()">
     DOWNLOAD PDF
@@ -2957,7 +3134,10 @@
     <div class="bottom-buttons" style="display:block;">
 
   <button class="primary" id="pay-deposit-button"
-          style="width:100%" onclick="payDeposit()">
+          type="button"
+          style="width:100%"
+          aria-label="Pay deposit through secure payment"
+          onclick="payDeposit()">
     PAY DEPOSIT
   </button>
 
@@ -3011,7 +3191,9 @@
     </p>
 
     <button class="primary"
+            type="button"
             style="width:100%;"
+            aria-label="Close availability notice and return to calendar"
             onclick="closeLiveSeatsPopup()">
       BACK TO CALENDAR
     </button>
@@ -3070,22 +3252,35 @@ async function adminLogin() {
     return;
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    message.textContent = "Enter a valid email address.";
+    return;
+  }
+
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
     password
   });
 
-  if (error || !data.user) {
+  if (error || !data?.user) {
+    document.getElementById("admin-password").value = "";
     message.textContent = "Invalid login credentials.";
     return;
   }
-
+  
   const { data: isAdmin, error: roleError } =
     await supabaseClient.rpc("is_vanbooking_admin");
 
   if (roleError || isAdmin !== true) {
-    await supabaseClient.auth.signOut();
-    message.textContent = "Admin access denied.";
+    const { error: logoutError } =
+      await supabaseClient.auth.signOut();
+
+    document.getElementById("admin-password").value = "";
+
+    message.textContent = logoutError
+      ? "Admin access denied. Session logout could not be verified."
+      : "Admin access denied.";
+
     return;
   }
 
@@ -3094,9 +3289,20 @@ async function adminLogin() {
 }
 
 async function adminLogout() {
-  await supabaseClient.auth.signOut();
-  document.getElementById("admin-password").value = "";
-  showScreen("screen-access");
+  try {
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      alert("Unable to log out. Please try again.");
+      return;
+    }
+
+    document.getElementById("admin-password").value = "";
+    showScreen("screen-access");
+  } catch (error) {
+    console.error("Admin logout error:", error);
+    alert("Unable to log out. Please check your connection.");
+  }
 }
 
 async function openAdminPanel() {
@@ -3859,8 +4065,14 @@ async function createAssistedBooking() {
     customerNameLabel.textContent = "Guest Name";
     customerNameInput.placeholder = "Guest full name";
 
-    if (type !== "business") {
+    if (type === "guest") {
       showScreen("screen-tour");
+      return;
+    }
+
+    if (type !== "business") {
+      booking.accessType = "";
+      showScreen("screen-access");
       return;
     }
     
@@ -3871,6 +4083,11 @@ async function createAssistedBooking() {
     if (!savedToken || !/^[a-f0-9]{64}$/i.test(savedToken)) {
       localStorage.removeItem("nomad_business_session_token");
       localStorage.removeItem("nomad_business_partner_name");
+
+      businessSessionToken = null;
+      businessDefaultPickup = "";
+      booking.businessPartnerName = "";
+
       showScreen("screen-business-login");
       return;
     }
@@ -3888,20 +4105,34 @@ async function createAssistedBooking() {
         }
       );
 
+      if (
+        localStorage.getItem("nomad_business_session_token") !== savedToken
+      ) {
+        return;
+      }
+
       if (booking.accessType !== "business") return;
 
       if (error || !data?.ok || data?.status !== "SUCCESS") {
         localStorage.removeItem("nomad_business_session_token");
         localStorage.removeItem("nomad_business_partner_name");
+
+        businessSessionToken = null;
         businessDefaultPickup = "";
+        booking.businessPartnerName = "";
+
         showScreen("screen-business-login");
         return;
       }
 
       businessSessionToken = savedToken;
-      businessDefaultPickup = data.defaultPickupLocation || "";
+      businessDefaultPickup = String(
+        data.defaultPickupLocation || ""
+      ).trim().replace(/\s+/g, " ");
 
-      booking.businessPartnerName = (data.partnerName || "")
+      booking.businessPartnerName = String(data.partnerName || "")
+        .trim()
+        .replace(/\s+/g, " ")
         .toLocaleLowerCase()
         .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 
@@ -4019,13 +4250,16 @@ async function createAssistedBooking() {
         for (const name of data.suggestions.slice(0, 8)) {
           if (typeof name !== "string") continue;
 
+          const pickupName = name.trim().replace(/\s+/g, " ");
+          if (!pickupName) continue;
+
           const button = document.createElement("button");
           button.type = "button";
           button.className = "pickup-suggestion";
-          button.textContent = name;
+          button.textContent = pickupName;
 
           button.addEventListener("click", () => {
-            input.value = name;
+            input.value = pickupName;
             hidePickupSuggestions();
           });
 
@@ -4078,7 +4312,9 @@ async function checkBusinessPassword() {
 
     businessSessionToken = data.token;
     businessDefaultPickup = data.defaultPickupLocation || "";
-    booking.businessPartnerName = (data.partnerName || "")
+    booking.businessPartnerName = String(data.partnerName || "")
+      .trim()
+      .replace(/\s+/g, " ")
       .toLocaleLowerCase()
       .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 
@@ -4264,7 +4500,12 @@ async function checkBusinessPassword() {
     const email = emailInput.value.trim();
 
     const validName = name.length >= 2;
-    const validWhatsapp = /^\+?[0-9\s()-]{7,20}$/.test(whatsapp);
+    const whatsappDigits = whatsapp.replace(/\D/g, "");
+    const validWhatsapp =
+      /^\+?[0-9\s()-]+$/.test(whatsapp) &&
+      whatsappDigits.length >= 7 &&
+      whatsappDigits.length <= 15;
+
     const validEmail = email !== "" && emailInput.checkValidity();
 
     document.getElementById("private-guest-send").disabled =
@@ -4288,10 +4529,16 @@ async function checkBusinessPassword() {
     const full_name = document
       .getElementById("private-guest-name").value.trim();
 
-    const whatsapp =
-      document.getElementById("private-guest-country-code").value +
-      document.getElementById("private-guest-whatsapp")
-        .value.trim().replace(/\D/g, "");
+    const privateCountryCode =
+      document.getElementById("private-guest-country-code").value;
+
+    const privatePhone = document
+      .getElementById("private-guest-whatsapp")
+      .value.trim();
+
+    const whatsapp = privatePhone.startsWith("+")
+      ? "+" + privatePhone.replace(/\D/g, "")
+      : privateCountryCode + privatePhone.replace(/\D/g, "");
 
     const email = document
         .getElementById("private-guest-email").value.trim();
@@ -4340,10 +4587,23 @@ async function checkBusinessPassword() {
   }
 
   function selectPrivateExperience(duration, price) {
+    const approvedPrices = {
+      "4 hours": 299,
+      "8 hours": 449
+    };
+
+    if (
+      !Object.prototype.hasOwnProperty.call(approvedPrices, duration) ||
+      Number(price) !== approvedPrices[duration]
+    ) {
+      alert("Invalid Private Experience selection.");
+      return;
+    }
+
     booking.tour = "Private Experience";
     booking.duration = duration;
     booking.pricePerPerson = 0;
-    booking.tourTotal = price;
+    booking.tourTotal = approvedPrices[duration];
   }
   
   async function selectTour(tour, duration, price) {
@@ -4373,6 +4633,7 @@ async function checkBusinessPassword() {
     .from("public_trip_availability")
     .select("id, title, starts_at, ends_at, seats_available")
     .eq("title", tour)
+    .gte("starts_at", new Date().toISOString())
     .order("starts_at");
 
   if (error) {
@@ -4381,8 +4642,9 @@ async function checkBusinessPassword() {
     return;
   }
 
-  if (!data || data.length === 0) {
-    alert("This tour is currently unavailable.");
+  if (!Array.isArray(data) || data.length === 0) {
+    booking.availableTrips = [];
+    alert("There are currently no upcoming dates for this tour.");
     return;
   }
 
@@ -4644,14 +4906,20 @@ function renderCalendar() {
         return;
       }
       
+    const selectedPeople = Number(booking.people);
+
+    if (!Number.isInteger(selectedPeople) || selectedPeople < 1) {
+      throw new Error("Invalid passenger selection");
+    }
+
     if (booking.limitPeopleAfterInsufficient) {
       booking.people = Math.max(
         1,
-        Math.min(booking.people, seats, 8)
+        Math.min(selectedPeople, seats, 8)
       );
       booking.limitPeopleAfterInsufficient = false;
     } else {
-      booking.people = Math.max(1, booking.people);
+      booking.people = selectedPeople;
     }
 
     booking.tourTotal = booking.pricePerPerson * booking.people;
@@ -4667,7 +4935,10 @@ function renderCalendar() {
       alert("Unable to verify availability. Please try again.");
     } finally {
       if (document.getElementById("screen-date").classList.contains("active")) {
-        button.disabled = booking.seatsAvailable <= 0;
+        button.disabled =
+          !booking.tripId ||
+          !booking.date ||
+          Number(booking.seatsAvailable) <= 0;
       }
     }
   }
@@ -4709,15 +4980,19 @@ function renderCalendar() {
     );
   });
 
-if (!selectedTrip || selectedTrip.seats_available <= 0) {
-  alert("No seats available for this date. Please choose another day.");
-  return;
-}
-
-booking.tripId = selectedTrip.id;
-booking.seatsAvailable = selectedTrip.seats_available;
-booking.startsAt = selectedTrip.starts_at;
-booking.endsAt = selectedTrip.ends_at;
+  if (
+    !selectedTrip ||
+    !Number.isFinite(Number(selectedTrip.seats_available)) ||
+    Number(selectedTrip.seats_available) <= 0
+  ) {
+    alert("No seats available for this date. Please choose another day.");
+    return;
+  }
+    
+    booking.tripId = selectedTrip.id;
+    booking.seatsAvailable = selectedTrip.seats_available;
+    booking.startsAt = selectedTrip.starts_at;
+    booking.endsAt = selectedTrip.ends_at;
     
     document.querySelectorAll(".day").forEach(el => {
       el.classList.remove("selected");
@@ -4751,6 +5026,14 @@ booking.endsAt = selectedTrip.ends_at;
     // Preserve passengers when selecting a date.
     // Apply the new limit when entering the People screen.
 
+    if (
+      !Number.isInteger(Number(booking.people)) ||
+      Number(booking.people) < 1 ||
+      Number(booking.people) > 8
+    ) {
+      booking.people = 1;
+    }
+
     document.getElementById("people-count").textContent = booking.people;
     booking.tourTotal = booking.pricePerPerson * booking.people;
     
@@ -4777,9 +5060,19 @@ async function continueFromPeople() {
       .from("public_trip_availability")
       .select("seats_available")
       .eq("id", booking.tripId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+
+    if (!data) {
+      alert(
+        "This tour date is no longer available. " +
+        "Please choose another date."
+      );
+      showScreen("screen-date");
+      await refreshLiveSeatsCalendar();
+      return;
+    }
 
     const available = Number(data.seats_available);
     if (!Number.isFinite(available) || available < 0) {
@@ -4834,10 +5127,18 @@ async function continueFromPeople() {
       return;
     }
 
-    let newValue = booking.people + change;
+    const currentPeople = Number(booking.people);
+    const increment = Number(change);
 
-    if (newValue < 1) return;
-    if (newValue > 8) return;
+    if (
+      !Number.isInteger(currentPeople) ||
+      !Number.isInteger(increment) ||
+      ![-1, 1].includes(increment)
+    ) return;
+
+    const newValue = currentPeople + increment;
+
+    if (newValue < 1 || newValue > 8) return;
 
     if (change > 0 && newValue > booking.seatsAvailable) {
       return;
@@ -4851,8 +5152,9 @@ async function continueFromPeople() {
 
     function capitalizeName(input) {
   input.value = input.value
-    .toLowerCase()
-    .replace(/\b\p{L}/gu, letter => letter.toUpperCase());
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase()
+    .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 }
   function openReview() {
 
@@ -4866,8 +5168,13 @@ async function continueFromPeople() {
     }
 
     const phoneDigits = booking.phone.replace(/\D/g, "");
+    const validPhoneCharacters = /^\+?[\d\s().-]+$/.test(booking.phone);
 
-    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+    if (
+      !validPhoneCharacters ||
+      phoneDigits.length < 7 ||
+      phoneDigits.length > 15
+    ) {
       alert("Please enter a valid WhatsApp number.");
       return;
     }
@@ -4892,8 +5199,10 @@ async function continueFromPeople() {
 
     document.getElementById("review-time").textContent =
       booking.tour === "North Fuerteventura"
-      ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+        ? "09:30 – 13:30"
+        : booking.tour === "Sotavento Experience"
+          ? "09:30 – 17:00"
+          : "Time to be confirmed";
 
     document.getElementById("review-people").textContent =
       booking.people + (booking.people === 1 ? " person" : " people");
@@ -4905,14 +5214,22 @@ async function continueFromPeople() {
 
     partnerRow.style.display = isPartner ? "flex" : "none";
     document.getElementById("review-partner").textContent =
-      (booking.businessPartnerName || "")
+      String(booking.businessPartnerName || "")
+        .trim()
+        .replace(/\s+/g, " ")
         .toLocaleLowerCase()
         .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
 
-    const countryCode = document.getElementById("country-code").value;
+    const countryCode = String(
+      document.getElementById("country-code")?.value || "+34"
+    ).trim();
+
+    const reviewPhone = String(booking.phone || "").trim();
 
     document.getElementById("review-phone").textContent =
-      countryCode + " " + booking.phone;
+      reviewPhone.startsWith("+")
+        ? reviewPhone
+        : countryCode + " " + reviewPhone;
 
     document.getElementById("review-pickup").textContent =
       booking.pickup;
@@ -5228,10 +5545,19 @@ async function continueFromReview() {
 }
 
   function formatDateWithOrdinal(dateString) {
-  const parts = dateString.split(" ");
-  const day = parseInt(parts[0], 10);
+  if (typeof dateString !== "string" || !dateString.trim()) {
+    return "Date to be confirmed";
+  }
 
-  if (isNaN(day) || parts.length < 3) {
+  const parts = dateString.trim().split(/\s+/);
+  const day = Number(parts[0]);
+
+  if (
+    !Number.isInteger(day) ||
+    day < 1 ||
+    day > 31 ||
+    parts.length < 3
+  ) {
     return dateString;
   }
 
@@ -5240,9 +5566,10 @@ async function continueFromReview() {
 
   function buildWhatsAppMessage() {
   const formattedDate = formatDateWithOrdinal(booking.date);
-  const peopleText = booking.people === 1
+  const passengers = Number(booking.people);
+  const peopleText = passengers === 1
     ? "1 person"
-    : booking.people + " people";
+    : passengers + " people";
 
   return `🌴 *Thank you for choosing Nomad Escape!*
 
@@ -5252,7 +5579,7 @@ We're looking forward to having you with us on the van.
 
 *${booking.tour}*
 📅 *${formattedDate}*
-🕘 *Departure: 09:30*
+🕘 *${booking.tour === "North Fuerteventura" || booking.tour === "Sotavento Experience" ? "Departure: 09:30" : "Departure time to be confirmed"}*
 👥 *${peopleText}*
 📍 *${booking.pickup}*
 
@@ -5420,7 +5747,10 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
     const confirmationFields = {
       "confirmation-booking-code": booking.bookingCode,
-      "confirmation-partner": (booking.businessPartnerName || "")
+      "confirmation-partner": String(
+        booking.businessPartnerName || ""
+      )
+        .trim()
         .toLocaleLowerCase()
         .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase()),
       "confirmation-customer": booking.name,
@@ -5431,7 +5761,9 @@ const result = await supabaseClient.functions.invoke("business-booking", {
         formatDateWithOrdinal(booking.date) + " · " +
         (booking.tour === "North Fuerteventura"
           ? "09:30 – 13:30"
-          : "09:30 – 17:00"),
+          : booking.tour === "Sotavento Experience"
+            ? "09:30 – 17:00"
+            : "Time to be confirmed"),
       "confirmation-people":
         booking.people + (booking.people === 1 ? " person" : " people"),
       "confirmation-total": "Pending verification",
@@ -5501,7 +5833,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "€" + Number(depositAmount).toFixed(2);
 
     document.getElementById("confirmation-balance").textContent =
-      "€" + balanceAmount;
+      "€" + Number(balanceAmount).toFixed(2);
 
       const whatsappMessage = buildWhatsAppMessage();
       console.log("WhatsApp confirmation message:", whatsappMessage);
@@ -5517,25 +5849,36 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
     const time = booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+      : booking.tour === "Sotavento Experience"
+        ? "09:30 – 17:00"
+        : "Time to be confirmed";
 
-    const countryCode =
-      document.getElementById("country-code").value;
+    const countryCode = String(
+      document.getElementById("country-code")?.value || "+34"
+    ).trim();
 
-    const fullPhone = countryCode + " " + booking.phone;
+    const phone = String(booking.phone || "").trim();
+
+    const fullPhone = phone.startsWith("+")
+      ? phone
+      : countryCode + " " + phone;
 
     const bookingText = [
       "NOMAD ESCAPE FUERTEVENTURA",
-      "BOOKING RECEIPT",
+      "PARTNER BOOKING RECEIPT",
       "",
       "Booking Code: " + booking.bookingCode,
-      "Tour: " + booking.tour,
-      "Date / Time: " + formatDateWithOrdinal(booking.date) + " / " + time,
-      "People: " + booking.people,
-      "Partner Commission: €" + booking.businessCommissionAmount,
-      "Tour Total: €" + booking.tourTotal,
       "Guest Name: " + booking.name,
       "WhatsApp: " + fullPhone,
+      "Passengers: " + booking.people,
+      "Tour: " + booking.tour,
+      "Date: " + formatDateWithOrdinal(booking.date),
+      "Time: " + time,
+      "Total Price: €" + Number(booking.businessTotalAmount).toFixed(2),
+      "Partner Commission: €" +
+        Number(booking.businessCommissionAmount).toFixed(2),
+      "Remaining Balance: €" +
+        Number(booking.businessBalanceAmount).toFixed(2),
       "Pickup Location: " + booking.pickup,
       "Partner Name: " + (booking.businessPartnerName || ""),
       "",
@@ -5582,7 +5925,12 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   
   function downloadConfirmedBooking() {
     if (booking.accessType === "business") {
-      return downloadBusinessReceipt();
+      alert(
+        "SEND TO GUEST is not available yet.\n\n" +
+        "The customer PDFs and WhatsApp delivery must be " +
+        "connected before this action can be used."
+      );
+      return;
     }
 
     if (booking.accessType === "guest") {
@@ -5593,57 +5941,74 @@ const result = await supabaseClient.functions.invoke("business-booking", {
   }
 
     
-async function downloadGuestBookingPDF() {
-  if (booking.accessType !== "guest") return;
-
-  // Guest PDF remains disabled until a verified backend payment
-  // confirmation has been integrated.
-  if (
-    booking.guestPaymentVerified !== true ||
-    !booking.bookingCode
-  ) {
-    return;
-  }
-
-  if (!window.jspdf?.jsPDF) {
-    alert("PDF library unavailable. Please reload the page.");
-    return;
-  }
-
-  const doc = new window.jspdf.jsPDF();
-  const navy = [23, 40, 63];
-  const turquoise = [49, 157, 162];
-
-  const issuedAt = new Date().toLocaleString("en-GB", {
-    timeZone: "Atlantic/Canary",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(105, 117, 133);
-  doc.text(issuedAt + " (Canary Islands)", 20, 13);
-
-  let y = 20;
-
-  try {
-    const logo = new Image();
-
-    await new Promise((resolve, reject) => {
-      logo.onload = resolve;
-      logo.onerror = reject;
-      logo.src = new URL("logo.png", window.location.href).href;
+  async function downloadGuestBookingPDF() {
+    if (booking.accessType !== "guest") return;
+  
+    if (
+      booking.guestPaymentVerified !== true ||
+      !booking.bookingCode
+    ) {
+      alert("Booking payment has not been verified yet.");
+      return;
+    }
+  
+    if (
+      !Number.isFinite(Number(booking.tourTotal)) ||
+      Number(booking.tourTotal) <= 0
+    ) {
+      alert("Booking financial details are unavailable.");
+      return;
+    }
+  
+    if (!window.jspdf?.jsPDF) {
+      alert("PDF library unavailable. Please reload the page.");
+      return;
+    }
+  
+    const doc = new window.jspdf.jsPDF();
+    const navy = [23, 40, 63];
+    const turquoise = [49, 157, 162];
+  
+    const issuedAt = new Date().toLocaleString("en-GB", {
+      timeZone: "Atlantic/Canary",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
     });
+  
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(105, 117, 133);
+    doc.text(issuedAt + " (Canary Islands)", 20, 13);
+  
+    let y = 20;
+  
+    try {
+      const logo = new Image();
+  
+      await new Promise((resolve, reject) => {
+        logo.onload = resolve;
+        logo.onerror = reject;
+        logo.src = new URL("logo.png", window.location.href).href;
+      });
+
+    if (!logo.naturalWidth || !logo.naturalHeight) {
+      throw new Error("Invalid logo dimensions");
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = logo.naturalWidth;
     canvas.height = logo.naturalHeight;
-    canvas.getContext("2d").drawImage(logo, 0, 0);
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Unable to create PDF logo canvas");
+    }
+
+    context.drawImage(logo, 0, 0);
 
     const width = 100;
     const height = Math.min(
@@ -5811,10 +6176,20 @@ async function downloadGuestBookingPDF() {
   const time =
     booking.tour === "North Fuerteventura"
       ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+      : booking.tour === "Sotavento Experience"
+        ? "09:30 – 17:00"
+        : "Time to be confirmed";
 
-  const countryCode = document.getElementById("country-code").value;
-  const fullPhone = countryCode + " " + booking.phone;
+  const countryCode = String(
+    document.getElementById("country-code")?.value || "+34"
+  ).trim();
+
+  const phone = String(booking.phone || "").trim();
+
+  const fullPhone = phone.startsWith("+")
+    ? phone
+    : countryCode + " " + phone;
+
   const depositAmount = booking.businessCommissionAmount;
 
   const safe = escapeReceiptHTML;
@@ -5978,7 +6353,7 @@ async function downloadGuestBookingPDF() {
       <h1>NOMAD ESCAPE</h1>
       <div class="destination">FUERTEVENTURA</div>
 
-      <h2>Booking Receipt</h2>
+      <h2>Partner Booking Receipt</h2>
 
       <div class="row">
         <div class="label">Booking Code</div>
@@ -6002,7 +6377,7 @@ async function downloadGuestBookingPDF() {
 
       <div class="row">
         <div class="label">Partner Commission</div>
-        <div class="value">€${safe(depositAmount)}</div>
+        <div class="value">€${safe(Number(depositAmount).toFixed(2))}</div>
       </div>
 
       <div class="row">
@@ -6017,7 +6392,7 @@ async function downloadGuestBookingPDF() {
 
       <div class="row">
         <div class="label">WhatsApp</div>
-        <div class="value">${safe(fullPhone)}</div>
+        <div class="value">${safe(fullPhone.trim())}</div>
       </div>
 
       <div class="row">
@@ -6027,7 +6402,9 @@ async function downloadGuestBookingPDF() {
 
       <div class="row">
         <div class="label">Partner Name</div>
-        <div class="value">${safe(booking.businessPartnerName || "")}</div>
+        <div class="value">${safe(
+          String(booking.businessPartnerName || "").trim() || "Not available"
+        )}</div>
       </div>
       
       <div class="thanks">
@@ -6036,11 +6413,13 @@ async function downloadGuestBookingPDF() {
       </div>
 
       <div style="display:flex; gap:10px; justify-content:center; margin-top:30px; flex-wrap:wrap; width:100%;">
-        <button class="print-button" onclick="window.downloadReceiptPDF()">
+        <button class="print-button" type="button"
+                onclick="window.downloadReceiptPDF()">
           <span aria-hidden="true">↓</span> DOWNLOAD PDF
         </button>
-        <button class="print-button" onclick="window.shareReceiptOnDevice()">
-          SHARE
+        <button class="print-button" type="button"
+                onclick="window.shareReceiptOnDevice()">
+          <span aria-hidden="true">↗</span> SHARE
         </button>
         <button class="print-button" onclick="window.copyReceiptOnDevice()">
           <span aria-hidden="true">▢</span> COPY
@@ -6059,22 +6438,24 @@ async function downloadGuestBookingPDF() {
     return shareBusinessReceipt(receiptWindow);
   };
 
-  receiptWindow.copyReceiptOnDevice = async function () {
-    const doc = receiptWindow.document;
-    const rows = Array.from(doc.querySelectorAll(".row"))
-      .map(row => {
-        const label = row.querySelector(".label")?.textContent || "";
-        const value = row.querySelector(".value")?.textContent || "";
-        return label + ": " + value;
-      });
-
-    const text = [
+   const text = [
       "NOMAD ESCAPE FUERTEVENTURA",
-      "BOOKING RECEIPT",
+      "PARTNER BOOKING RECEIPT",
       "",
       ...rows,
       "",
-      "Thank you for booking with Nomad Escape!"
+      "Thank you for booking with Nomad Escape!",
+      "Explore - Escape - Be Free"
+    ].join("\n");
+
+    const text = [
+      "NOMAD ESCAPE FUERTEVENTURA",
+      "PARTNER BOOKING RECEIPT",
+      "",
+      ...rows,
+      "",
+      "Thank you for booking with Nomad Escape!",
+      "Explore - Escape - Be Free"
     ].join("\n");
 
     try {
