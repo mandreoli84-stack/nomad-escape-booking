@@ -422,21 +422,22 @@
 
     .phone-row {
       display: flex;
-      gap: 8px;
+      gap: 5px;
       min-width: 0;
+      width: 100%;
     }
-
+    
     .phone-row input[type="tel"]:not(.country-code) {
-       flex: 1;
-       min-width: 0;
-       width: 100%;
+      flex: 1 1 0;
+      min-width: 0;
+      width: 100%;
     }
-
+    
     .country-code {
-      width: 105px;
-      min-width: 105px;
-      flex: 0 0 105px;
-      padding: 10px 8px;
+      width: 88px;
+      min-width: 88px;
+      flex: 0 0 88px;
+      padding: 10px 4px;
       text-align: center;
     }
     
@@ -1456,7 +1457,8 @@
     id="partner-default-pickup"
     type="text"
     maxlength="50"
-    placeholder="Hotel / Partner premises">
+    placeholder="Hotel / Partner premises"
+    onblur="this.value=formatPartnerName(this.value)">
 
   <label for="partner-commission">Commission Group *</label>
   <select id="partner-commission"
@@ -1608,7 +1610,10 @@
   <input id="edit-partner-website" type="url" maxlength="500">
 
   <label for="edit-partner-pickup">Default Pickup Location</label>
-  <input id="edit-partner-pickup" type="text" maxlength="50">
+  <input id="edit-partner-pickup"
+         type="text"
+         maxlength="50"
+         onblur="this.value=formatPartnerName(this.value)">
 
   <label for="edit-partner-group">Commission Group *</label>
   <select id="edit-partner-group"
@@ -3928,47 +3933,55 @@ async function createAssistedBooking() {
     const partnerRadio = document.getElementById("pickup-partner");
     const otherRadio = document.getElementById("pickup-other");
     const pickupInput = document.getElementById("pickup-location");
-
+  
     const isBusiness = booking.accessType === "business";
-    options.style.display = isBusiness ? "block" : "none";
-
+    const hasDefault = Boolean(businessDefaultPickup.trim());
+  
+    options.style.display =
+      isBusiness && hasDefault ? "block" : "none";
+  
     if (!isBusiness) {
       pickupInput.readOnly = false;
       return;
     }
-
+  
+    if (!hasDefault) {
+      partnerRadio.checked = false;
+      otherRadio.checked = true;
+      pickupInput.readOnly = false;
+      capitalizeName(pickupInput);
+      return;
+    }
+  
     if (!partnerRadio.checked && !otherRadio.checked) {
       partnerRadio.checked = true;
     }
-
+  
     if (partnerRadio.checked) {
-      if (!pickupInput.value.trim()) {
-        pickupInput.value = businessDefaultPickup;
-      }
+      pickupInput.value = businessDefaultPickup;
       pickupInput.readOnly = true;
     } else {
       pickupInput.readOnly = false;
     }
-
+  
     if (pickupInput.value.trim()) {
       capitalizeName(pickupInput);
     }
   }
-
-  function changeBusinessPickup(mode) {
-    const pickupInput = document.getElementById("pickup-location");
-    hidePickupSuggestions();
-    
-    if (mode === "partner") {
-      pickupInput.value = businessDefaultPickup;
-      capitalizeName(pickupInput);
-      pickupInput.readOnly = true;
-    } else {
-      pickupInput.value = "";
-      pickupInput.readOnly = false;
-      pickupInput.focus();
+    function changeBusinessPickup(mode) {
+      const pickupInput = document.getElementById("pickup-location");
+      hidePickupSuggestions();
+      
+      if (mode === "partner") {
+        pickupInput.value = businessDefaultPickup;
+        capitalizeName(pickupInput);
+        pickupInput.readOnly = true;
+      } else {
+        pickupInput.value = "";
+        pickupInput.readOnly = false;
+        pickupInput.focus();
+      }
     }
-  }
 
   let pickupSearchTimer = null;
   let pickupSearchVersion = 0;
@@ -6565,7 +6578,10 @@ async function downloadGuestBookingPDF() {
 
       const email = get("edit-partner-email").value.trim();
       const website = get("edit-partner-website").value.trim();
-      const pickup = get("edit-partner-pickup").value.trim();
+      const pickup = formatPartnerName(
+      get("edit-partner-pickup").value
+      );
+      get("edit-partner-pickup").value = pickup;
       const group = Number(get("edit-partner-group").value);
 
       message.style.color = "#b42318";
