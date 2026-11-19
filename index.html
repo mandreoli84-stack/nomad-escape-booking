@@ -437,9 +437,12 @@
       width: 88px;
       min-width: 88px;
       flex: 0 0 88px;
-      padding: 10px 4px;
+      padding: 10px 2px;
       text-align: center;
-    }
+      font-size: 12px;
+      border: 1px solid #d9e0e3;
+      border-radius: 6px;
+      background: #ffffff;
     
     .helper {
       color: #728091;
@@ -1393,10 +1396,10 @@
     <div style="flex:1; min-width:0;">
       <label for="partner-whatsapp">WhatsApp 1 *</label>
       <div class="phone-row">
-  <input id="partner-prefix-1"
-         class="country-code"
-         type="tel"
-         value="+34"
+  <select id="partner-prefix-1"
+          class="country-code"
+          aria-label="Country code">
+  </select>
          aria-label="Country code">
   <input id="partner-whatsapp"
          type="tel"
@@ -1420,10 +1423,10 @@
     <div style="flex:1; min-width:0;">
       <label for="partner-whatsapp-2">WhatsApp 2</label>
       <div class="phone-row">
-  <input id="partner-prefix-2"
-         class="country-code"
-         type="tel"
-         value="+34"
+  <select id="partner-prefix-2"
+          class="country-code"
+          aria-label="Country code">
+  </select>
          aria-label="Country code">
   <input id="partner-whatsapp-2"
          type="tel"
@@ -1537,11 +1540,10 @@
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-whatsapp">WhatsApp 1 *</label>
       <div class="phone-row">
-  <input id="edit-partner-prefix-1"
-         class="country-code"
-         type="tel"
-         value="+34"
-         aria-label="Country code">
+  <select id="edit-partner-prefix-1"
+          class="country-code"
+          aria-label="Country code">
+  </select>
     <input id="edit-partner-whatsapp"
          type="tel"
          placeholder="600 000 000">
@@ -1572,11 +1574,10 @@
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-whatsapp-2">WhatsApp 2</label>
       <div class="phone-row">
-  <input id="edit-partner-prefix-2"
-         class="country-code"
-         type="tel"
-         value="+34"
-         aria-label="Country code">
+  <select id="edit-partner-prefix-2"
+          class="country-code"
+          aria-label="Country code">
+  </select>
   <input id="edit-partner-whatsapp-2"
          type="tel"
          placeholder="600 000 000">
@@ -7009,22 +7010,53 @@ async function downloadGuestBookingPDF() {
       const number = document.getElementById(numberId);
       const value = String(phone || "").trim();
       const digits = value.replace(/\D/g, "");
-
+    
       prefix.value = "+34";
       number.value = "";
-
+    
       if (!digits) return;
-
-      if (digits.startsWith("34") && digits.length === 11) {
-        number.value = digits.slice(2);
-      } else if (digits.length === 9) {
+    
+      const codes = Array.from(prefix.options)
+        .map(option => option.value)
+        .filter(code => /^\+[1-9]\d*$/.test(code))
+        .sort((a, b) => b.length - a.length);
+    
+      const match = codes.find(code =>
+        digits.startsWith(code.slice(1)) &&
+        digits.length > code.length - 1
+      );
+    
+      if (match) {
+        prefix.value = match;
+        number.value = digits.slice(match.length - 1);
+      } else if (digits.length === 9 && !value.startsWith("+")) {
         number.value = digits;
       } else {
-        // Non indovinare il prefisso dei numeri internazionali.
-        prefix.value = "";
+        // Keep unknown international numbers intact.
+        // getPartnerPhone() accepts a full number beginning with +.
         number.value = value.startsWith("+") ? value : "+" + digits;
       }
     }
+    
+    function initializePartnerCountryCodes() {
+      const source = document.getElementById("country-code");
+      if (!source) return;
+    
+      [
+        "partner-prefix-1",
+        "partner-prefix-2",
+        "edit-partner-prefix-1",
+        "edit-partner-prefix-2"
+      ].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+    
+        select.innerHTML = source.innerHTML;
+        select.value = "+34";
+      });
+    }
+    
+    initializePartnerCountryCodes();
   
     function validateBusinessPartnerForm() {
       const name = formatPartnerName(document.getElementById("partner-name").value);
