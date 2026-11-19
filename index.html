@@ -1104,7 +1104,47 @@
 
     </form>
   </dialog>
-
+    
+    <!-- NOMAD CONFIRMATION POPUP -->
+    <dialog id="nomad-confirm-dialog"
+            style="border:1px solid #d9e0e3;
+                   border-radius:12px;
+                   padding:24px;
+                   width:calc(100% - 32px);
+                   max-width:390px;
+                   color:#10233b;
+                   box-shadow:0 12px 40px rgba(0,0,0,.2);">
+    
+      <h3 id="nomad-confirm-title"
+          style="margin:0 0 18px;
+                 text-align:center;"></h3>
+    
+      <div id="nomad-confirm-details"
+           style="white-space:pre-line;
+                  font-size:16px;
+                  line-height:1.8;
+                  margin-bottom:24px;"></div>
+    
+      <form method="dialog"
+            style="display:flex;gap:12px;">
+    
+        <button class="secondary"
+                type="submit"
+                value="cancel"
+                style="flex:1;min-width:0;">
+          Cancel
+        </button>
+    
+        <button class="primary"
+                type="submit"
+                value="ok"
+                style="flex:1;min-width:0;">
+          OK
+        </button>
+    
+      </form>
+    </dialog>
+  
     <dialog id="driver-payment-choice-dialog"
           style="border:1px solid #d9e0e3;
                  border-radius:12px;
@@ -6659,8 +6699,8 @@ async function downloadGuestBookingPDF() {
     compare("edit-partner-private-8h", "Private 8h (€)", private8h);
 
     if (changes.length > 0) {
-      const approved = confirm(
-        "CONFIRM COMMISSION CHANGES\n\n" +
+      const approved = await nomadConfirmAction(
+        "CONFIRM COMMISSION CHANGES",
         changes.join("\n") +
         "\n\nApply these changes to the partner?"
       );
@@ -7715,7 +7755,25 @@ async function downloadGuestBookingPDF() {
         dialog.showModal();
       });
     }
-
+    
+    function nomadConfirmAction(title, details) {
+      return new Promise(resolve => {
+        const dialog = document.getElementById("nomad-confirm-dialog");
+        const titleEl = document.getElementById("nomad-confirm-title");
+        const detailsEl = document.getElementById("nomad-confirm-details");
+    
+        titleEl.textContent = title;
+        detailsEl.textContent = details;
+        dialog.returnValue = "";
+    
+        dialog.addEventListener("close", function onClose() {
+          resolve(dialog.returnValue === "ok");
+        }, { once: true });
+    
+        dialog.showModal();
+      });
+    }
+  
     async function driverCheckIn(bookingId) {
       const b = driverBookings.find(x => x.booking_id === bookingId);
     
