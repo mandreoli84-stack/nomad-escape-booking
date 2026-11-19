@@ -423,26 +423,26 @@
     .phone-row {
       display: flex;
       gap: 5px;
-      min-width: 0;
       width: 100%;
+      min-width: 0;
     }
     
-    .phone-row input[type="tel"]:not(.country-code) {
+    .phone-row .country-code {
       flex: 1 1 0;
+      width: 33.333%;
       min-width: 0;
-      width: 100%;
-    }
-    
-    .country-code {
-      width: 88px;
-      min-width: 88px;
-      flex: 0 0 88px;
-      padding: 10px 2px;
+      padding: 10px 4px;
       text-align: center;
-      font-size: 12px;
+      font-size: 14px;
       border: 1px solid #d9e0e3;
       border-radius: 6px;
       background: #ffffff;
+    }
+    
+    .phone-row input[type="tel"] {
+      flex: 2 1 0;
+      width: 66.667%;
+      min-width: 0;
     }
     
     .helper {
@@ -1393,7 +1393,7 @@
   <input id="partner-name" type="text" maxlength="100"
        onblur="this.value=formatPartnerName(this.value)">
 
-  <div style="display:flex; gap:10px; align-items:flex-start;">
+  <div style="display:block;">
     <div style="flex:1; min-width:0;">
       <label for="partner-whatsapp">WhatsApp 1 *</label>
       <div class="phone-row">
@@ -1419,7 +1419,7 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:10px; align-items:flex-start;">
+  <div style="display:block;">
     <div style="flex:1; min-width:0;">
       <label for="partner-whatsapp-2">WhatsApp 2</label>
       <div class="phone-row">
@@ -1535,7 +1535,7 @@
   <input id="edit-partner-code" type="text"
          maxlength="6" readonly>
 
-  <div style="display:flex; gap:10px;">
+  <div style="display:block;">
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-whatsapp">WhatsApp 1 *</label>
       <div class="phone-row">
@@ -1569,7 +1569,7 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:10px;">
+  <div style="display:block;">
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-whatsapp-2">WhatsApp 2</label>
       <div class="phone-row">
