@@ -1104,46 +1104,6 @@
 
     </form>
   </dialog>
-    
-    <!-- NOMAD CONFIRMATION POPUP -->
-    <dialog id="nomad-confirm-dialog"
-            style="border:1px solid #d9e0e3;
-                   border-radius:12px;
-                   padding:24px;
-                   width:calc(100% - 32px);
-                   max-width:390px;
-                   color:#10233b;
-                   box-shadow:0 12px 40px rgba(0,0,0,.2);">
-    
-      <h3 id="nomad-confirm-title"
-          style="margin:0 0 18px;
-                 text-align:center;"></h3>
-    
-      <div id="nomad-confirm-details"
-           style="white-space:pre-line;
-                  font-size:16px;
-                  line-height:1.8;
-                  margin-bottom:24px;"></div>
-    
-      <form method="dialog"
-            style="display:flex;gap:12px;">
-    
-        <button class="secondary"
-                type="submit"
-                value="cancel"
-                style="flex:1;min-width:0;">
-          Cancel
-        </button>
-    
-        <button class="primary"
-                type="submit"
-                value="ok"
-                style="flex:1;min-width:0;">
-          OK
-        </button>
-    
-      </form>
-    </dialog>
   
     <dialog id="driver-payment-choice-dialog"
           style="border:1px solid #d9e0e3;
@@ -1731,7 +1691,47 @@
     </button>
   </div>
   
-  <p id="edit-partner-message" role="status"></p>
+    <!-- NOMAD CONFIRMATION POPUP -->
+    <dialog id="nomad-confirm-dialog"
+            style="border:1px solid #d9e0e3;
+                   border-radius:12px;
+                   padding:24px;
+                   width:calc(100% - 32px);
+                   max-width:390px;
+                   color:#10233b;
+                   box-shadow:0 12px 40px rgba(0,0,0,.2);">
+  
+      <h3 id="nomad-confirm-title"
+          style="margin:0 0 18px;
+                 text-align:center;"></h3>
+  
+      <div id="nomad-confirm-details"
+           style="white-space:pre-line;
+                  font-size:16px;
+                  line-height:1.8;
+                  margin-bottom:24px;"></div>
+  
+      <form method="dialog"
+            style="display:flex;gap:12px;">
+  
+        <button class="secondary"
+                type="submit"
+                value="cancel"
+                style="flex:1;min-width:0;">
+          Cancel
+        </button>
+  
+        <button class="primary"
+                type="submit"
+                value="ok"
+                style="flex:1;min-width:0;">
+          OK
+        </button>
+  
+      </form>
+    </dialog>
+
+    <p id="edit-partner-message" role="status"></p>
 
   <div class="bottom-buttons">
     <button class="secondary"
@@ -6595,6 +6595,18 @@ async function downloadGuestBookingPDF() {
           "Unable to load business partners: " + error.message;
       }
     }
+  
+    function normalizePartnerWebsite(id) {
+      const input = document.getElementById(id);
+      let website = input.value.trim();
+
+      if (website && !/^[a-z][a-z0-9+.-]*:\/\//i.test(website)) {
+        website = "https://" + website;
+      }
+
+      input.value = website;
+      return website;
+    }
 
     async function saveBusinessPartnerChanges() {
       const get = id => document.getElementById(id);
@@ -6617,7 +6629,7 @@ async function downloadGuestBookingPDF() {
       }
 
       const email = get("edit-partner-email").value.trim();
-      const website = get("edit-partner-website").value.trim();
+      const website = normalizePartnerWebsite("edit-partner-website");
       const pickup = formatPartnerName(
       get("edit-partner-pickup").value
       );
@@ -7115,7 +7127,7 @@ async function downloadGuestBookingPDF() {
         return null;
       }
       
-      const website = document.getElementById("partner-website").value.trim();
+      const website = normalizePartnerWebsite("partner-website");
       const defaultPickupLocation = document.getElementById("partner-default-pickup").value.trim();
       const commission = Number(
         document.getElementById("partner-commission").value
