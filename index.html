@@ -7269,7 +7269,11 @@ async function downloadGuestBookingPDF() {
         document.getElementById("partner-manual-code")
           .value.trim().toUpperCase();
 
-      if (codeMode === "manual" && !/^PC[0-9]{4}$/.test(manualCode)) {
+      if (
+        codeMode === "manual" &&
+        (!/^PC[0-9]{4}$/.test(manualCode) ||
+         Number(manualCode.slice(2)) < 101)
+      ) {
         message.style.color = "#b42318";
         message.textContent =
           "Invalid Personal Code. Use PC followed by 4 digits (e.g. PC1234).";
