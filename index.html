@@ -1438,9 +1438,11 @@
       <label for="partner-contact-name-2">Contact Name 2</label>
       <input
         id="partner-contact-name-2"
+        name="partner-secondary-contact-name"
         type="text"
         maxlength="100"
         placeholder="Contact person"
+        autocomplete="off"
         onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
@@ -6521,6 +6523,10 @@ async function downloadGuestBookingPDF() {
   }
   
     function openBusinessPartnerRegistration() {
+      document.getElementById("partner-code-mode").value = "random";
+      document.getElementById("partner-manual-code").value = "";
+      document.getElementById("partner-manual-code-box").hidden = true;
+
       document.getElementById("partner-name").value = "";
       document.getElementById("partner-prefix-1").value = "+34";
       document.getElementById("partner-prefix-2").value = "+34";
