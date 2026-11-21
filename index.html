@@ -1461,6 +1461,28 @@
     maxlength="50"
     placeholder="Hotel / Partner premises"
     onblur="this.value=formatPartnerName(this.value)">
+  
+  <label for="partner-code-mode">Personal Code *</label>
+  <select id="partner-code-mode"
+          style="width:100%;padding:13px;"
+          onchange="
+            document.getElementById('partner-manual-code-box').hidden =
+              this.value !== 'manual';
+          ">
+    <option value="random" selected>RANDOM — Automatic</option>
+    <option value="manual">MANUAL — Choose Code</option>
+  </select>
+
+  <div id="partner-manual-code-box" hidden>
+    <label for="partner-manual-code">Manual Personal Code *</label>
+    <input id="partner-manual-code"
+           type="text"
+           maxlength="6"
+           placeholder="PC1234"
+           autocapitalize="characters"
+           oninput="this.value=this.value.toUpperCase()">
+    <p class="helper">Format: PC followed by 4 digits.</p>
+  </div>
 
   <label for="partner-commission">Commission Group *</label>
   <select id="partner-commission"
@@ -7232,13 +7254,27 @@ async function downloadGuestBookingPDF() {
         ...fixedValues
       };
     }
-
+  
     async function registerBusinessPartner() {
       const form = validateBusinessPartnerForm();
       if (!form) return;
 
       const message = document.getElementById("partner-registration-message");
       const button = document.getElementById("partner-register-button");
+
+      const codeMode =
+        document.getElementById("partner-code-mode").value;
+
+      const manualCode =
+        document.getElementById("partner-manual-code")
+          .value.trim().toUpperCase();
+
+      if (codeMode === "manual" && !/^PC[0-9]{4}$/.test(manualCode)) {
+        message.style.color = "#b42318";
+        message.textContent =
+          "Invalid Personal Code. Use PC followed by 4 digits (e.g. PC1234).";
+        return;
+      }
 
       button.disabled = true;
       button.textContent = "REGISTERING...";
@@ -7261,7 +7297,10 @@ async function downloadGuestBookingPDF() {
             p_whatsapp: form.whatsapp,
             p_email: form.email,
             p_group_percent: form.commission,
-            p_personal_code: "",
+            p_personal_code:
+            document.getElementById("partner-code-mode").value === "manual"
+              ? document.getElementById("partner-manual-code").value.trim().toUpperCase()
+              : "",
             p_default_pickup_location: form.defaultPickupLocation,
             p_contact_name_1: form.contactName1,
             p_whatsapp_2: form.whatsapp2 || null,
