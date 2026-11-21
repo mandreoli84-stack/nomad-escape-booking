@@ -1442,13 +1442,16 @@
         type="text"
         maxlength="100"
         placeholder="Contact person"
-        autocomplete="off"
+        autocomplete="section-partner-secondary given-name"
         onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
   <label for="partner-email">Email *</label>
-  <input id="partner-email" type="email">
+  <input id="partner-email"
+       name="partner-business-email"
+       type="email"
+       autocomplete="section-partner-business email">
   <label for="partner-website">Website (optional)</label>
   <input
     id="partner-website"
