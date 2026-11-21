@@ -1625,13 +1625,20 @@
     </div>
     <div style="flex:1; min-width:0;">
       <label for="edit-partner-contact-2">Contact Name 2</label>
-      <input id="edit-partner-contact-2" type="text" maxlength="100"
+      <input id="edit-partner-contact-2"
+       name="edit-partner-secondary-contact-name"
+       type="text"
+       maxlength="100"
+       autocomplete="section-edit-partner-secondary given-name"
        onblur="this.value=formatPartnerName(this.value)">
     </div>
   </div>
 
   <label for="edit-partner-email">Email *</label>
-  <input id="edit-partner-email" type="email">
+  <input id="edit-partner-email"
+       name="edit-partner-business-email"
+       type="email"
+       autocomplete="section-edit-partner-business email">
 
   <label for="edit-partner-website">Website (optional)</label>
   <input id="edit-partner-website" type="url" maxlength="500">
