@@ -1817,8 +1817,16 @@
          placeholder="Full name">
 
   <label for="assisted-phone">WhatsApp *</label>
-  <input id="assisted-phone" type="tel"
-         placeholder="+34 600 000 000">
+  <div class="phone-row">
+    <select id="assisted-prefix"
+            class="country-code"
+            aria-label="Country code">
+    </select>
+
+    <input id="assisted-phone"
+           type="tel"
+           placeholder="600 000 000">
+  </div>
 
   <label for="assisted-email">Email</label>
   <input id="assisted-email" type="email"
@@ -3696,6 +3704,7 @@ async function openAssistedBookingForm() {
 
   document.getElementById("assisted-people").value = 1;
   document.getElementById("assisted-name").value = "";
+  document.getElementById("assisted-prefix").value = "+34";
   document.getElementById("assisted-phone").value = "";
   document.getElementById("assisted-email").value = "";
   document.getElementById("assisted-pickup").value = "";
@@ -3783,7 +3792,14 @@ async function createAssistedBooking() {
   const tripId = document.getElementById("assisted-trip").value;
   const passengers = Number(document.getElementById("assisted-people").value);
   const name = document.getElementById("assisted-name").value.trim();
-  const phone = document.getElementById("assisted-phone").value.trim();
+  let phone;
+
+  try {
+    phone = getPartnerPhone("assisted-prefix", "assisted-phone");
+  } catch (error) {
+    message.textContent = error.message;
+    return;
+  }
   const email = document.getElementById("assisted-email").value.trim();
   const pickup = document.getElementById("assisted-pickup").value.trim();
 
@@ -7135,7 +7151,8 @@ async function downloadGuestBookingPDF() {
         "partner-prefix-1",
         "partner-prefix-2",
         "edit-partner-prefix-1",
-        "edit-partner-prefix-2"
+        "edit-partner-prefix-2",
+        "assisted-prefix"
       ].forEach(id => {
         const select = document.getElementById(id);
         if (!select) return;
