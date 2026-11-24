@@ -1025,6 +1025,16 @@
     </div>
   </div>
 
+  <div class="tour-card" onclick="showScreen('screen-admin-booking-overview')">
+    <div class="tour-info">
+      <div class="tour-title">Booking Overview</div>
+      <div class="tour-meta">
+        Admin calendar, availability and booking management
+      </div>
+      <div class="tour-arrow">›</div>
+    </div>
+  </div>
+
   <div class="bottom-buttons">
     <button class="secondary" onclick="adminLogout()">
       LOGOUT
@@ -1032,9 +1042,41 @@
   </div>
 
   </section>
+
+  <!-- ADMIN - BOOKING OVERVIEW -->
+  <section class="screen" id="screen-admin-booking-overview">
   
-<!-- ADMIN - DRIVER DASHBOARD -->
-<section class="screen" id="screen-admin-driver">
+    <div class="logo">
+      <img src="logo.png"
+           alt="Nomad Escape Fuerteventura"
+           class="logo-image">
+    </div>
+  
+    <h1>Booking Overview</h1>
+    <p class="subtitle">
+      Ocean Luxury · Admin Calendar
+    </p>
+  
+    <div class="panel">
+      <h3>Booking Overview V4</h3>
+      <p>
+        Admin calendar integration in progress.
+      </p>
+      <p>
+        No live bookings or availability will be modified.
+      </p>
+    </div>
+  
+    <div class="bottom-buttons">
+      <button class="secondary"
+              onclick="showScreen('screen-admin')">
+        BACK
+      </button>
+    </div>
+  
+  </section>  
+  <!-- ADMIN - DRIVER DASHBOARD -->
+  <section class="screen" id="screen-admin-driver">
 
   <div class="logo">
     <img src="logo.png"
