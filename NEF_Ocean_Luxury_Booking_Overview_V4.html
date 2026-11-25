@@ -98,47 +98,317 @@
 <div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">Nomad Escape · Demo</div><h2 id="modalTitle">Create Booking</h2></div><button class="close" id="closeModal" aria-label="Close dialog">×</button></div><form class="modal-body" id="bookingForm"><div class="notice">This is a demonstration form. Saving adds simulated seats to the local calendar only.</div><div class="form-grid"><div class="field"><label for="bookingDate">Tour date</label><input id="bookingDate" type="date" required></div><div class="field"><label for="bookingSlot">Time slot</label><select id="bookingSlot" required><option value="morning">Morning</option><option value="arvo">Arvo</option><option value="night">Night</option></select></div><div class="field full"><label for="bookingTour">Tour</label><select id="bookingTour"><option value="North Fuerteventura">North Fuerteventura</option><option value="Sotavento">Sotavento</option><option value="Private Experience">Private Experience</option></select></div><div class="field full"><label for="bookingName">Guest name</label><input id="bookingName" placeholder="Full name" maxlength="90" required></div><div class="field"><label for="bookingPax">Passengers</label><input id="bookingPax" type="number" min="1" max="8" value="2" required></div><div class="field"><label for="bookingStatus">Demo seat status</label><select id="bookingStatus"><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="hold">Hold</option></select></div><div class="field full"><label for="bookingNotes">Notes (optional)</label><textarea id="bookingNotes" placeholder="Pickup, internal notes..."></textarea></div></div><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Cancel</button><button type="submit" class="btn btn-primary">Save Demo Booking</button></div></form></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
-(()=>{'use strict';
-// =============================================================
-// DEMO DATA / LOGIC — separate from CSS; NO external requests.
-// =============================================================
-const TZ='Atlantic/Canary',slots=['morning','arvo','night'];
-const $=id=>document.getElementById(id);
-const pad=n=>String(n).padStart(2,'0');
-function canaryToday(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${v.year}-${v.month}-${v.day}`}
-const todayKey=canaryToday();
-const dateFromKey=k=>new Date(k+'T12:00:00Z');
-const keyFromDate=d=>`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
-const addDays=(k,n)=>{let d=dateFromKey(k);d.setUTCDate(d.getUTCDate()+n);return keyFromDate(d)};
-const monday=k=>{let dow=dateFromKey(k).getUTCDay();return addDays(k,-((dow+6)%7))};
-const dayDiff=(a,b)=>Math.round((dateFromKey(a)-dateFromKey(b))/86400000);
-const minKey=addDays(todayKey,-365),maxKey=addDays(todayKey,365);
-let weekStart=monday(todayKey),tick=0,settings={everyday:false,arvo:false,night:false};
-const locks=new Set(),bookings=new Map();
-const seed=(date,slot,status,count)=>{let k=date+'|'+slot;let list=bookings.get(k)||[];for(let i=0;i<count;i++)list.push({status,guest:'Demo guest'});bookings.set(k,list)};
-// Seed a small amount of believable demo data, including future dates.
-for(let i=0;i<18;i++){let date=addDays(todayKey,i),dow=dateFromKey(date).getUTCDay();if([2,3,4,5].includes(dow)&&i%3===0){seed(date,'morning','confirmed',2+(i%3));if(i%2===0)seed(date,'morning','pending',1)}if([0,1,6].includes(dow)&&i%4===1){seed(date,'morning','confirmed',3);seed(date,'arvo','confirmed',3)}if(i===2)seed(date,'morning','hold',1)}
-function counts(k,slot){const list=bookings.get(k+'|'+slot)||[];let c={confirmed:0,pending:0,hold:0};for(let x of list)c[x.status]=(c[x.status]||0)+1;return c}
-function baseSmart(k,slot){let d=dateFromKey(k).getUTCDay();let north=[2,3,4,5].includes(d),sot=[0,1,6].includes(d);
- if(slot==='morning')return settings.everyday?(north||sot):(north&&[2,3].includes(d))||(sot&&[0,6].includes(d));
- if(slot==='arvo')return sot||(north&&settings.arvo);
- if(slot==='night')return north&&settings.night;
- return false}
-function isOpen(k,slot){if(locks.has(k+'|day')||locks.has(k+'|'+slot))return false;const c=counts(k,slot);return baseSmart(k,slot)||((c.confirmed+c.pending+c.hold)>0)}
-function state(k,slot){return locks.has(k+'|day')||locks.has(k+'|'+slot)?'manual':isOpen(k,slot)?'open':'closed'}
-function readable(k,opts={month:'short',day:'numeric'}){return new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',...opts}).format(dateFromKey(k))}
-function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
-function slotHtml(k,slot){const st=state(k,slot),past=k<todayKey,valid=k>=minKey&&k<=maxKey,c=counts(k,slot),total=Math.min(8,c.confirmed+c.pending+c.hold),free=st==='open'?Math.max(0,8-total):0;let dots=[];for(let [name,n] of [['confirmed',c.confirmed],['pending',c.pending],['hold',c.hold],['free',free]])for(let i=0;i<n&&dots.length<8;i++)dots.push(`<i class="seat ${name}" title="${name}"></i>`);while(dots.length<8)dots.push('<i class="seat empty" title="Not offered"></i>');let label=st==='open'?'SMART OPEN':st==='closed'?'SMART CLOSED':'MANUAL',lock=st==='manual',dayLocked=locks.has(k+'|day'),ownLocked=locks.has(k+'|'+slot);let canUnlock=ownLocked&&!dayLocked;let lockButton=dayLocked?'<button class="mini-lock locked" disabled title="Unlock the day first">DAY LOCKED</button>':`<button class="mini-lock ${ownLocked?'locked':''}" data-action="lock-slot" data-date="${k}" data-slot="${slot}" ${past||!valid?'disabled':''}>${ownLocked?'🔒 UNLOCK':'🔓 LOCK'}</button>`;let tourName=[0,1,6].includes(dateFromKey(k).getUTCDay())?'Sotavento':'North';return `<div class="slot ${st==='closed'?'smart-closed':''} ${st==='manual'?'manual-slot':''} ${past?'past':''}"><span class="state ${st}">${label}</span><div class="tour-name">${tourName}</div><div class="seat-count">${total}/8</div><div class="seat-dots" aria-label="${c.confirmed} confirmed, ${c.pending} pending, ${c.hold} held, ${free} available">${dots.join('')}</div><div class="slot-actions">${lockButton}</div></div>`}
-function render(){let end=addDays(weekStart,6);$('weekTitle').textContent=`${readable(weekStart,{month:'long',year:'numeric'})}${dateFromKey(weekStart).getUTCMonth()!==dateFromKey(end).getUTCMonth()?' — '+readable(end,{month:'long',year:'numeric'}):''}`;$('weekRange').textContent=`${readable(weekStart)} – ${readable(end,{day:'numeric',month:'short',year:'numeric'})}`;$('prevWeek').disabled=addDays(weekStart,-7)<monday(minKey);$('nextWeek').disabled=addDays(weekStart,7)>maxKey;let html='',sum={open:0,confirmed:0,reserved:0,locked:0};for(let i=0;i<7;i++){let k=addDays(weekStart,i),d=dateFromKey(k),isToday=k===todayKey,valid=k>=minKey&&k<=maxKey,past=k<todayKey,locked=locks.has(k+'|day');for(let s of slots){let c=counts(k,s);sum.confirmed+=c.confirmed;sum.reserved+=c.pending+c.hold;if(state(k,s)==='open')sum.open++;if(state(k,s)==='manual')sum.locked++}html+=`<article class="day ${isToday?'today':''} ${!valid?'outside':''}"><div class="day-head"><div class="compact-date"><span class="day-week">${new Intl.DateTimeFormat('en-GB',{weekday:'short',timeZone:'UTC'}).format(d)}</span><span class="day-num">${d.getUTCDate()}</span></div><button class="mini-lock day-lock-inline ${locked?'locked':''}" data-action="lock-day" data-date="${k}" ${past||!valid?'disabled':''}><span class="day-lock-icon" aria-hidden="true">${locked?'🔒':'🔓'}</span><span class="day-lock-text">${locked?'UNLOCK':'LOCK'}<span>DAY</span></span></button></div>${slots.map(s=>slotHtml(k,s)).join('')}</article>`} $('weekGrid').innerHTML=html;$('mOpen').textContent=sum.open;$('mConfirmed').textContent=sum.confirmed;$('mReserved').textContent=sum.reserved;$('mLocked').textContent=sum.locked;$('refreshLabel').textContent=`Simulated live refresh · ${tick?'updated '+new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date()):'every 15s'}`}
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),3100)}
-function openModal(k,slot){$('bookingForm').reset();$('bookingDate').min=todayKey;$('bookingDate').max=maxKey;$('bookingDate').value=k>=todayKey&&k<=maxKey?k:todayKey;$('bookingSlot').value=slot||'morning';$('bookingPax').value=2;$('modalBackdrop').classList.add('show');$('bookingName').focus()}
-function closeModal(){$('modalBackdrop').classList.remove('show')}
-$('generalCreate').addEventListener('click',()=>openModal(todayKey,'morning'));$('todayBtn').addEventListener('click',()=>{weekStart=monday(todayKey);render()});$('prevWeek').addEventListener('click',()=>{weekStart=addDays(weekStart,-7);render()});$('nextWeek').addEventListener('click',()=>{weekStart=addDays(weekStart,7);render()});
-for(let id of ['everyday','arvo','night'])$(id).addEventListener('change',e=>{settings[id]=e.target.checked;render();toast(`${id==='everyday'?'Everyday Booking':id==='arvo'?'Arvo Smart':'Night Smart'} ${settings[id]?'ON':'OFF'} (demo)`)});
-$('weekGrid').addEventListener('click',e=>{let b=e.target.closest('button[data-action]');if(!b||b.disabled)return;let {action,date,slot}=b.dataset;if(action==='create'){openModal(date,slot);return}let key=date+'|'+(action==='lock-day'?'day':slot);if(locks.has(key)){locks.delete(key);toast(`UNLOCKED · ${date}${slot?' · '+slot:''}`)}else{if(action==='lock-day'){let has=slots.some(s=>{let c=counts(date,s);return c.confirmed+c.pending+c.hold>0});if(has){toast('Cannot lock this day: demo bookings already occupy seats');return}}else{let c=counts(date,slot);if(c.confirmed+c.pending+c.hold>0){toast('Cannot lock this slot: demo bookings already occupy seats');return}}locks.add(key);toast(`LOCKED · ${date}${slot?' · '+slot:''}`)}render()});
-$('bookingForm').addEventListener('submit',e=>{e.preventDefault();let k=$('bookingDate').value,s=$('bookingSlot').value,pax=Number($('bookingPax').value),status=$('bookingStatus').value,guest=$('bookingName').value.trim();if(!guest||!k||k<todayKey||k>maxKey||pax<1||pax>8){toast('Check the date, guest name and passenger count');return}if(locks.has(k+'|day')||locks.has(k+'|'+s)){toast('This slot is manually locked. Unlock it first.');return}let c=counts(k,s),used=c.confirmed+c.pending+c.hold;if(used+pax>8){toast(`Only ${Math.max(0,8-used)} demo seats remain in this slot`);return}let list=bookings.get(k+'|'+s)||[];for(let i=0;i<pax;i++)list.push({status,guest,tour:$('bookingTour').value});bookings.set(k+'|'+s,list);weekStart=monday(k);closeModal();render();toast(`Demo booking saved · ${pax} ${status} seat${pax===1?'':'s'}`)});
-$('closeModal').addEventListener('click',closeModal);$('cancelModal').addEventListener('click',closeModal);$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-setInterval(()=>{tick++;render()},15000);render();
+(() => {
+  'use strict';
+
+  const TZ = 'Atlantic/Canary';
+  const slots = ['morning', 'arvo', 'night'];
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23'
+  });
+
+  function canaryParts(value) {
+    return Object.fromEntries(
+      formatter.formatToParts(new Date(value))
+        .map(p => [p.type, p.value])
+    );
+  }
+
+  function canaryToday() {
+    const p = canaryParts(Date.now());
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+
+  const todayKey = canaryToday();
+  const dateFromKey = k => new Date(k + 'T12:00:00Z');
+
+  const keyFromDate = d =>
+    `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+
+  function addDays(k, n) {
+    const d = dateFromKey(k);
+    d.setUTCDate(d.getUTCDate() + n);
+    return keyFromDate(d);
+  }
+
+  const monday = k => {
+    const day = dateFromKey(k).getUTCDay();
+    return addDays(k, -((day + 6) % 7));
+  };
+
+  const minKey = addDays(todayKey, -365);
+  const maxKey = addDays(todayKey, 365);
+
+  let weekStart = monday(todayKey);
+  let trips = [];
+  let loaded = false;
+  let requestRunning = false;
+  let lastUpdate = null;
+  let loadError = false;
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+  }
+
+  function readable(k, options = { month: 'short', day: 'numeric' }) {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC',
+      ...options
+    }).format(dateFromKey(k));
+  }
+
+  function tripLocation(trip) {
+    const p = canaryParts(trip.starts_at);
+    const date = `${p.year}-${p.month}-${p.day}`;
+    const hour = Number(p.hour);
+
+    return {
+      date,
+      slot: hour < 12 ? 'morning' : hour < 18 ? 'arvo' : 'night'
+    };
+  }
+
+  function getTrips(k, slot) {
+    return trips.filter(trip => {
+      const location = tripLocation(trip);
+      return location.date === k && location.slot === slot;
+    });
+  }
+
+  function seatDots(confirmed, pending, held, free, capacity) {
+    const dots = [];
+
+    for (const [type, count] of [
+      ['confirmed', confirmed],
+      ['pending', pending],
+      ['hold', held],
+      ['free', free]
+    ]) {
+      for (let i = 0; i < count && dots.length < capacity; i++) {
+        dots.push(`<i class="seat ${type}" title="${type}"></i>`);
+      }
+    }
+
+    while (dots.length < 8) {
+      dots.push('<i class="seat empty" title="Not offered"></i>');
+    }
+
+    return dots.join('');
+  }
+
+  function slotHtml(k, slot) {
+    const list = getTrips(k, slot);
+
+    if (!loaded || loadError) {
+      return `<div class="slot smart-closed">
+        <span class="state closed">${loadError ? 'ERROR' : 'LOADING'}</span>
+        <div class="tour-name">${loadError ? 'Data unavailable' : 'Loading trips...'}</div>
+        <div class="seat-count">—</div>
+      </div>`;
+    }
+
+    if (!list.length) {
+      return `<div class="slot smart-closed">
+        <span class="state closed">NOT OFFERED</span>
+        <div class="tour-name">No scheduled tour</div>
+        <div class="seat-count">—</div>
+        <div class="seat-dots">${seatDots(0, 0, 0, 0, 0)}</div>
+        <div class="slot-actions">
+          <button class="mini-lock" disabled>LOCK</button>
+        </div>
+      </div>`;
+    }
+
+    return list.map(trip => {
+      const capacity = Math.max(0, Math.min(8, Number(trip.capacity) || 0));
+      const confirmed = Number(trip.confirmed_seats) || 0;
+      const pending = Number(trip.pending_seats) || 0;
+      const held = Number(trip.held_seats) || 0;
+      const free = Math.max(0, Math.min(capacity, Number(trip.available_seats) || 0));
+      const occupied = confirmed + pending + held;
+      const time = canaryParts(trip.starts_at);
+      const full = free === 0;
+
+      return `<div class="slot ${full ? 'smart-closed' : ''}">
+        <span class="state ${full ? 'closed' : 'open'}">
+          ${full ? 'FULL' : 'PUBLISHED'}
+        </span>
+        <div class="tour-name">${escapeHtml(trip.tour_title)}</div>
+        <div class="seat-count">${occupied}/${capacity}</div>
+        <div class="seat-dots"
+             aria-label="${confirmed} confirmed, ${pending} pending, ${held} held, ${free} available">
+          ${seatDots(confirmed, pending, held, free, capacity)}
+        </div>
+        <div class="slot-actions">
+          <span>${time.hour}:00 · ${free} free</span>
+          <button class="mini-lock" disabled>LOCK</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function render() {
+    const end = addDays(weekStart, 6);
+
+    $('weekTitle').textContent =
+      `${readable(weekStart, { month: 'long', year: 'numeric' })}`;
+
+    $('weekRange').textContent =
+      `${readable(weekStart)} – ${readable(end, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })}`;
+
+    $('prevWeek').disabled = addDays(weekStart, -7) < monday(minKey);
+    $('nextWeek').disabled = addDays(weekStart, 7) > maxKey;
+
+    let html = '';
+
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(weekStart, i);
+      const d = dateFromKey(k);
+
+      html += `<article class="day ${k === todayKey ? 'today' : ''}">
+        <div class="day-head">
+          <div class="compact-date">
+            <span class="day-week">${
+              new Intl.DateTimeFormat('en-GB', {
+                weekday: 'short',
+                timeZone: 'UTC'
+              }).format(d)
+            }</span>
+            <span class="day-num">${d.getUTCDate()}</span>
+          </div>
+          <button class="mini-lock day-lock-inline" disabled>
+            LOCK DAY
+          </button>
+        </div>
+        ${slots.map(slot => slotHtml(k, slot)).join('')}
+      </article>`;
+    }
+
+    $('weekGrid').innerHTML = html;
+
+    const visible = trips.filter(trip => {
+      const date = tripLocation(trip).date;
+      return date >= weekStart && date <= end;
+    });
+
+    $('mOpen').textContent = loaded && !loadError
+      ? visible.filter(t => Number(t.available_seats) > 0).length
+      : '—';
+
+    $('mConfirmed').textContent = loaded && !loadError
+      ? visible.reduce((n, t) => n + Number(t.confirmed_seats || 0), 0)
+      : '—';
+
+    $('mReserved').textContent = loaded && !loadError
+      ? visible.reduce(
+          (n, t) => n + Number(t.pending_seats || 0) +
+            Number(t.held_seats || 0), 0
+        )
+      : '—';
+
+    $('mLocked').textContent = '—';
+
+    $('refreshLabel').textContent = loadError
+      ? 'Unable to load Supabase data'
+      : lastUpdate
+        ? `Supabase · updated ${new Intl.DateTimeFormat('en-GB', {
+            timeZone: TZ,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }).format(lastUpdate)}`
+        : 'Connecting to Supabase...';
+  }
+
+  function requestData() {
+    if (requestRunning) return;
+
+    requestRunning = true;
+
+    const from = addDays(weekStart, -1) + 'T00:00:00Z';
+    const to = addDays(weekStart, 8) + 'T00:00:00Z';
+
+    window.parent.postMessage({
+      type: 'NEF_V4_REQUEST_DATA',
+      from,
+      to
+    }, '*');
+  }
+
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent) return;
+
+    if (event.data?.type === 'NEF_V4_REAL_DATA') {
+      trips = Array.isArray(event.data.trips) ? event.data.trips : [];
+      loaded = true;
+      loadError = false;
+      requestRunning = false;
+      lastUpdate = new Date();
+      render();
+    }
+
+    if (event.data?.type === 'NEF_V4_DATA_ERROR') {
+      trips = [];
+      loaded = false;
+      loadError = true;
+      requestRunning = false;
+      render();
+    }
+  });
+
+  // Read-only: controls are not connected to backend.
+  for (const id of ['generalCreate', 'everyday', 'arvo', 'night']) {
+    $(id).disabled = true;
+  }
+
+  $('todayBtn').addEventListener('click', () => {
+    weekStart = monday(todayKey);
+    requestRunning = false;
+    loaded = false;
+    render();
+    requestData();
+  });
+
+  $('prevWeek').addEventListener('click', () => {
+    weekStart = addDays(weekStart, -7);
+    requestRunning = false;
+    loaded = false;
+    render();
+    requestData();
+  });
+
+  $('nextWeek').addEventListener('click', () => {
+    weekStart = addDays(weekStart, 7);
+    requestRunning = false;
+    loaded = false;
+    render();
+    requestData();
+  });
+
+  render();
+  requestData();
+
+  setInterval(() => {
+    if (!requestRunning) requestData();
+  }, 15000);
 })();
 </script>
 </body></html>
