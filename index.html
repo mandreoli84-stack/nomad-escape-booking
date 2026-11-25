@@ -1069,7 +1069,7 @@
     </div>
 
     <iframe
-      
+      id="nef-admin-calendar-v4"
       src="NEF_Ocean_Luxury_Booking_Overview_V4.html"
       title="Ocean Luxury Booking Overview V4"
       sandbox="allow-scripts"
@@ -1081,6 +1081,79 @@
              border-radius:12px;
              background:#f2eee6;">
     </iframe>
+    
+    <script>
+    (function () {
+      let calendarRequestRunning = false;
+    
+      window.addEventListener("message", async function (event) {
+        const iframe = document.getElementById("nef-admin-calendar-v4");
+    
+        if (!iframe || event.source !== iframe.contentWindow) return;
+        if (event.data?.type !== "NEF_V4_REQUEST_DATA") return;
+        if (calendarRequestRunning) return;
+    
+        const activeScreen = document.getElementById(
+          "screen-admin-booking-overview"
+        );
+    
+        if (!activeScreen?.classList.contains("active")) return;
+    
+        const from = event.data.from;
+        const to = event.data.to;
+    
+        if (
+          typeof from !== "string" ||
+          typeof to !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}T/.test(from) ||
+          !/^\d{4}-\d{2}-\d{2}T/.test(to)
+        ) return;
+    
+        const fromTime = Date.parse(from);
+        const toTime = Date.parse(to);
+    
+        if (
+          !Number.isFinite(fromTime) ||
+          !Number.isFinite(toTime) ||
+          toTime <= fromTime ||
+          toTime - fromTime > 31 * 86400000
+        ) return;
+    
+        calendarRequestRunning = true;
+    
+        try {
+          const { data, error } = await supabaseClient.rpc(
+            "admin_booking_overview_v4",
+            {
+              p_from: from,
+              p_to: to
+            }
+          );
+    
+          if (error) throw error;
+    
+          if (iframe.contentWindow === event.source) {
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_REAL_DATA",
+              trips: data || []
+            }, "*");
+          }
+    
+        } catch (error) {
+          console.error("Admin Calendar V4:", error);
+    
+          if (iframe.contentWindow === event.source) {
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_DATA_ERROR"
+            }, "*");
+          }
+    
+        } finally {
+          calendarRequestRunning = false;
+        }
+      });
+    })();
+    </script>
   
     <div class="bottom-buttons">
       <button class="secondary"
