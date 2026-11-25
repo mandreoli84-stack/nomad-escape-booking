@@ -84,6 +84,29 @@
 .week-grid .day-lock-text span{display:block}
 /* V4: restore only the missing right-hand calendar border */
 .calendar-with-rail .week-grid{border-right:1px solid var(--line)}
+/* Past calendar days */
+.week-grid .day.past-day {
+  background: #f1f3f3;
+}
+
+.week-grid .day.past-day .day-head,
+.week-grid .day.past-day .slot {
+  background: #f1f3f3;
+}
+
+.week-grid .day.past-day .tour-name,
+.week-grid .day.past-day .seat-count {
+  color: #78878d;
+}
+
+.week-grid .day.past-day .state {
+  background: #e2e7e8;
+  color: #667780;
+}
+
+.week-grid .day.past-day .seat {
+  opacity: 0.55;
+}
 </style>
 </head>
 <body>
@@ -107,13 +130,14 @@
   const pad = n => String(n).padStart(2, '0');
 
   const formatter = new Intl.DateTimeFormat('en-GB', {
-    timeZone: TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hourCycle: 'h23'
-  });
+  timeZone: TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23'
+});
 
   function canaryParts(value) {
     return Object.fromEntries(
@@ -223,7 +247,7 @@
 
     if (!list.length) {
       return `<div class="slot smart-closed">
-        <span class="state closed">NOT OFFERED</span>
+        <span class="state closed">${k < todayKey ? 'PAST DATE' : 'NO TOUR'}</span>
         <div class="tour-name">No scheduled tour</div>
         <div class="seat-count">—</div>
         <div class="seat-dots">${seatDots(0, 0, 0, 0, 0)}</div>
@@ -245,7 +269,7 @@
 
       return `<div class="slot ${full ? 'smart-closed' : ''}">
         <span class="state ${full ? 'closed' : 'open'}">
-          ${full ? 'FULL' : 'PUBLISHED'}
+          ${k < todayKey ? 'PAST DATE' : full ? 'FULL' : 'SCHEDULED'}
         </span>
         <div class="tour-name">${escapeHtml(trip.tour_title)}</div>
         <div class="seat-count">${occupied}/${capacity}</div>
@@ -254,7 +278,7 @@
           ${seatDots(confirmed, pending, held, free, capacity)}
         </div>
         <div class="slot-actions">
-          <span>${time.hour}:00 · ${free} free</span>
+          <span>${time.hour}:${time.minute}</span>
           <button class="mini-lock" disabled>LOCK</button>
         </div>
       </div>`;
@@ -283,7 +307,7 @@
       const k = addDays(weekStart, i);
       const d = dateFromKey(k);
 
-      html += `<article class="day ${k === todayKey ? 'today' : ''}">
+      html += `<article class="day ${k === todayKey ? 'today' : ''} ${k < todayKey ? 'past-day' : ''}">
         <div class="day-head">
           <div class="compact-date">
             <span class="day-week">${
