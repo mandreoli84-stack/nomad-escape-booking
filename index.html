@@ -1056,16 +1056,31 @@
     <p class="subtitle">
       Ocean Luxury · Admin Calendar
     </p>
-  
-    <div class="panel">
-      <h3>Booking Overview V4</h3>
-      <p>
-        Admin calendar integration in progress.
-      </p>
-      <p>
-        No live bookings or availability will be modified.
+        
+    <div class="panel"
+         style="background:#fff8e9;
+                border:1px solid #e8cf99;
+                font-size:13px;">
+      <strong>DEMO MODE — READ ONLY IN SUPABASE</strong>
+      <p style="margin-bottom:0;">
+        This calendar currently uses simulated data.
+        No changes are made to real bookings or availability.
       </p>
     </div>
+
+    <iframe
+      
+      src="NEF_Ocean_Luxury_Booking_Overview_V4.html"
+      title="Ocean Luxury Booking Overview V4"
+      sandbox="allow-scripts"
+      loading="lazy"
+      style="display:block;
+             width:100%;
+             height:900px;
+             border:1px solid #d9e0e3;
+             border-radius:12px;
+             background:#f2eee6;">
+    </iframe>
   
     <div class="bottom-buttons">
       <button class="secondary"
@@ -4260,7 +4275,16 @@ async function checkBusinessPassword() {
     });
   
     document.getElementById(id).classList.add("active");
-  
+
+    const appContainer = document.querySelector(".app");
+
+    if (appContainer) {
+      appContainer.style.maxWidth =
+        id === "screen-admin-booking-overview"
+          ? "1640px"
+          : "430px";
+    }
+
     if (id === "screen-confirmation") {
       const isPartner = booking.accessType === "business";
   
