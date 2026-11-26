@@ -173,6 +173,7 @@
 
   let weekStart = monday(todayKey);
   let trips = [];
+  let slotDetails = [];
   let loaded = false;
   let requestRunning = false;
   let lastUpdate = null;
@@ -212,7 +213,18 @@
       return location.date === k && location.slot === slot;
     });
   }
+    
+  function getContinuingTrips(k, slot) {
+    return slotDetails.filter(trip => {
+      const location = tripLocation(trip);
 
+      return location.date === k
+        && location.slot !== slot
+        && Array.isArray(trip.occupied_slots)
+        && trip.occupied_slots.includes(slot);
+    });
+  }
+   
   function seatDots(confirmed, pending, held, free, capacity) {
     const dots = [];
 
@@ -233,9 +245,10 @@
 
     return dots.join('');
   }
-
-  function slotHtml(k, slot) {
+    
+   function slotHtml(k, slot) {
     const list = getTrips(k, slot);
+    const continuing = getContinuingTrips(k, slot);
 
     if (!loaded || loadError) {
       return `<div class="slot smart-closed">
@@ -243,6 +256,23 @@
         <div class="tour-name">${loadError ? 'Data unavailable' : 'Loading trips...'}</div>
         <div class="seat-count">—</div>
       </div>`;
+    }
+
+    if (!list.length && continuing.length) {
+      return continuing.map(trip => `
+        <div class="slot">
+          <span class="state open">
+            ${k < todayKey ? 'PAST DATE' : 'OCCUPIED'}
+          </span>
+          <div class="tour-name">${escapeHtml(trip.tour_title)}</div>
+          <div class="seat-count">
+            From ${escapeHtml(trip.departure_time)}
+          </div>
+          <div class="slot-actions">
+            <button class="mini-lock" disabled>LOCK</button>
+          </div>
+        </div>
+      `).join('');
     }
 
     if (!list.length) {
@@ -257,7 +287,7 @@
       </div>`;
     }
 
-    return list.map(trip => {
+    const departureHtml = list.map(trip => {
       const capacity = Math.max(0, Math.min(8, Number(trip.capacity) || 0));
       const confirmed = Number(trip.confirmed_seats) || 0;
       const pending = Number(trip.pending_seats) || 0;
@@ -283,8 +313,20 @@
         </div>
       </div>`;
     }).join('');
-  }
 
+    const continuationHtml = continuing.map(trip => `
+      <div class="slot">
+        <span class="state open">OCCUPIED</span>
+        <div class="tour-name">${escapeHtml(trip.tour_title)}</div>
+        <div class="seat-count">
+          From ${escapeHtml(trip.departure_time)}
+        </div>
+      </div>
+    `).join('');
+
+    return departureHtml + continuationHtml;
+  }
+   
   function render() {
     const end = addDays(weekStart, 6);
 
@@ -382,6 +424,9 @@
 
     if (event.data?.type === 'NEF_V4_REAL_DATA') {
       trips = Array.isArray(event.data.trips) ? event.data.trips : [];
+      slotDetails = Array.isArray(event.data.slotDetails)
+        ? event.data.slotDetails
+        : [];
       loaded = true;
       loadError = false;
       requestRunning = false;
