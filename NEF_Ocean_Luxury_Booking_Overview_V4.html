@@ -279,7 +279,10 @@
         </div>
         <div class="seat-count">—</div>
         <div class="slot-actions">
-          <button class="mini-lock locked" disabled>
+          <button class="mini-lock locked"
+            ${k === '2026-11-27' && slot === 'morning'
+              ? 'data-test-lock="unlock"'
+              : 'disabled'}>
             UNLOCK
           </button>
         </div>
@@ -337,7 +340,12 @@
         </div>
         <div class="slot-actions">
           <span>${time.hour}:${time.minute}</span>
-          <button class="mini-lock" disabled>LOCK</button>
+          <button class="mini-lock"
+            ${k === '2026-11-27' && slot === 'morning'
+              ? 'data-test-lock="lock"'
+              : 'disabled'}>
+            LOCK
+          </button>
         </div>
       </div>`;
     }).join('');
@@ -446,7 +454,30 @@
       to
     }, '*');
   }
+   
+    $('weekGrid').addEventListener('click', event => {
+    const button = event.target.closest('[data-test-lock]');
+    if (!button) return;
 
+    window.parent.postMessage({
+      type: 'NEF_V4_TEST_LOCK',
+      action: button.dataset.testLock
+    }, '*');
+  });
+
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent) return;
+
+    if (event.data?.type === 'NEF_V4_TEST_RESULT') {
+      if (!event.data.success) {
+        alert(event.data.message || 'LOCK test failed');
+        return;
+      }
+
+      requestRunning = false;
+      requestData();
+    }
+  });
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;
 
