@@ -1090,6 +1090,50 @@
         const iframe = document.getElementById("nef-admin-calendar-v4");
     
         if (!iframe || event.source !== iframe.contentWindow) return;
+
+        if (
+          event.data?.type === "NEF_V4_GET_EVERYDAY" ||
+          event.data?.type === "NEF_V4_SET_EVERYDAY"
+        ) {
+          const activeScreen = document.getElementById(
+            "screen-admin-booking-overview"
+          );
+        
+          if (!activeScreen?.classList.contains("active")) return;
+        
+          const isSet = event.data.type === "NEF_V4_SET_EVERYDAY";
+        
+          try {
+            if (isSet && typeof event.data.enabled !== "boolean") {
+              throw new Error("Invalid Everyday setting");
+            }
+        
+            const { data, error } = await supabaseClient.rpc(
+              isSet
+                ? "admin_set_everyday_booking"
+                : "admin_get_everyday_booking",
+              isSet ? { p_enabled: event.data.enabled } : {}
+            );
+        
+            if (error) throw error;
+        
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_EVERYDAY_STATE",
+              enabled: data
+            }, "*");
+        
+          } catch (error) {
+            console.error("Everyday Booking:", error);
+        
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_EVERYDAY_ERROR",
+              message: "Unable to update Everyday Booking"
+            }, "*");
+          }
+        
+          return;
+        }
+        
         if (event.data?.type !== "NEF_V4_REQUEST_DATA") return;
         if (calendarRequestRunning) return;
     
