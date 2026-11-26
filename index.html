@@ -1134,6 +1134,68 @@
           return;
         }
         
+        if (event.data?.type === "NEF_V4_TEST_LOCK") {
+          const activeScreen = document.getElementById(
+            "screen-admin-booking-overview"
+          );
+
+          if (!activeScreen?.classList.contains("active")) return;
+
+          const action = event.data.action;
+
+          if (!["lock", "unlock"].includes(action)) return;
+
+          const approved = await nomadConfirmAction(
+            action === "lock" ? "CONFIRM TEST LOCK" : "CONFIRM TEST UNLOCK",
+            `27 November 2026\nMorning\n` +
+            `This will ${action} a real vehicle slot in Supabase.`
+          );
+
+          if (!approved) return;
+
+          try {
+            const { data: { user } } =
+              await supabaseClient.auth.getUser();
+
+            if (!user) throw new Error("Admin login required");
+
+            const { data: isAdmin, error: adminError } =
+              await supabaseClient.rpc("is_vanbooking_admin");
+
+            if (adminError || isAdmin !== true) {
+              throw new Error("Admin access denied");
+            }
+
+            const { data, error } = await supabaseClient.rpc(
+              action === "lock"
+                ? "admin_lock_vehicle_slot"
+                : "admin_unlock_vehicle_slot",
+              {
+                p_vehicle_id: "1cf3b533-271c-42a2-8569-2ab12c0e2e20",
+                p_slot_date: "2026-11-27",
+                p_slot_name: "morning"
+              }
+            );
+
+            if (error) throw error;
+
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_TEST_RESULT",
+              success: true,
+              result: data
+            }, "*");
+
+          } catch (error) {
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_TEST_RESULT",
+              success: false,
+              message: error.message
+            }, "*");
+          }
+
+          return;
+        }
+
         if (event.data?.type !== "NEF_V4_REQUEST_DATA") return;
         if (calendarRequestRunning) return;
     
