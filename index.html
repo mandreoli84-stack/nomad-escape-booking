@@ -5490,8 +5490,17 @@ async function continueFromReview() {
     );
 
     if (error) {
-      requestOutcomeUnknown = true;
       console.error("HOLD error:", error);
+
+      if (
+        error.message?.includes("VEHICLE_SLOT_LOCKED") ||
+        error.message?.includes("TRIP_MANUALLY_CLOSED")
+      ) {
+        showLiveSeatsPopup("SOLD_OUT");
+        return;
+      }
+
+      requestOutcomeUnknown = true;
       alert(
         "We couldn't confirm the status of your request.\n\n" +
         "Please contact Nomad Escape before trying again."
