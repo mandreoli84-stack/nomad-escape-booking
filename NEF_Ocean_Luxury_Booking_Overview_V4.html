@@ -456,6 +456,7 @@
   }
    
     $('weekGrid').addEventListener('click', event => {
+    alert("LOCK CLICK DETECTED");
     const button = event.target.closest('[data-test-lock]');
     if (!button) return;
 
