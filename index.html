@@ -4503,11 +4503,8 @@ async function checkBusinessPassword() {
       actionButton.textContent =
         isPartner ? "SEND TO GUEST" : "DOWNLOAD PDF";
   
-      // WhatsApp sending will be enabled after backend integration.
-      actionButton.disabled = isPartner;
-      actionButton.title = isPartner
-        ? "WhatsApp delivery integration pending"
-        : "";
+      actionButton.disabled = false;
+      actionButton.title = "";
     }
   
     window.scrollTo(0, 0);
