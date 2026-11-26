@@ -1166,7 +1166,10 @@
         calendarRequestRunning = true;
     
         try {
-          const [seatsResult, slotsResult] = await Promise.all([
+          const lockFrom = from.slice(0, 10);
+          const lockTo = to.slice(0, 10);
+          
+          const [seatsResult, slotsResult, locksResult] = await Promise.all([
             supabaseClient.rpc(
               "admin_booking_overview_v4",
               { p_from: from, p_to: to }
@@ -1174,17 +1177,23 @@
             supabaseClient.rpc(
               "admin_booking_overview_v4_slots",
               { p_from: from, p_to: to }
+            ),
+            supabaseClient.rpc(
+              "admin_get_vehicle_slot_locks",
+              { p_from: lockFrom, p_to: lockTo }
             )
           ]);
-
+          
           if (seatsResult.error) throw seatsResult.error;
           if (slotsResult.error) throw slotsResult.error;
-
+          if (locksResult.error) throw locksResult.error;
+          
           if (iframe.contentWindow === event.source) {
             iframe.contentWindow.postMessage({
               type: "NEF_V4_REAL_DATA",
               trips: seatsResult.data || [],
-              slotDetails: slotsResult.data || []
+              slotDetails: slotsResult.data || [],
+              manualLocks: locksResult.data || []
             }, "*");
           }
     
