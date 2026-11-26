@@ -4103,6 +4103,16 @@ async function createAssistedBooking() {
     );
 
     if (error) {
+      if (
+        error.message?.includes("VEHICLE_SLOT_LOCKED") ||
+        error.message?.includes("TRIP_MANUALLY_CLOSED")
+      ) {
+        message.textContent =
+          "This tour is currently blocked in Booking Overview. " +
+          "Unlock the required time slot before creating a booking.";
+        return;
+      }
+
       message.textContent = "Booking failed: " + error.message;
       return;
     }
@@ -5739,9 +5749,16 @@ const result = await supabaseClient.functions.invoke("business-booking", {
 
       if (
         errorBody.result === "HELD_BY_OTHER" ||
-        errorBody.result === "SOLD_OUT"
+        errorBody.result === "SOLD_OUT" ||
+        errorBody.result === "VEHICLE_SLOT_LOCKED" ||
+        errorBody.result === "TRIP_MANUALLY_CLOSED"
       ) {
-        showAvailabilityPopup(errorBody.result);
+        showAvailabilityPopup(
+          ["VEHICLE_SLOT_LOCKED", "TRIP_MANUALLY_CLOSED"]
+            .includes(errorBody.result)
+            ? "SOLD_OUT"
+            : errorBody.result
+        );
         return;
       }
     } catch (parseError) {
