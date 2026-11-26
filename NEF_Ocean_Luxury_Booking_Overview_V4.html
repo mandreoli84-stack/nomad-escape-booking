@@ -398,10 +398,50 @@
     }
   });
 
-  // Read-only: controls are not connected to backend.
-  for (const id of ['generalCreate', 'everyday', 'arvo', 'night']) {
-    $(id).disabled = true;
-  }
+   // Controls without backend integration remain disabled.
+   for (const id of ['generalCreate', 'arvo', 'night']) {
+     $(id).disabled = true;
+   }
+   
+   const everydaySwitch = $('everyday');
+   let everydaySavedState = false;
+   
+   everydaySwitch.disabled = true;
+   
+   window.addEventListener('message', event => {
+     if (event.source !== window.parent) return;
+   
+     if (event.data?.type === 'NEF_V4_EVERYDAY_STATE') {
+       if (typeof event.data.enabled !== 'boolean') return;
+   
+       everydaySavedState = event.data.enabled;
+       everydaySwitch.checked = everydaySavedState;
+       everydaySwitch.disabled = false;
+   
+       if (loaded && !loadError && !requestRunning) {
+         requestData();
+       }
+     }
+   
+     if (event.data?.type === 'NEF_V4_EVERYDAY_ERROR') {
+       everydaySwitch.checked = everydaySavedState;
+       everydaySwitch.disabled = false;
+       alert(event.data.message || 'Everyday Booking error');
+     }
+   });
+   
+   everydaySwitch.addEventListener('change', () => {
+     everydaySwitch.disabled = true;
+   
+     window.parent.postMessage({
+       type: 'NEF_V4_SET_EVERYDAY',
+       enabled: everydaySwitch.checked
+     }, '*');
+   });
+   
+   window.parent.postMessage({
+     type: 'NEF_V4_GET_EVERYDAY'
+   }, '*');
 
   $('todayBtn').addEventListener('click', () => {
     weekStart = monday(todayKey);
