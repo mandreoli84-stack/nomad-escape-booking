@@ -1166,20 +1166,25 @@
         calendarRequestRunning = true;
     
         try {
-          const { data, error } = await supabaseClient.rpc(
-            "admin_booking_overview_v4",
-            {
-              p_from: from,
-              p_to: to
-            }
-          );
-    
-          if (error) throw error;
-    
+          const [seatsResult, slotsResult] = await Promise.all([
+            supabaseClient.rpc(
+              "admin_booking_overview_v4",
+              { p_from: from, p_to: to }
+            ),
+            supabaseClient.rpc(
+              "admin_booking_overview_v4_slots",
+              { p_from: from, p_to: to }
+            )
+          ]);
+
+          if (seatsResult.error) throw seatsResult.error;
+          if (slotsResult.error) throw slotsResult.error;
+
           if (iframe.contentWindow === event.source) {
             iframe.contentWindow.postMessage({
               type: "NEF_V4_REAL_DATA",
-              trips: data || []
+              trips: seatsResult.data || [],
+              slotDetails: slotsResult.data || []
             }, "*");
           }
     
