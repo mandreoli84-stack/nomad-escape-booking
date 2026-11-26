@@ -3101,6 +3101,9 @@
   </div>
 </div>
 
+<div style="display:none;" aria-hidden="true">
+<div class="review-row" id="confirmation-partner-row" style="display:none;">
+
 
 <div class="review-row" id="confirmation-partner-row" style="display:none;">
   <div class="review-content">
@@ -3150,6 +3153,7 @@
     <div id="confirmation-people"></div>
   </div>
 </div>
+</div>
 
 <div class="review-row">
   <div class="review-content">
@@ -3168,7 +3172,7 @@
   <div class="review-content">
     <div class="review-label">Remaining balance</div>
     <div id="confirmation-balance"></div>
-    <div>It must be paid in cash on the day of the tour.</div>
+    <div>Cash payment is preferred on the day of the tour.</div>
   </div>
 </div>
 <div class="whatsapp-box" id="confirmation-thanks">
@@ -4494,8 +4498,7 @@ async function checkBusinessPassword() {
       document.getElementById("confirmation-back-button").style.display =
         isPartner ? "none" : "";
   
-      document.getElementById("confirmation-thanks").style.display =
-        isPartner ? "none" : "";
+      document.getElementById("confirmation-thanks").style.display = "";
   
       const actionButton =
         document.getElementById("confirmation-action-button");
