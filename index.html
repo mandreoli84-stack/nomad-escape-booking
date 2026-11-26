@@ -1974,46 +1974,6 @@
       CHANGE PERSONAL CODE
     </button>
   </div>
-  
-    <!-- NOMAD CONFIRMATION POPUP -->
-    <dialog id="nomad-confirm-dialog"
-            style="border:1px solid #d9e0e3;
-                   border-radius:12px;
-                   padding:24px;
-                   width:calc(100% - 32px);
-                   max-width:390px;
-                   color:#10233b;
-                   box-shadow:0 12px 40px rgba(0,0,0,.2);">
-  
-      <h3 id="nomad-confirm-title"
-          style="margin:0 0 18px;
-                 text-align:center;"></h3>
-  
-      <div id="nomad-confirm-details"
-           style="white-space:pre-line;
-                  font-size:16px;
-                  line-height:1.8;
-                  margin-bottom:24px;"></div>
-  
-      <form method="dialog"
-            style="display:flex;gap:12px;">
-  
-        <button class="secondary"
-                type="submit"
-                value="cancel"
-                style="flex:1;min-width:0;">
-          Cancel
-        </button>
-  
-        <button class="primary"
-                type="submit"
-                value="ok"
-                style="flex:1;min-width:0;">
-          OK
-        </button>
-  
-      </form>
-    </dialog>
 
     <p id="edit-partner-message" role="status"></p>
 
@@ -2031,6 +1991,46 @@
   </div>
 
 </section>
+
+<!-- NOMAD CONFIRMATION POPUP -->
+<dialog id="nomad-confirm-dialog"
+        style="border:1px solid #d9e0e3;
+               border-radius:12px;
+               padding:24px;
+               width:calc(100% - 32px);
+               max-width:390px;
+               color:#10233b;
+               box-shadow:0 12px 40px rgba(0,0,0,.2);">
+
+  <h3 id="nomad-confirm-title"
+      style="margin:0 0 18px;
+             text-align:center;"></h3>
+
+  <div id="nomad-confirm-details"
+       style="white-space:pre-line;
+              font-size:16px;
+              line-height:1.8;
+              margin-bottom:24px;"></div>
+
+  <form method="dialog"
+        style="display:flex;gap:12px;">
+
+    <button class="secondary"
+            type="submit"
+            value="cancel"
+            style="flex:1;min-width:0;">
+      Cancel
+    </button>
+
+    <button class="primary"
+            type="submit"
+            value="ok"
+            style="flex:1;min-width:0;">
+      OK
+    </button>
+
+  </form>
+</dialog>
 
 <!-- ADMIN - CREATE GUEST ASSISTED BOOKING -->
 <section class="screen" id="screen-admin-assisted">
