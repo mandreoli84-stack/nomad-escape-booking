@@ -456,7 +456,6 @@
   }
    
     $('weekGrid').addEventListener('click', event => {
-    alert("LOCK CLICK DETECTED");
     const button = event.target.closest('[data-test-lock]');
     if (!button) return;
 
@@ -471,8 +470,23 @@
 
     if (event.data?.type === 'NEF_V4_TEST_RESULT') {
       if (!event.data.success) {
-        alert(event.data.message || 'LOCK test failed');
+        const message = String(event.data.message || '');
+
+        if (
+          message.includes('ACTIVE_BOOKINGS') ||
+          message.includes('BOOKINGS_EXIST') ||
+          message.includes('SLOT_NOT_EMPTY')
+        ) {
+          alert(
+            'LOCK NOT ALLOWED\n\n' +
+            'This time slot already contains active bookings ' +
+            'or reservations. It cannot be locked.'
+          );
+        } else {
+          alert('LOCK FAILED\n\n' + (message || 'Please try again.'));
+        }
         return;
+      }
       }
 
       requestRunning = false;
