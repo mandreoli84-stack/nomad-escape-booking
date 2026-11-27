@@ -1164,30 +1164,63 @@
           return;
         }
         
-        if (event.data?.type === "NEF_V4_TEST_LOCK") {
+        if (event.data?.type === "NEF_V4_SLOT_LOCK") {
           const activeScreen = document.getElementById(
             "screen-admin-booking-overview"
           );
 
           if (!activeScreen?.classList.contains("active")) return;
 
-          const action = event.data.action;
+          const { action, slotDate, slotName } = event.data;
 
           if (!["lock", "unlock"].includes(action)) return;
+          if (!["morning", "arvo", "night"].includes(slotName)) return;
+          if (typeof slotDate !== "string" ||
+              !/^\d{4}-\d{2}-\d{2}$/.test(slotDate)) return;
+
+          const parsedDate = new Date(slotDate + "T12:00:00Z");
+          if (!Number.isFinite(parsedDate.getTime()) ||
+              parsedDate.toISOString().slice(0, 10) !== slotDate) return;
+
+          const canaryToday = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Atlantic/Canary",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          }).format(new Date());
+
+          if (slotDate < canaryToday) return;
+
+          const slotLabel = {
+            morning: "Morning",
+            arvo: "Arvo",
+            night: "Night"
+          }[slotName];
 
           const approved = await nomadConfirmAction(
-            action === "lock" ? "CONFIRM TEST LOCK" : "CONFIRM TEST UNLOCK",
-            `27 November 2026\nMorning\n` +
-            `This will ${action} a real vehicle slot in Supabase.`
+            action === "lock" ? "CONFIRM LOCK" : "CONFIRM UNLOCK",
+            `${slotDate}\n${slotLabel}\nMain van\n\n` +
+            (action === "lock"
+              ? "Block new bookings for this time slot?"
+              : "Remove the manual block from this time slot?")
           );
 
-          if (!approved) return;
+          if (!approved) {
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_SLOT_LOCK_RESULT",
+              success: false,
+              cancelled: true
+            }, "*");
+            return;
+          }
 
           try {
-            const { data: { user } } =
+            const { data: { user }, error: authError } =
               await supabaseClient.auth.getUser();
 
-            if (!user) throw new Error("Admin login required");
+            if (authError || !user) {
+              throw new Error("Admin login required");
+            }
 
             const { data: isAdmin, error: adminError } =
               await supabaseClient.rpc("is_vanbooking_admin");
@@ -1202,24 +1235,33 @@
                 : "admin_unlock_vehicle_slot",
               {
                 p_vehicle_id: "1cf3b533-271c-42a2-8569-2ab12c0e2e20",
-                p_slot_date: "2026-11-27",
-                p_slot_name: "morning"
+                p_slot_date: slotDate,
+                p_slot_name: slotName
               }
             );
 
             if (error) throw error;
 
+            if (!data || data.result !== (
+              action === "lock" ? "LOCKED" : "UNLOCKED"
+            )) {
+              throw new Error(
+                data?.result === "ACTIVE_BOOKINGS"
+                  ? "ACTIVE_BOOKINGS"
+                  : "Unexpected lock result"
+              );
+            }
+
             iframe.contentWindow.postMessage({
-              type: "NEF_V4_TEST_RESULT",
-              success: true,
-              result: data
+              type: "NEF_V4_SLOT_LOCK_RESULT",
+              success: true
             }, "*");
 
           } catch (error) {
             iframe.contentWindow.postMessage({
-              type: "NEF_V4_TEST_RESULT",
+              type: "NEF_V4_SLOT_LOCK_RESULT",
               success: false,
-              message: error.message
+              message: error.message || "Operation failed"
             }, "*");
           }
 
