@@ -110,13 +110,13 @@
 </style>
 </head>
 <body>
-<header class="topbar"><div class="top-inner"><div class="brand"><div class="brand-mark" aria-hidden="true">✦</div><div><div class="brand-name">NOMAD ESCAPE</div><div class="brand-sub">FUERTEVENTURA · OCEAN LUXURY</div></div></div><div class="top-right"><span class="demo-pill">INTERACTIVE DEMO</span><span class="admin-name">Admin Overview</span><span class="avatar" aria-hidden="true">NE</span></div></div></header>
+<header class="topbar"><div class="top-inner"><div class="brand"><div class="brand-mark" aria-hidden="true">✦</div><div><div class="brand-name">NOMAD ESCAPE</div><div class="brand-sub">FUERTEVENTURA · OCEAN LUXURY</div></div></div><div class="top-right"><span class="demo-pill">LIVE ADMIN</span><span class="admin-name">Admin Overview</span><span class="avatar" aria-hidden="true">NE</span></div></div></header>
 <main class="shell">
 <section class="hero"><div><div class="eyebrow">Operations / Reservations</div><h1>Booking Overview</h1><p class="subtle">One clear view of every day, every tour and every seat.</p></div><div class="hero-actions"><button class="btn btn-outline" id="todayBtn">↺ Today</button><button class="btn btn-primary" id="generalCreate">＋ Create Booking</button></div></section>
 
 <section class="metrics" aria-label="Booking summary"><div class="card metric"><div><small>Monthly Confirmed Seats</small><strong id="mOpen">0</strong></div><span class="symbol">◉</span></div><div class="card metric"><div><small>Confirmed seats</small><strong id="mConfirmed">0</strong></div><span class="symbol">●</span></div><div class="card metric"><div><small>Pending + held</small><strong id="mReserved">0</strong></div><span class="symbol">◷</span></div><div class="card metric"><div><small>Smart Occupancy %</small><strong id="mLocked">0</strong></div><span class="symbol">▣</span></div></section>
 <section class="card calendar-card" aria-label="Weekly booking calendar"><div class="cal-head"><div class="calendar-title"><div class="section-label">Live weekly calendar</div><h2 id="weekTitle">Weekly overview</h2></div><div class="switches"><div class="switch-row"><span>Classic Smart</span><label class="switch" title="Classic Smart is always on"><input type="checkbox" checked disabled aria-label="Classic Smart always on"><span class="switch-track"></span></label><span class="always">ALWAYS ON</span></div><label class="switch-row">Everyday Booking <span class="switch"><input id="everyday" type="checkbox"><span class="switch-track"></span></span></label><label class="switch-row">Arvo Smart <span class="switch"><input id="arvo" type="checkbox"><span class="switch-track"></span></span></label><label class="switch-row">Night Smart <span class="switch"><input id="night" type="checkbox"><span class="switch-track"></span></span></label></div><div class="nav"><button class="btn btn-outline btn-icon" id="prevWeek" aria-label="Previous week">‹</button><span class="nav-date" id="weekRange"></span><button class="btn btn-outline btn-icon" id="nextWeek" aria-label="Next week">›</button></div></div><div class="calendar-scroll" tabindex="0" aria-label="Scrollable weekly calendar on small screens"><div class="calendar-with-rail"><aside class="time-rail" aria-label="Daily time bands"><div class="rail-spacer" aria-hidden="true"></div><div class="rail-band">Morning</div><div class="rail-band">Arvo</div><div class="rail-band">Night</div></aside><div class="week-grid" id="weekGrid"></div></div></div><div class="legend"><div class="legend-items"><span class="legend-item"><i class="seat confirmed"></i> Confirmed</span><span class="legend-item"><i class="seat pending"></i> Pending</span><span class="legend-item"><i class="seat hold"></i> Hold (10 min)</span><span class="legend-item"><i class="seat free"></i> Available</span><span class="legend-item"><i class="seat empty"></i> Not offered</span></div><div class="refresh"><span class="pulse"></span><span id="refreshLabel">Simulated live refresh · every 15s</span></div></div></section>
-<p class="footnote"><strong>Demo rules:</strong> Classic Smart always runs. Everyday opens permitted tour days (North Tue–Fri; Sotavento Sat–Mon). Arvo and Night enable independent North slots. LOCK creates a manual block; UNLOCK returns to Smart logic. Dates are navigable up to 365 days before and after today. Past dates are read-only. <strong>No real bookings or backend changes are made.</strong></p>
+<p class="footnote"><strong>Admin Calendar:</strong> Booking data is loaded from Supabase. Classic Smart remains enabled. Everyday Booking uses its saved setting. Arvo Smart, Night Smart and general LOCK / UNLOCK controls are being completed. Past dates are read-only.</p>
 </main>
 <div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">Nomad Escape · Demo</div><h2 id="modalTitle">Create Booking</h2></div><button class="close" id="closeModal" aria-label="Close dialog">×</button></div><form class="modal-body" id="bookingForm"><div class="notice">This is a demonstration form. Saving adds simulated seats to the local calendar only.</div><div class="form-grid"><div class="field"><label for="bookingDate">Tour date</label><input id="bookingDate" type="date" required></div><div class="field"><label for="bookingSlot">Time slot</label><select id="bookingSlot" required><option value="morning">Morning</option><option value="arvo">Arvo</option><option value="night">Night</option></select></div><div class="field full"><label for="bookingTour">Tour</label><select id="bookingTour"><option value="North Fuerteventura">North Fuerteventura</option><option value="Sotavento">Sotavento</option><option value="Private Experience">Private Experience</option></select></div><div class="field full"><label for="bookingName">Guest name</label><input id="bookingName" placeholder="Full name" maxlength="90" required></div><div class="field"><label for="bookingPax">Passengers</label><input id="bookingPax" type="number" min="1" max="8" value="2" required></div><div class="field"><label for="bookingStatus">Demo seat status</label><select id="bookingStatus"><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="hold">Hold</option></select></div><div class="field full"><label for="bookingNotes">Notes (optional)</label><textarea id="bookingNotes" placeholder="Pickup, internal notes..."></textarea></div></div><div class="modal-actions"><button type="button" class="btn btn-outline" id="cancelModal">Cancel</button><button type="submit" class="btn btn-primary">Save Demo Booking</button></div></form></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -204,7 +204,7 @@
 
     return {
       date,
-      slot: hour < 12 ? 'morning' : hour < 18 ? 'arvo' : 'night'
+      slot: hour < 12 ? 'morning' : hour < 17 ? 'arvo' : 'night'
     };
   }
 
@@ -283,7 +283,7 @@
             ${k === '2026-11-27' && slot === 'morning'
               ? 'data-test-lock="unlock"'
               : 'disabled'}>
-            UNLOCK
+            🔒 UNLOCK
           </button>
         </div>
       </div>`;
@@ -344,7 +344,7 @@
             ${k === '2026-11-27' && slot === 'morning'
               ? 'data-test-lock="lock"'
               : 'disabled'}>
-            LOCK
+            🔒 LOCK
           </button>
         </div>
       </div>`;
@@ -397,7 +397,11 @@
             <span class="day-num">${d.getUTCDate()}</span>
           </div>
           <button class="mini-lock day-lock-inline" disabled>
-            LOCK DAY
+            <span class="day-lock-icon" aria-hidden="true">🔒</span>
+            <span class="day-lock-text">
+              <span>LOCK</span>
+              <span>DAY</span>
+            </span>
           </button>
         </div>
         ${slots.map(slot => slotHtml(k, slot)).join('')}
