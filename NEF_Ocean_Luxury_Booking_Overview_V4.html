@@ -406,26 +406,52 @@
             }</span>
             <span class="day-num">${d.getUTCDate()}</span>
           </div>
-          <button class="mini-lock day-lock-inline"
+          
+          <button class="mini-lock day-lock-inline ${
+            slots.every(slot => manualLocks.some(lock =>
+              lock.slot_date === k && lock.slot_name === slot
+            )) ? 'locked' : ''
+          }"
             data-day-lock="${k}"
-            ${k < todayKey || !loaded || loadError ||
-              manualLocks.some(lock => lock.slot_date === k) ||
-              trips.some(trip =>
-                tripLocation(trip).date === k &&
+            data-day-action="${
+              slots.every(slot => manualLocks.some(lock =>
+                lock.slot_date === k && lock.slot_name === slot
+              )) ? 'unlock' : 'lock'
+            }"
+            ${k < canaryToday() || !loaded || loadError ||
+              (
+                !slots.every(slot => manualLocks.some(lock =>
+                  lock.slot_date === k && lock.slot_name === slot
+                )) &&
                 (
-                  Number(trip.confirmed_seats || 0) +
-                  Number(trip.pending_seats || 0) +
-                  Number(trip.held_seats || 0)
-                ) > 0
+                  manualLocks.some(lock => lock.slot_date === k) ||
+                  trips.some(trip =>
+                    tripLocation(trip).date === k &&
+                    (
+                      Number(trip.confirmed_seats || 0) +
+                      Number(trip.pending_seats || 0) +
+                      Number(trip.held_seats || 0)
+                    ) > 0
+                  )
+                )
               )
               ? 'disabled'
               : ''}>
-            <span class="day-lock-icon" aria-hidden="true">🔒</span>
+            <span class="day-lock-icon" aria-hidden="true">${
+              slots.every(slot => manualLocks.some(lock =>
+                lock.slot_date === k && lock.slot_name === slot
+              )) ? '🔓' : '🔒'
+            }</span>
             <span class="day-lock-text">
-              <span>LOCK</span>
+              <span>${
+                slots.every(slot => manualLocks.some(lock =>
+                  lock.slot_date === k && lock.slot_name === slot
+                )) ? 'UNLOCK' : 'LOCK'
+              }</span>
               <span>DAY</span>
             </span>
           </button>
+
         </div>
         ${slots.map(slot => slotHtml(k, slot)).join('')}
       </article>`;
@@ -511,13 +537,17 @@
   let slotLockRunning = false;
 
   $('weekGrid').addEventListener('click', event => {
+    
     const dayButton = event.target.closest('[data-day-lock]');
 
     if (dayButton) {
-      if (dayLockRunning || slotLockRunning || !loaded || loadError) return;
+      if (dayButton.disabled || dayLockRunning ||
+          slotLockRunning || !loaded || loadError) return;
 
       const slotDate = dayButton.dataset.dayLock;
+      const action = dayButton.dataset.dayAction;
 
+      if (!['lock', 'unlock'].includes(action)) return;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(slotDate || '')) return;
       if (slotDate < canaryToday()) return;
 
@@ -525,6 +555,7 @@
 
       window.parent.postMessage({
         type: 'NEF_V4_DAY_LOCK',
+        action,
         slotDate
       }, '*');
 
@@ -583,6 +614,34 @@
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;
     if (event.data?.type !== 'NEF_V4_DAY_LOCK_RESULT') return;
+
+    dayLockRunning = false;
+
+    if (event.data.cancelled) return;
+
+    if (!event.data.success) {
+      const message = String(event.data.message || '');
+
+      if (message.includes('ACTIVE_BOOKINGS')) {
+        alert(
+          'LOCK DAY NOT ALLOWED\n\n' +
+          'This day contains active reservations.'
+        );
+      } else if (message.includes('ALREADY_LOCKED')) {
+        alert(
+          'DAY ALREADY PARTIALLY LOCKED\n\n' +
+          'Unlock the existing time slot before using LOCK DAY.'
+        );
+      } else {
+        alert('DAY OPERATION FAILED\n\n' +
+          (message || 'Please try again.'));
+      }
+      return;
+    }
+
+    requestRunning = false;
+    requestData();
+  });
 
     dayLockRunning = false;
 
