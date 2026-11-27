@@ -6209,7 +6209,12 @@ async function downloadGuestBookingPDF() {
     alert("Please allow pop-ups to download your receipt.");
     return;
   }
-
+  shareBusinessReceipt(receiptWindow, false, true).catch(error => {
+    console.error("Partner receipt preview failed:", error);
+    receiptWindow.alert("Unable to open the receipt preview.");
+  });
+  return;
+    
   receiptWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -6503,7 +6508,12 @@ async function downloadGuestBookingPDF() {
   };
 }
   
-  async function shareBusinessReceipt(receiptWindow, downloadOnly = false) {
+  async function shareBusinessReceipt(
+    receiptWindow,
+    downloadOnly = false,
+    previewOnly = false
+  ) {
+    
     if (!booking.businessAmountsVerified) {
       alert("Receipt financial details are unavailable.");
       return;
@@ -6674,7 +6684,114 @@ async function downloadGuestBookingPDF() {
     const filename = "Nomad-Escape-" +
       String(booking.bookingCode || "Receipt")
         .replace(/[^a-zA-Z0-9_-]/g, "-") + ".pdf";
+        
+    if (previewOnly) {
+      const pdfBlob = doc.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
 
+      receiptWindow.document.open();
+      receiptWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport"
+                content="width=device-width, initial-scale=1">
+          <title>Partner Booking Receipt</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 16px;
+              background: #f2eee6;
+              font-family: Arial, sans-serif;
+            }
+            iframe {
+              display: block;
+              width: 100%;
+              height: 75vh;
+              border: none;
+              background: white;
+              border-radius: 10px;
+            }
+            .actions {
+              display: flex;
+              gap: 10px;
+              margin-top: 16px;
+              flex-wrap: wrap;
+            }
+            button {
+              flex: 1;
+              min-width: 100px;
+              padding: 15px 10px;
+              border: none;
+              border-radius: 8px;
+              background: #246b80;
+              color: white;
+              font-weight: bold;
+              cursor: pointer;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe id="receipt-preview"
+                  title="Partner Receipt PDF"></iframe>
+          <div class="actions">
+            <button id="receipt-download">DOWNLOAD PDF</button>
+            <button id="receipt-share">SHARE</button>
+            <button id="receipt-copy">COPY</button>
+          </div>
+        </body>
+        </html>
+      `);
+      receiptWindow.document.close();
+
+      receiptWindow.document.getElementById(
+        "receipt-preview"
+      ).src = pdfUrl;
+
+      receiptWindow.document.getElementById(
+        "receipt-download"
+      ).onclick = () => doc.save(filename);
+
+      receiptWindow.document.getElementById(
+        "receipt-share"
+      ).onclick = () => shareBusinessReceipt(receiptWindow);
+
+      receiptWindow.document.getElementById(
+        "receipt-copy"
+      ).onclick = async () => {
+        const text = [
+          "NOMAD ESCAPE FUERTEVENTURA",
+          "BOOKING RECEIPT",
+          "Booking Code: " + booking.bookingCode,
+          "Tour: " + booking.tour,
+          "Date / Time: " +
+            formatDateWithOrdinal(booking.date) + " / " + time,
+          "People: " + booking.people,
+          "Partner Commission: EUR " +
+            booking.businessCommissionAmount,
+          "Tour Total: EUR " + booking.tourTotal,
+          "Guest Name: " + booking.name,
+          "WhatsApp: " + fullPhone,
+          "Pickup Location: " + booking.pickup,
+          "Partner Name: " + (booking.businessPartnerName || "")
+        ].join("\n");
+
+        try {
+          await receiptWindow.navigator.clipboard.writeText(text);
+          receiptWindow.alert("Receipt copied!");
+        } catch (error) {
+          receiptWindow.alert("Unable to copy the receipt.");
+        }
+      };
+
+      receiptWindow.addEventListener("pagehide", () => {
+        URL.revokeObjectURL(pdfUrl);
+      }, { once: true });
+
+      return;
+    }
+    
     if (downloadOnly) {
       doc.save(filename);
       return;
