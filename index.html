@@ -1109,7 +1109,18 @@
         const iframe = document.getElementById("nef-admin-calendar-v4");
     
         if (!iframe || event.source !== iframe.contentWindow) return;
+        
+        if (event.data?.type === "NEF_V4_CREATE_BOOKING") {
+          const activeScreen = document.getElementById(
+            "screen-admin-booking-overview"
+          );
 
+          if (!activeScreen?.classList.contains("active")) return;
+
+          await openAssistedBookingForm();
+          return;
+        }
+        
         if (
           event.data?.type === "NEF_V4_GET_EVERYDAY" ||
           event.data?.type === "NEF_V4_SET_EVERYDAY"
