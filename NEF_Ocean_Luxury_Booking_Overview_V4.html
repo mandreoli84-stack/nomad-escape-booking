@@ -425,8 +425,34 @@
             Number(t.held_seats || 0), 0
         )
       : '—';
+   
+    // Smart Occupancy: occupied seats / scheduled capacity.
+    if (loaded && !loadError) {
+      const totalCapacity = visible.reduce(
+        (sum, trip) =>
+          sum + Math.max(0, Math.min(8, Number(trip.capacity) || 0)),
+        0
+      );
 
-    $('mLocked').textContent = '—';
+      const occupiedSeats = visible.reduce(
+        (sum, trip) =>
+          sum +
+          (Number(trip.confirmed_seats) || 0) +
+          (Number(trip.pending_seats) || 0) +
+          (Number(trip.held_seats) || 0),
+        0
+      );
+
+      const occupancy = totalCapacity > 0
+        ? Math.min(100, Math.round(
+            (occupiedSeats / totalCapacity) * 100
+          ))
+        : 0;
+
+      $('mLocked').textContent = occupancy + '%';
+    } else {
+      $('mLocked').textContent = '—';
+    }
 
     $('refreshLabel').textContent = loadError
       ? 'Unable to load Supabase data'
