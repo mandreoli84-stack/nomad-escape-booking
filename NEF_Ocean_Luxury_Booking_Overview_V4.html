@@ -271,7 +271,7 @@
       const tourNames = [...new Set(names)];
    
       return `<div class="slot manual-slot">
-        <span class="state manual">MANUAL OFF</span>
+        <span class="state manual">MANUAL</span>
         <div class="tour-name">
           ${tourNames.length
             ? tourNames.map(escapeHtml).join(', ')
@@ -280,9 +280,10 @@
         <div class="seat-count">—</div>
         <div class="slot-actions">
           <button class="mini-lock locked"
-            ${k === '2026-11-27' && slot === 'morning'
-              ? 'data-test-lock="unlock"'
-              : 'disabled'}>
+            data-slot-lock="unlock"
+            data-slot-date="${k}"
+            data-slot-name="${slot}"
+            ${k < todayKey ? 'disabled' : ''}>
             🔒 UNLOCK
           </button>
         </div>
@@ -313,7 +314,13 @@
         <div class="seat-count">—</div>
         <div class="seat-dots">${seatDots(0, 0, 0, 0, 0)}</div>
         <div class="slot-actions">
-          <button class="mini-lock" disabled>LOCK</button>
+          <button class="mini-lock"
+            data-slot-lock="lock"
+            data-slot-date="${k}"
+            data-slot-name="${slot}"
+            ${k < todayKey ? 'disabled' : ''}>
+            🔒 LOCK
+          </button>
         </div>
       </div>`;
     }
@@ -341,9 +348,12 @@
         <div class="slot-actions">
           <span>${time.hour}:${time.minute}</span>
           <button class="mini-lock"
-            ${k === '2026-11-27' && slot === 'morning'
-              ? 'data-test-lock="lock"'
-              : 'disabled'}>
+           data-slot-lock="lock"
+           data-slot-date="${k}"
+           data-slot-name="${slot}"
+           ${k < todayKey || occupied > 0 || continuing.length > 0
+             ? 'disabled'
+             : ''}>
             🔒 LOCK
           </button>
         </div>
@@ -485,43 +495,57 @@
     }, '*');
   }
    
-    $('weekGrid').addEventListener('click', event => {
-    const button = event.target.closest('[data-test-lock]');
-    if (!button) return;
+  let slotLockRunning = false;
+
+  $('weekGrid').addEventListener('click', event => {
+    const button = event.target.closest('[data-slot-lock]');
+    if (!button || slotLockRunning || !loaded || loadError) return;
+
+    const action = button.dataset.slotLock;
+    const slotDate = button.dataset.slotDate;
+    const slotName = button.dataset.slotName;
+
+    if (!['lock', 'unlock'].includes(action)) return;
+    if (!['morning', 'arvo', 'night'].includes(slotName)) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(slotDate || '')) return;
+    if (slotDate < canaryToday()) return;
+
+    slotLockRunning = true;
 
     window.parent.postMessage({
-      type: 'NEF_V4_TEST_LOCK',
-      action: button.dataset.testLock
+      type: 'NEF_V4_SLOT_LOCK',
+      action,
+      slotDate,
+      slotName
     }, '*');
   });
 
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;
+    if (event.data?.type !== 'NEF_V4_SLOT_LOCK_RESULT') return;
 
-    if (event.data?.type === 'NEF_V4_TEST_RESULT') {
-      if (!event.data.success) {
-        const message = String(event.data.message || '');
+    slotLockRunning = false;
 
-        if (
-          message.includes('ACTIVE_BOOKINGS') ||
-          message.includes('BOOKINGS_EXIST') ||
-          message.includes('SLOT_NOT_EMPTY')
-        ) {
-          alert(
-            'LOCK NOT ALLOWED\n\n' +
-            'This time slot already contains active bookings ' +
-            'or reservations. It cannot be locked.'
-          );
-        } else {
-          alert('LOCK FAILED\n\n' + (message || 'Please try again.'));
-        }
-        return;
+    if (event.data.cancelled) return;
+   
+    if (!event.data.success) {
+      const message = String(event.data.message || '');
+
+      if (message.includes('ACTIVE_BOOKINGS')) {
+        alert(
+          'LOCK NOT ALLOWED\n\n' +
+          'This time slot contains active reservations.'
+        );
+      } else {
+        alert('OPERATION FAILED\n\n' + (message || 'Please try again.'));
       }
-
-      requestRunning = false;
-      requestData();
+      return;
     }
+
+    requestRunning = false;
+    requestData();
   });
+
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;
 
