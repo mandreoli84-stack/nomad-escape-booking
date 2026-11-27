@@ -519,8 +519,15 @@
     }
   });
 
-   // Controls without backend integration remain disabled.
-   for (const id of ['generalCreate', 'arvo', 'night']) {
+   // Create Booking opens the existing Admin Assisted Booking flow.
+   $('generalCreate').addEventListener('click', () => {
+     window.parent.postMessage({
+       type: 'NEF_V4_CREATE_BOOKING'
+     }, '*');
+   });
+
+   // Smart controls without backend integration remain disabled.
+   for (const id of ['arvo', 'night']) {
      $(id).disabled = true;
    }
    
