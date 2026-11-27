@@ -409,7 +409,15 @@
           <button class="mini-lock day-lock-inline"
             data-day-lock="${k}"
             ${k < todayKey || !loaded || loadError ||
-              manualLocks.some(lock => lock.slot_date === k)
+              manualLocks.some(lock => lock.slot_date === k) ||
+              trips.some(trip =>
+                tripLocation(trip).date === k &&
+                (
+                  Number(trip.confirmed_seats || 0) +
+                  Number(trip.pending_seats || 0) +
+                  Number(trip.held_seats || 0)
+                ) > 0
+              )
               ? 'disabled'
               : ''}>
             <span class="day-lock-icon" aria-hidden="true">🔒</span>
