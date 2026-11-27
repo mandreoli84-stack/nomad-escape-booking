@@ -1267,6 +1267,119 @@
 
           return;
         }
+        
+        if (event.data?.type === "NEF_V4_DAY_LOCK") {
+          const activeScreen = document.getElementById(
+            "screen-admin-booking-overview"
+          );
+
+          if (!activeScreen?.classList.contains("active")) return;
+
+          const slotDate = event.data.slotDate;
+
+          const sendDayLockResult = (result) => {
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_DAY_LOCK_RESULT",
+              ...result
+            }, "*");
+          };
+
+          if (typeof slotDate !== "string" ||
+              !/^\d{4}-\d{2}-\d{2}$/.test(slotDate)) {
+            sendDayLockResult({
+              success: false,
+              message: "Invalid date"
+            });
+            return;
+          }
+
+          const parsedDate = new Date(slotDate + "T12:00:00Z");
+
+          if (!Number.isFinite(parsedDate.getTime()) ||
+              parsedDate.toISOString().slice(0, 10) !== slotDate) {
+            sendDayLockResult({
+              success: false,
+              message: "Invalid date"
+            });
+            return;
+          }
+
+          const canaryToday = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Atlantic/Canary",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          }).format(new Date());
+
+          if (slotDate < canaryToday) {
+            sendDayLockResult({
+              success: false,
+              message: "Past dates cannot be locked"
+            });
+            return;
+          }
+
+          const approved = await nomadConfirmAction(
+            "CONFIRM LOCK DAY",
+            `${slotDate}\nMain van\n\n` +
+            "Block Morning, Arvo and Night for the entire day?"
+          );
+
+          if (!approved) {
+            sendDayLockResult({
+              success: false,
+              cancelled: true
+            });
+            return;
+          }
+
+          try {
+            const { data: authData, error: authError } =
+              await supabaseClient.auth.getUser();
+
+            if (authError || !authData?.user) {
+              throw new Error("Admin login required");
+            }
+
+            const { data: isAdmin, error: adminError } =
+              await supabaseClient.rpc("is_vanbooking_admin");
+
+            if (adminError || isAdmin !== true) {
+              throw new Error("Admin access denied");
+            }
+
+            const { data, error } = await supabaseClient.rpc(
+              "admin_lock_vehicle_day",
+              {
+                p_vehicle_id:
+                  "1cf3b533-271c-42a2-8569-2ab12c0e2e20",
+                p_slot_date: slotDate
+              }
+            );
+
+            if (error) throw error;
+
+            if (data?.result !== "DAY_LOCKED") {
+              throw new Error(
+                data?.result === "ACTIVE_BOOKINGS"
+                  ? "ACTIVE_BOOKINGS"
+                  : data?.result === "ALREADY_LOCKED"
+                    ? "ALREADY_LOCKED"
+                    : "Unexpected day lock result"
+              );
+            }
+
+            sendDayLockResult({ success: true });
+
+          } catch (error) {
+            sendDayLockResult({
+              success: false,
+              message: error.message || "Operation failed"
+            });
+          }
+
+          return;
+        }
 
         if (event.data?.type !== "NEF_V4_REQUEST_DATA") return;
         if (calendarRequestRunning) return;
