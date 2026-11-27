@@ -1034,7 +1034,26 @@
       <div class="tour-arrow">›</div>
     </div>
   </div>
+  <!-- TEMPORARY ADMIN CONFIRMATION PREVIEW -->
+  <div class="panel" style="margin-top:22px;">
+    <h3 style="margin-top:0;">Preview Booking Confirmation</h3>
 
+    <p class="helper">
+      Demo only. No bookings or payments will be created.
+    </p>
+
+    <div class="bottom-buttons">
+      <button class="secondary"
+              onclick="previewBookingConfirmation('guest')">
+        PREVIEW GUEST
+      </button>
+
+      <button class="primary"
+              onclick="previewBookingConfirmation('business')">
+        PREVIEW PARTNER
+      </button>
+    </div>
+  </div>
   <div class="bottom-buttons">
     <button class="secondary" onclick="adminLogout()">
       LOGOUT
@@ -4472,7 +4491,107 @@ async function checkBusinessPassword() {
   
   let liveSeatsTimer = null;
   let liveSeatsRefreshing = false;
+  
+  function previewBookingConfirmation(type) {
+    const source = document.getElementById("screen-confirmation");
+    if (!source || !["guest", "business"].includes(type)) return;
 
+    const existing = document.getElementById("nef-preview-dialog");
+    if (existing) existing.remove();
+
+    const dialog = document.createElement("dialog");
+    dialog.id = "nef-preview-dialog";
+    dialog.style.cssText = `
+      width:calc(100% - 20px);
+      max-width:470px;
+      max-height:90vh;
+      overflow:auto;
+      border:1px solid #d9e0e3;
+      border-radius:14px;
+      padding:18px;
+      background:#ffffff;
+      color:#10233b;
+    `;
+
+    const heading = document.createElement("div");
+    heading.style.cssText =
+      "text-align:center;font-weight:bold;color:#246B80;margin-bottom:12px;";
+    heading.textContent =
+      "DEMO PREVIEW — " + (type === "business" ? "PARTNER" : "GUEST");
+
+    const preview = source.cloneNode(true);
+    preview.classList.remove("screen");
+    preview.classList.add("nef-preview-content");
+    preview.style.display = "block";
+
+    const sample = {
+      "confirmation-booking-code":
+        type === "business" ? "VB-DEMO-0001" : "VG-DEMO-0001",
+      "confirmation-partner": "Nomad Test Partner",
+      "confirmation-customer": "Alex Example",
+      "confirmation-phone": "+34 600 000 000",
+      "confirmation-pickup": "Corralejo",
+      "confirmation-tour": "North Fuerteventura",
+      "confirmation-date-time": "15 December 2026 · 09:30 – 13:30",
+      "confirmation-people": "2 people",
+      "confirmation-total": "€98.00",
+      "confirmation-deposit":
+        type === "business" ? "€24.50" : "€24.50",
+      "confirmation-balance": "€73.50",
+      "confirmation-deposit-label":
+        type === "business" ? "Partner Commission" : "Deposit Paid"
+    };
+
+    Object.entries(sample).forEach(([id, value]) => {
+      const element = preview.querySelector(`[id="${id}"]`);
+      if (element) element.textContent = value;
+    });
+
+    const backButton =
+      preview.querySelector("#confirmation-back-button");
+    if (backButton) backButton.remove();
+
+    const actionButton =
+      preview.querySelector("#confirmation-action-button");
+
+    if (actionButton) {
+      actionButton.textContent =
+        type === "business" ? "SEND PDF TO GUEST" : "DOWNLOAD PDF";
+      actionButton.disabled = true;
+      actionButton.removeAttribute("onclick");
+      actionButton.title = "Disabled in demo preview";
+    }
+
+    const partnerRow =
+      preview.querySelector("#confirmation-partner-row");
+    if (partnerRow) {
+      partnerRow.style.display =
+        type === "business" ? "flex" : "none";
+    }
+
+    preview.querySelectorAll("[id]").forEach(element => {
+      element.removeAttribute("id");
+    });
+
+    preview.querySelectorAll("[onclick]").forEach(element => {
+      element.removeAttribute("onclick");
+    });
+
+    const close = document.createElement("button");
+    close.className = "primary";
+    close.textContent = "CLOSE PREVIEW";
+    close.style.cssText = "width:100%;margin-top:20px;";
+    close.onclick = () => dialog.close();
+
+    dialog.append(heading, preview, close);
+    document.body.appendChild(dialog);
+
+    dialog.addEventListener("close", () => dialog.remove(), {
+      once: true
+    });
+
+    dialog.showModal();
+  }
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
       screen.classList.remove("active");
