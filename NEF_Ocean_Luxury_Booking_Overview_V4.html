@@ -643,33 +643,6 @@
     requestData();
   });
 
-    dayLockRunning = false;
-
-    if (event.data.cancelled) return;
-
-    if (!event.data.success) {
-      const message = String(event.data.message || '');
-
-      if (message.includes('ACTIVE_BOOKINGS')) {
-        alert(
-          'LOCK DAY NOT ALLOWED\n\n' +
-          'This day contains active reservations.'
-        );
-      } else if (message.includes('ALREADY_LOCKED')) {
-        alert(
-          'DAY ALREADY PARTIALLY LOCKED\n\n' +
-          'Unlock the existing time slot before using LOCK DAY.'
-        );
-      } else {
-        alert('LOCK DAY FAILED\n\n' + (message || 'Please try again.'));
-      }
-      return;
-    }
-
-    requestRunning = false;
-    requestData();
-  });
-
   window.addEventListener('message', event => {
     if (event.source !== window.parent) return;
 
