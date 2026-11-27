@@ -676,11 +676,73 @@
        type: 'NEF_V4_CREATE_BOOKING'
      }, '*');
    });
+   
+   // Arvo Smart and Night Smart — Supabase integration
+   const smartSwitches = {
+     arvo: $('arvo'),
+     night: $('night')
+   };
 
-   // Smart controls without backend integration remain disabled.
-   for (const id of ['arvo', 'night']) {
-     $(id).disabled = true;
+   const smartSavedState = {
+     arvo: false,
+     night: false
+   };
+
+   for (const input of Object.values(smartSwitches)) {
+     input.disabled = true;
    }
+
+   window.addEventListener('message', event => {
+     if (event.source !== window.parent) return;
+
+     if (event.data?.type === 'NEF_V4_SMART_SLOTS_STATE') {
+       if (!Array.isArray(event.data.slots)) return;
+
+       event.data.slots.forEach(item => {
+         if (!Object.prototype.hasOwnProperty.call(
+           smartSwitches, item.slot_name
+         )) return;
+
+         if (typeof item.enabled !== 'boolean') return;
+
+         smartSavedState[item.slot_name] = item.enabled;
+         smartSwitches[item.slot_name].checked = item.enabled;
+         smartSwitches[item.slot_name].disabled = false;
+       });
+
+       if (loaded && !loadError && !requestRunning) {
+         requestData();
+       }
+     }
+
+     if (event.data?.type === 'NEF_V4_SMART_SLOT_ERROR') {
+       const slotName = event.data.slotName;
+
+       if (smartSwitches[slotName]) {
+         smartSwitches[slotName].checked =
+           smartSavedState[slotName];
+         smartSwitches[slotName].disabled = false;
+       }
+
+       alert(event.data.message || 'Smart Slot error');
+     }
+   });
+
+   for (const [slotName, input] of Object.entries(smartSwitches)) {
+     input.addEventListener('change', () => {
+       input.disabled = true;
+
+       window.parent.postMessage({
+         type: 'NEF_V4_SET_SMART_SLOT',
+         slotName,
+         enabled: input.checked
+       }, '*');
+     });
+   }
+
+   window.parent.postMessage({
+     type: 'NEF_V4_GET_SMART_SLOTS'
+   }, '*');
    
    const everydaySwitch = $('everyday');
    let everydaySavedState = false;
