@@ -1276,7 +1276,10 @@
           if (!activeScreen?.classList.contains("active")) return;
 
           const slotDate = event.data.slotDate;
+          const action = event.data.action || "lock";
 
+          if (!["lock", "unlock"].includes(action)) return;
+          
           const sendDayLockResult = (result) => {
             iframe.contentWindow.postMessage({
               type: "NEF_V4_DAY_LOCK_RESULT",
@@ -1320,9 +1323,13 @@
           }
 
           const approved = await nomadConfirmAction(
-            "CONFIRM LOCK DAY",
+            action === "lock"
+              ? "CONFIRM LOCK DAY"
+              : "CONFIRM UNLOCK DAY",
             `${slotDate}\nMain van\n\n` +
-            "Block Morning, Arvo and Night for the entire day?"
+            (action === "lock"
+              ? "Block Morning, Arvo and Night for the entire day?"
+              : "Remove all manual blocks from Morning, Arvo and Night?")
           );
 
           if (!approved) {
@@ -1349,7 +1356,9 @@
             }
 
             const { data, error } = await supabaseClient.rpc(
-              "admin_lock_vehicle_day",
+              action === "lock"
+                ? "admin_lock_vehicle_day"
+                : "admin_unlock_vehicle_day",
               {
                 p_vehicle_id:
                   "1cf3b533-271c-42a2-8569-2ab12c0e2e20",
@@ -1359,13 +1368,15 @@
 
             if (error) throw error;
 
-            if (data?.result !== "DAY_LOCKED") {
+            if (data?.result !== (
+              action === "lock" ? "DAY_LOCKED" : "DAY_UNLOCKED"
+            )) {
               throw new Error(
                 data?.result === "ACTIVE_BOOKINGS"
                   ? "ACTIVE_BOOKINGS"
                   : data?.result === "ALREADY_LOCKED"
                     ? "ALREADY_LOCKED"
-                    : "Unexpected day lock result"
+                    : "Unexpected day operation result"
               );
             }
 
