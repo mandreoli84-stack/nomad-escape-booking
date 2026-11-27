@@ -406,7 +406,12 @@
             }</span>
             <span class="day-num">${d.getUTCDate()}</span>
           </div>
-          <button class="mini-lock day-lock-inline" disabled>
+          <button class="mini-lock day-lock-inline"
+            data-day-lock="${k}"
+            ${k < todayKey || !loaded || loadError ||
+              manualLocks.some(lock => lock.slot_date === k)
+              ? 'disabled'
+              : ''}>
             <span class="day-lock-icon" aria-hidden="true">🔒</span>
             <span class="day-lock-text">
               <span>LOCK</span>
@@ -498,9 +503,28 @@
   let slotLockRunning = false;
 
   $('weekGrid').addEventListener('click', event => {
-    const button = event.target.closest('[data-slot-lock]');
-    if (!button || slotLockRunning || !loaded || loadError) return;
+    const dayButton = event.target.closest('[data-day-lock]');
 
+    if (dayButton) {
+      if (dayLockRunning || slotLockRunning || !loaded || loadError) return;
+
+      const slotDate = dayButton.dataset.dayLock;
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(slotDate || '')) return;
+      if (slotDate < canaryToday()) return;
+
+      dayLockRunning = true;
+
+      window.parent.postMessage({
+        type: 'NEF_V4_DAY_LOCK',
+        slotDate
+      }, '*');
+
+      return;
+    }
+
+    const button = event.target.closest('[data-slot-lock]');
+    if (!button || dayLockRunning || slotLockRunning || !loaded || loadError) return;
     const action = button.dataset.slotLock;
     const slotDate = button.dataset.slotDate;
     const slotName = button.dataset.slotName;
@@ -538,6 +562,39 @@
         );
       } else {
         alert('OPERATION FAILED\n\n' + (message || 'Please try again.'));
+      }
+      return;
+    }
+
+    requestRunning = false;
+    requestData();
+  });
+  
+  let dayLockRunning = false;
+
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent) return;
+    if (event.data?.type !== 'NEF_V4_DAY_LOCK_RESULT') return;
+
+    dayLockRunning = false;
+
+    if (event.data.cancelled) return;
+
+    if (!event.data.success) {
+      const message = String(event.data.message || '');
+
+      if (message.includes('ACTIVE_BOOKINGS')) {
+        alert(
+          'LOCK DAY NOT ALLOWED\n\n' +
+          'This day contains active reservations.'
+        );
+      } else if (message.includes('ALREADY_LOCKED')) {
+        alert(
+          'DAY ALREADY PARTIALLY LOCKED\n\n' +
+          'Unlock the existing time slot before using LOCK DAY.'
+        );
+      } else {
+        alert('LOCK DAY FAILED\n\n' + (message || 'Please try again.'));
       }
       return;
     }
