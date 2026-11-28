@@ -6294,7 +6294,33 @@ async function continueFromReview() {
 
   return getOrdinalSuffix(day) + " " + parts.slice(1).join(" ");
 }
-
+  
+  function formatBookingDepartureTime(startOnly = false) {
+    const formatTime = value =>
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).format(new Date(value));
+  
+    if (!booking.startsAt) {
+      return "Time to be confirmed";
+    }
+  
+    const start = formatTime(booking.startsAt);
+  
+    if (startOnly) {
+      return start;
+    }
+  
+    if (!booking.endsAt) {
+      return start;
+    }
+  
+    return start + " – " + formatTime(booking.endsAt);
+  }
+  
   function buildWhatsAppMessage() {
   const formattedDate = formatDateWithOrdinal(booking.date);
   const peopleText = booking.people === 1
@@ -6309,7 +6335,7 @@ We're looking forward to having you with us on the van.
 
 *${booking.tour}*
 📅 *${formattedDate}*
-🕘 *Departure: 09:30*
+🕘 *Departure: ${formatBookingDepartureTime(true)}*
 👥 *${peopleText}*
 📍 *${booking.pickup}*
 
@@ -6493,9 +6519,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       "confirmation-tour": booking.tour,
       "confirmation-date-time":
         formatDateWithOrdinal(booking.date) + " · " +
-        (booking.tour === "North Fuerteventura"
-          ? "09:30 – 13:30"
-          : "09:30 – 17:00"),
+        formatBookingDepartureTime(),
       "confirmation-people":
         booking.people + (booking.people === 1 ? " person" : " people"),
       "confirmation-total": "Pending verification",
@@ -6542,12 +6566,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       booking.tour;
 
 
-    const confirmedTourTime =
-      booking.tour === "North Fuerteventura"
-        ? "09:30 – 13:30"
-        : booking.tour === "Sotavento Experience"
-          ? "09:30 – 17:00"
-          : "Time to be confirmed";
+    const confirmedTourTime = formatBookingDepartureTime();
 
     document.getElementById("confirmation-date-time").textContent =
       formatDateWithOrdinal(booking.date) + " · " + confirmedTourTime;
@@ -6579,9 +6598,7 @@ const result = await supabaseClient.functions.invoke("business-booking", {
       return;
     }
 
-    const time = booking.tour === "North Fuerteventura"
-      ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+    const time = formatBookingDepartureTime();
 
     const countryCode =
       document.getElementById("country-code").value;
@@ -6761,11 +6778,7 @@ async function downloadGuestBookingPDF() {
     return;
   }
 
-  const time = booking.tour === "North Fuerteventura"
-    ? "09:30 - 13:30"
-    : booking.tour === "Sotavento Experience"
-      ? "09:30 - 17:00"
-      : "Time to be confirmed";
+  const time = formatBookingDepartureTime();
   const countryCode =
     String(document.getElementById("country-code")?.value || "+34").trim();
   
@@ -6872,11 +6885,7 @@ async function downloadGuestBookingPDF() {
       return;
     }
 
-  const time =
-    booking.tour === "North Fuerteventura"
-      ? "09:30 – 13:30"
-      : "09:30 – 17:00";
-
+  const time = formatBookingDepartureTime();
   const countryCode = document.getElementById("country-code").value;
   const fullPhone = countryCode + " " + booking.phone;
   const depositAmount = booking.businessCommissionAmount;
@@ -7203,9 +7212,7 @@ async function downloadGuestBookingPDF() {
       return;
     }
 
-    const time = booking.tour === "North Fuerteventura"
-      ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+    const time = formatBookingDepartureTime();
 
     const countryCode =
       document.getElementById("country-code").value;
