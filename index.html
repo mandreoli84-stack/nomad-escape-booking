@@ -3340,33 +3340,6 @@
 
     </div>
     
-    <div style="display:flex; align-items:flex-start;
-                gap:10px; margin:20px 0 14px;">
-
-      <input type="checkbox"
-             id="partner-terms-accepted"
-             style="width:18px; height:18px;
-                    flex-shrink:0; margin:2px 0 0;
-                    accent-color:#246B80;">
-
-      <div style="font-size:13px; line-height:1.5;
-                  color:#526b7a;">
-        I have read and agree to the
-        <a href="terms-and-conditions.html"
-           target="_blank" rel="noopener noreferrer"
-           style="color:#246B80;">
-          Terms & Conditions
-        </a>
-        and have read the
-        <a href="privacy-policy.html"
-           target="_blank" rel="noopener noreferrer"
-           style="color:#246B80;">
-          Privacy Policy
-        </a>.
-      </div>
-
-    </div>
-
     <button class="primary" style="width:100%" onclick="continueFromReview()">
       CONFIRM BOOKING
     </button>
@@ -4548,7 +4521,6 @@ async function createAssistedBooking() {
     booking.accessType = type;
 
     document.getElementById("guest-terms-accepted").checked = false;
-    document.getElementById("partner-terms-accepted").checked = false;
 
     businessSessionToken = null;
     businessDefaultPickup = "";
@@ -6117,15 +6089,6 @@ We're looking forward to having you with us on the van.
 }
   
   async function confirmBooking() {
-
-    if (booking.accessType === "business" &&
-        !document.getElementById("partner-terms-accepted")?.checked) {
-      await nomadConfirmAction(
-        "TERMS & CONDITIONS",
-        "Please accept the Terms & Conditions before confirming your booking."
-      );
-      return;
-    }
     
     if (
     booking.accessType === "business" &&
