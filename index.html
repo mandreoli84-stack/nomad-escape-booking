@@ -5287,7 +5287,11 @@ async function checkBusinessPassword() {
       formatTime(bookable[0].starts_at) === "09:30";
   
     const previousId = booking.tripId;
-  
+
+    if (previousId && !bookable.some(trip => trip.id === previousId)) {
+      booking.unavailableDepartureId = previousId;
+    }
+
     function setTrip(trip) {
       booking.tripId = trip ? trip.id : "";
       booking.startsAt = trip ? trip.starts_at : null;
@@ -5301,7 +5305,9 @@ async function checkBusinessPassword() {
       const classic = bookable[0];
   
       const previousDepartureLost =
-        previousId && previousId !== classic.id;
+        (previousId && previousId !== classic.id) ||
+        (booking.unavailableDepartureId &&
+         booking.unavailableDepartureId !== classic.id);
   
       setTrip(previousDepartureLost ? null : classic);
   
@@ -5357,7 +5363,11 @@ async function checkBusinessPassword() {
         );
   
         setTrip(trip || null);
-  
+
+        if (trip) {
+          booking.unavailableDepartureId = null;
+        }
+
         seatsLeft.textContent = trip
           ? `${booking.seatsAvailable} ${
               booking.seatsAvailable === 1 ? "seat" : "seats"
@@ -5670,11 +5680,13 @@ function renderCalendar() {
       year: "numeric"
     });
 
-    if (booking.date !== newDate) {
+    if (booking.date !== newDate ||
+        booking.unavailableDepartureId) {
       booking.tripId = "";
       booking.startsAt = null;
       booking.endsAt = null;
       booking.seatsAvailable = 0;
+      booking.unavailableDepartureId = null;
     }
 
     booking.date = newDate;
