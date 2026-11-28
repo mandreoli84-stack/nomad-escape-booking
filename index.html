@@ -3340,6 +3340,33 @@
 
     </div>
     
+    <div style="display:flex; align-items:flex-start;
+                gap:10px; margin:20px 0 14px;">
+
+      <input type="checkbox"
+             id="partner-terms-accepted"
+             style="width:18px; height:18px;
+                    flex-shrink:0; margin:2px 0 0;
+                    accent-color:#246B80;">
+
+      <div style="font-size:13px; line-height:1.5;
+                  color:#526b7a;">
+        I have read and agree to the
+        <a href="terms-and-conditions.html"
+           target="_blank" rel="noopener noreferrer"
+           style="color:#246B80;">
+          Terms & Conditions
+        </a>
+        and have read the
+        <a href="privacy-policy.html"
+           target="_blank" rel="noopener noreferrer"
+           style="color:#246B80;">
+          Privacy Policy
+        </a>.
+      </div>
+
+    </div>
+
     <button class="primary" style="width:100%" onclick="continueFromReview()">
       CONFIRM BOOKING
     </button>
@@ -3577,6 +3604,33 @@
 
     </div>
     
+    <div style="display:flex; align-items:flex-start;
+                gap:10px; margin:20px 0 12px;">
+
+      <input type="checkbox"
+             id="guest-terms-accepted"
+             style="width:18px; height:18px;
+                    flex-shrink:0; margin:2px 0 0;
+                    accent-color:#246B80;">
+
+      <div style="font-size:13px; line-height:1.5;
+                  color:#526b7a;">
+        I have read and agree to the
+        <a href="terms-and-conditions.html"
+           target="_blank" rel="noopener noreferrer"
+           style="color:#246B80;">
+          Terms & Conditions
+        </a>
+        and have read the
+        <a href="privacy-policy.html"
+           target="_blank" rel="noopener noreferrer"
+           style="color:#246B80;">
+          Privacy Policy
+        </a>.
+      </div>
+
+    </div>
+
     <div class="bottom-buttons" style="display:block;">
 
   <button class="primary" id="pay-deposit-button"
@@ -3668,6 +3722,26 @@
 
   </section>
 
+<footer style="text-align:center; margin-top:35px;
+                 padding:15px 0 5px; font-size:11px;
+                 line-height:1.8; color:#728093;">
+
+    <a href="legal-notice.html" target="_blank"
+       rel="noopener noreferrer" style="color:inherit;">
+      Legal Notice
+    </a>
+    &nbsp;·&nbsp;
+    <a href="terms-and-conditions.html" target="_blank"
+       rel="noopener noreferrer" style="color:inherit;">
+      Terms & Conditions
+    </a>
+    &nbsp;·&nbsp;
+    <a href="privacy-policy.html" target="_blank"
+       rel="noopener noreferrer" style="color:inherit;">
+      Privacy Policy
+    </a>
+
+  </footer>
 </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -5843,6 +5917,15 @@ async function continueFromReview() {
     }
   }, 15000);
   async function payDeposit() {
+
+    if (!document.getElementById("guest-terms-accepted")?.checked) {
+      await nomadConfirmAction(
+        "TERMS & CONDITIONS",
+        "Please accept the Terms & Conditions before proceeding to payment."
+      );
+      return;
+    }
+
     const button = document.getElementById("pay-deposit-button");
     
     if (button.disabled) return;
@@ -6025,6 +6108,15 @@ We're looking forward to having you with us on the van.
 }
   
   async function confirmBooking() {
+
+    if (booking.accessType === "business" &&
+        !document.getElementById("partner-terms-accepted")?.checked) {
+      await nomadConfirmAction(
+        "TERMS & CONDITIONS",
+        "Please accept the Terms & Conditions before confirming your booking."
+      );
+      return;
+    }
     
     if (
     booking.accessType === "business" &&
