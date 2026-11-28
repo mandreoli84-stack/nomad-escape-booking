@@ -5305,9 +5305,8 @@ async function checkBusinessPassword() {
       const classic = bookable[0];
   
       const previousDepartureLost =
-        (previousId && previousId !== classic.id) ||
-        (booking.unavailableDepartureId &&
-         booking.unavailableDepartureId !== classic.id);
+        Boolean(booking.unavailableDepartureId) ||
+        Boolean(previousId && previousId !== classic.id);
   
       setTrip(previousDepartureLost ? null : classic);
   
@@ -5520,10 +5519,19 @@ function renderCalendar() {
     dayElement.setAttribute("onclick", `chooseDate(${day})`);
   }
   
-  if (
-    booking.tripId &&
-    tripsForDay.some(trip => trip.id === booking.tripId)
-  ) {
+  const calendarDayDate = new Date(
+    calendarYear, calendarMonth, day
+  );
+
+  const calendarDayLabel = calendarDayDate.toLocaleDateString(
+    "en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }
+  );
+
+  if (booking.date === calendarDayLabel) {
     dayElement.classList.add("selected");
   }
   daysContainer.appendChild(dayElement);
