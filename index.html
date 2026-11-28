@@ -8353,6 +8353,16 @@ async function downloadGuestBookingPDF() {
       }
     }
       
+    function driverCheckInAllowed(booking) {
+      if (!booking || !booking.starts_at) return false;
+    
+      const departure = new Date(booking.starts_at).getTime();
+    
+      if (!Number.isFinite(departure)) return false;
+    
+      return Date.now() >= departure - 30 * 60 * 1000;
+    }
+    
     function renderDriverDashboard() {
       const bookings = driverBookings;
     
@@ -8503,11 +8513,17 @@ async function downloadGuestBookingPDF() {
               ${!checkedIn ? `
                 <button class="primary" type="button"
                         style="width:100%;margin-top:12px;"
+                        ${driverCheckInAllowed(b) ? "" : "disabled"}
                         onclick="driverCheckIn('${b.booking_id}')">
                   CHECK IN
                 </button>
+                ${!driverCheckInAllowed(b) ? `
+                  <div class="helper" style="text-align:center;">
+                    Check-in opens 30 minutes before departure.
+                  </div>
+                ` : ""}
               ` : ""}
-    
+                  
               ${checkedIn && !paid && !droppedOff ? `
                 <div style="color:#c66a00;font-weight:800;
                             font-size:17px;margin:12px 0;">
@@ -8621,6 +8637,13 @@ async function downloadGuestBookingPDF() {
       const b = driverBookings.find(x => x.booking_id === bookingId);
     
       if (!b || b.checked_in_at || driverActionBusy || driverLoading) return;
+
+      if (!driverCheckInAllowed(b)) {
+        document.getElementById("driver-message").textContent =
+          "Check-in opens 30 minutes before departure.";
+        renderDriverDashboard();
+        return;
+      }
     
       const passengers = Number(b.passengers);
     
