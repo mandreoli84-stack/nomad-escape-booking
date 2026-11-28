@@ -4547,6 +4547,9 @@ async function createAssistedBooking() {
   async function selectAccessType(type) {
     booking.accessType = type;
 
+    document.getElementById("guest-terms-accepted").checked = false;
+    document.getElementById("partner-terms-accepted").checked = false;
+
     businessSessionToken = null;
     businessDefaultPickup = "";
     businessBookingInProgress = false;
