@@ -5796,6 +5796,9 @@ async function continueFromReview() {
 
   const payDepositButton = document.getElementById("pay-deposit-button");
 
+  document.getElementById("guest-terms-accepted").disabled =
+    Boolean(guestHoldRequestId);
+
   if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
     payDepositButton.disabled = true;
     payDepositButton.textContent = "BOOKING ATTEMPT IN PROGRESS";
@@ -5930,8 +5933,10 @@ async function continueFromReview() {
     }
 
     const button = document.getElementById("pay-deposit-button");
-    
+
     if (button.disabled) return;
+    
+    document.getElementById("guest-terms-accepted").disabled = true;
     if (!guestHoldRequestId) {
       guestHoldRequestId = crypto.randomUUID();
   }
@@ -6047,10 +6052,11 @@ async function continueFromReview() {
       );
     } finally {
       if (!holdCreated && !alreadyProcessed && !requestOutcomeUnknown) {
-        guestHoldRequestId = null;
-        guestHoldToken = null;
-        button.disabled = false;
-        button.textContent = originalText;
+      guestHoldRequestId = null;
+      guestHoldToken = null;
+      button.disabled = false;
+      button.textContent = originalText;
+      document.getElementById("guest-terms-accepted").disabled = false;
       } else if (alreadyProcessed) {
         button.disabled = true;
         button.textContent = "REQUEST ALREADY PROCESSED";
@@ -7322,6 +7328,10 @@ async function downloadGuestBookingPDF() {
     const payButton = document.getElementById("pay-deposit-button");
     payButton.disabled = false;
     payButton.textContent = "PAY DEPOSIT";
+    
+    const termsCheckbox = document.getElementById("guest-terms-accepted");
+    termsCheckbox.disabled = false;
+    termsCheckbox.checked = false;
     const previousAccessType = booking.accessType;
     const previousPartnerName = booking.businessPartnerName || "";
     
