@@ -5178,6 +5178,8 @@ async function checkBusinessPassword() {
   booking.duration = duration;
   booking.tripId = "";
   booking.date = "";
+  booking.startsAt = null;
+  booking.endsAt = null;
   booking.seatsAvailable = 0;
   booking.limitPeopleAfterInsufficient = false;
 
@@ -5185,6 +5187,13 @@ async function checkBusinessPassword() {
   document.getElementById("date-seats").textContent = "";
   document.getElementById("date-continue").disabled = true;
 
+  const departureContainer = document.getElementById("departure-selection");
+  const departureSelect = document.getElementById("departure-time");
+
+  departureContainer.hidden = true;
+  departureSelect.innerHTML =
+    '<option value="">Select a departure</option>';
+  departureSelect.onchange = null;
   const { data, error } = await supabaseClient
     .from("public_trip_availability")
     .select("id, title, starts_at, ends_at, seats_available")
@@ -5689,14 +5698,20 @@ function renderCalendar() {
     trip => trip.id === booking.tripId
   );
 
-  const selectedTrip = previousTrip || departures[0];
+  const selectedTrip = previousTrip || null;
 
-  departureSelect.value = selectedTrip.id;
+  departureSelect.value = selectedTrip ? selectedTrip.id : "";
 
-  booking.tripId = selectedTrip.id;
-  booking.seatsAvailable = Number(selectedTrip.seats_available);
-  booking.startsAt = selectedTrip.starts_at;
-  booking.endsAt = selectedTrip.ends_at;
+  booking.tripId = selectedTrip ? selectedTrip.id : "";
+  booking.seatsAvailable = selectedTrip
+    ? Number(selectedTrip.seats_available)
+    : 0;
+  booking.startsAt = selectedTrip
+    ? selectedTrip.starts_at
+    : null;
+  booking.endsAt = selectedTrip
+    ? selectedTrip.ends_at
+    : null;
 
   departureSelect.onchange = async function () {
     if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
@@ -5740,7 +5755,7 @@ function renderCalendar() {
       selectedDayElement.classList.add("selected");
     }
 
-    const tripDate = new Date(booking.startsAt);
+    const tripDate = new Date(departures[0].starts_at);
 
     booking.date = tripDate.toLocaleDateString("en-GB", {
       timeZone: "Atlantic/Canary",
@@ -5767,7 +5782,8 @@ function renderCalendar() {
       booking.seatsAvailable +
       (booking.seatsAvailable === 1 ? " seat left" : " seats left");
     
-    document.getElementById("date-continue").disabled = false;
+    document.getElementById("date-continue").disabled =
+      !booking.tripId || booking.seatsAvailable <= 0;
 
     document.getElementById("seats-left").textContent =
       booking.seatsAvailable +
