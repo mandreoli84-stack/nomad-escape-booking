@@ -3515,57 +3515,9 @@
       </div>
     </div>
 
+    <!-- 1. Remaining balance -->
     <div class="info-note"
          style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:14px;">
-
-      <span style="width:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center;" aria-hidden="true">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-          <path d="M16 3v4M8 3v4M3 10h18"></path>
-        </svg>
-      </span>
-
-      <div>
-        If we cancel your experience due to weather or safety
-        conditions, you will receive a full refund.
-      </div>
-
-    </div>
-    
-    <div class="info-note"
-         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
-    
-      <span style="width:28px; flex-shrink:0; font-size:21px; text-align:center;"
-            aria-hidden="true">ⓘ</span>
-    
-      <div>
-        If the minimum number of participants is not reached,
-        we'll work with you to find the most convenient alternative date.
-        If that doesn't suit you, you'll receive a full refund.
-      </div>
-    
-    </div>
-    
-    <div class="info-note"
-         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
-
-      <span style="width:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center;" aria-hidden="true">
-        <svg width="26" height="22" viewBox="0 0 24 20" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-          <path d="M2 7h20"></path>
-        </svg>
-      </span>
-
-      <div>
-        Only the deposit is required now to secure your booking.
-      </div>
-
-    </div>
-
-    <div class="info-note"
-         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
 
       <span class="cash-van"
             style="width:28px; height:22px; flex-shrink:0; display:flex; align-items:center; justify-content:center;"
@@ -3582,9 +3534,58 @@
       </span>
 
       <div>
-        The remaining balance is collected separately on the day of your experience, preferably in cash.
+        The remaining balance is collected separately on the day of your
+        experience, preferably in cash.
       </div>
+    </div>
 
+    <!-- 2. Deposit -->
+    <div class="info-note"
+         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
+
+      <span style="width:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center;" aria-hidden="true">
+        <svg width="26" height="22" viewBox="0 0 24 20" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+          <path d="M2 7h20"></path>
+        </svg>
+      </span>
+
+      <div>
+        A deposit is required to confirm your reservation.
+      </div>
+    </div>
+
+    <!-- 3. Minimum participants -->
+    <div class="info-note"
+         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
+
+      <span style="width:28px; flex-shrink:0; font-size:21px; text-align:center;"
+            aria-hidden="true">ⓘ</span>
+
+      <div>
+        If the minimum number of participants isn't reached, we'll help you
+        find another suitable date. If that doesn't work for you, you'll
+        receive a full refund.
+      </div>
+    </div>
+
+    <!-- 4. Weather and safety -->
+    <div class="info-note"
+         style="display:flex; align-items:center; gap:12px; font-size:14px; line-height:1.35; margin-top:10px;">
+
+      <span style="width:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center;" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+          <path d="M16 3v4M8 3v4M3 10h18"></path>
+        </svg>
+      </span>
+
+      <div>
+        Your safety comes first. If we cancel your experience for weather
+        or safety reasons, you'll receive a full refund.
+      </div>
     </div>
     
     <div style="display:flex; align-items:flex-start;
@@ -5307,7 +5308,7 @@ document.getElementById("calendar-month").textContent =
     
         const seats = Number(trip.seats_available);
         const option = new Option(
-          `${name} — ${time} (${seats} seats left)`,
+          `${time} (${seats} seats left)`,
           trip.id
         );
     
@@ -5676,7 +5677,7 @@ function renderCalendar() {
     const option = document.createElement("option");
     option.value = trip.id;
     option.textContent =
-      `${name} — ${time} (${trip.seats_available} seats left)`;
+      `${time} (${trip.seats_available} seats left)`;
 
     departureSelect.appendChild(option);
   });
