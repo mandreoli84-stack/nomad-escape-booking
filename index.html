@@ -5663,12 +5663,21 @@ function renderCalendar() {
 
     const tripDate = new Date(departures[0].starts_at);
 
-    booking.date = tripDate.toLocaleDateString("en-GB", {
+    const newDate = tripDate.toLocaleDateString("en-GB", {
       timeZone: "Atlantic/Canary",
       day: "numeric",
       month: "long",
       year: "numeric"
     });
+
+    if (booking.date !== newDate) {
+      booking.tripId = "";
+      booking.startsAt = null;
+      booking.endsAt = null;
+      booking.seatsAvailable = 0;
+    }
+
+    booking.date = newDate;
 
     document.getElementById("selected-date-text").textContent =
       tripDate.toLocaleDateString("en-GB", {
