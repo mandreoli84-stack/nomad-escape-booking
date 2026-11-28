@@ -1164,6 +1164,71 @@
           return;
         }
         
+        // Arvo Smart / Night Smart — Supabase
+        if (
+          event.data?.type === "NEF_V4_GET_SMART_SLOTS" ||
+          event.data?.type === "NEF_V4_SET_SMART_SLOT"
+        ) {
+          const activeScreen = document.getElementById(
+            "screen-admin-booking-overview"
+          );
+
+          if (!activeScreen?.classList.contains("active")) return;
+
+          const isSet =
+            event.data.type === "NEF_V4_SET_SMART_SLOT";
+
+          const slotName = event.data.slotName;
+
+          try {
+            if (
+              isSet &&
+              (!["arvo", "night"].includes(slotName) ||
+               typeof event.data.enabled !== "boolean")
+            ) {
+              throw new Error("Invalid Smart Slot setting");
+            }
+
+            if (isSet) {
+              const { error } = await supabaseClient.rpc(
+                "admin_set_smart_slot",
+                {
+                  p_slot_name: slotName,
+                  p_enabled: event.data.enabled
+                }
+              );
+
+              if (error) throw error;
+            }
+
+            const { data, error } = await supabaseClient.rpc(
+              "admin_get_smart_slots"
+            );
+
+            if (error) throw error;
+
+            if (!Array.isArray(data)) {
+              throw new Error("Invalid Smart Slot response");
+            }
+
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_SMART_SLOTS_STATE",
+              slots: data
+            }, "*");
+
+          } catch (error) {
+            console.error("Smart Slot settings:", error);
+
+            iframe.contentWindow.postMessage({
+              type: "NEF_V4_SMART_SLOT_ERROR",
+              slotName,
+              message: "Unable to update Arvo/Night Smart"
+            }, "*");
+          }
+
+          return;
+        }
+
         if (event.data?.type === "NEF_V4_SLOT_LOCK") {
           const activeScreen = document.getElementById(
             "screen-admin-booking-overview"
