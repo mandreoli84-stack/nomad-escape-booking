@@ -2987,6 +2987,16 @@
       </div>
     </div>
 
+    <div id="departure-selection" hidden>
+      <label for="departure-time">Choose your departure</label>
+      <select
+        id="departure-time"
+        style="width:100%;padding:13px;border:1px solid #d9e0e3;
+               border-radius:6px;font-size:16px;background:white;">
+        <option value="">Select a departure</option>
+      </select>
+    </div>
+    
     <div class="bottom-buttons">
       <button class="secondary" onclick="showScreen('screen-tour')">BACK</button>
       <button class="primary" id="date-continue" disabled onclick="continueFromDate()">
@@ -5243,6 +5253,118 @@ document.getElementById("calendar-month").textContent =
 
     booking.availableTrips = data || [];
 
+    // Refresh departure options without changing the selected trip.
+    const departureSelect = document.getElementById("departure-time");
+    const departureContainer = document.getElementById("departure-selection");
+    
+    if (departureSelect && departureContainer && booking.startsAt) {
+      const canaryDay = value =>
+        new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Atlantic/Canary",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(value));
+    
+      const selectedDay = canaryDay(booking.startsAt);
+    
+      const departures = booking.availableTrips
+        .filter(trip =>
+          canaryDay(trip.starts_at) === selectedDay &&
+          ["09:30", "14:30", "19:30"].includes(
+            new Intl.DateTimeFormat("en-GB", {
+              timeZone: "Atlantic/Canary",
+              hour: "2-digit",
+              minute: "2-digit",
+              hourCycle: "h23"
+            }).format(new Date(trip.starts_at))
+          )
+        )
+        .sort((a, b) =>
+          new Date(a.starts_at) - new Date(b.starts_at)
+        );
+    
+      const previousTripId = booking.tripId;
+    
+      departureSelect.replaceChildren();
+    
+      const placeholder = new Option("Select a departure", "");
+      departureSelect.add(placeholder);
+    
+      departures.forEach(trip => {
+        const time = new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Atlantic/Canary",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23"
+        }).format(new Date(trip.starts_at));
+    
+        const name = {
+          "09:30": "Morning",
+          "14:30": "Arvo",
+          "19:30": "Night"
+        }[time];
+    
+        const seats = Number(trip.seats_available);
+        const option = new Option(
+          `${name} — ${time} (${seats} seats left)`,
+          trip.id
+        );
+    
+        option.disabled = !Number.isFinite(seats) || seats <= 0;
+        departureSelect.add(option);
+      });
+    
+      // Preserve a selected departure even if it disappears
+      // from the availability view.
+      if (
+        previousTripId &&
+        !departures.some(trip => trip.id === previousTripId)
+      ) {
+        const unavailable = new Option(
+          "Selected departure no longer available",
+          previousTripId
+        );
+        unavailable.disabled = true;
+        departureSelect.add(unavailable);
+      }
+    
+      departureSelect.value = previousTripId || "";
+    
+      departureSelect.onchange = async function () {
+        const newTripId = departureSelect.value;
+    
+        if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
+          departureSelect.value = booking.tripId;
+          return;
+        }
+    
+        const trip = departures.find(
+          item => item.id === newTripId &&
+                  Number(item.seats_available) > 0
+        );
+    
+        if (!trip) {
+          departureSelect.value = booking.tripId;
+          return;
+        }
+    
+        booking.tripId = trip.id;
+        booking.startsAt = trip.starts_at;
+        booking.endsAt = trip.ends_at;
+        booking.seatsAvailable = Number(trip.seats_available);
+    
+        const seatsText = booking.seatsAvailable +
+          (booking.seatsAvailable === 1
+            ? " seat left"
+            : " seats left");
+    
+        document.getElementById("date-seats").textContent = seatsText;
+        document.getElementById("seats-left").textContent = seatsText;
+        document.getElementById("date-continue").disabled = false;
+      };
+    }
+
     if (booking.tripId) {
       const selectedTrip = booking.availableTrips.find(
         trip => trip.id === booking.tripId
@@ -5353,44 +5475,50 @@ function renderCalendar() {
     dayElement.className = "day muted";
     dayElement.textContent = day;
 
-    const trip = booking.availableTrips.find(item => {
-      const parts = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Atlantic/Canary",
-        year: "numeric",
-        month: "numeric",
-        day: "numeric"
-      }).formatToParts(new Date(item.starts_at));
-
-      const tripDay = Number(
-        parts.find(p => p.type === "day").value
-      );
-
-      const tripMonth = Number(
-        parts.find(p => p.type === "month").value
-      ) - 1;
-
-      const tripYear = Number(
-        parts.find(p => p.type === "year").value
-      );
-
-      return (
-        tripYear === calendarYear &&
-        tripMonth === calendarMonth &&
-        tripDay === day
-      );
-    });
-
-    if (trip && Number(trip.seats_available) > 0) {
-      dayElement.classList.remove("muted");
-      dayElement.classList.add("available");
-      dayElement.setAttribute("onclick", `chooseDate(${day})`);
-      
-      if (trip.id === booking.tripId) {
-        dayElement.classList.add("selected");
-      }
-    }
-
-    daysContainer.appendChild(dayElement);
+  const tripsForDay = booking.availableTrips.filter(item => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Atlantic/Canary",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric"
+    }).formatToParts(new Date(item.starts_at));
+  
+    const tripDay = Number(
+      parts.find(p => p.type === "day").value
+    );
+  
+    const tripMonth = Number(
+      parts.find(p => p.type === "month").value
+    ) - 1;
+  
+    const tripYear = Number(
+      parts.find(p => p.type === "year").value
+    );
+  
+    return (
+      tripYear === calendarYear &&
+      tripMonth === calendarMonth &&
+      tripDay === day
+    );
+  });
+  
+  const hasAvailableDeparture = tripsForDay.some(
+    trip => Number(trip.seats_available) > 0
+  );
+  
+  if (hasAvailableDeparture) {
+    dayElement.classList.remove("muted");
+    dayElement.classList.add("available");
+    dayElement.setAttribute("onclick", `chooseDate(${day})`);
+  }
+  
+  if (
+    booking.tripId &&
+    tripsForDay.some(trip => trip.id === booking.tripId)
+  ) {
+    dayElement.classList.add("selected");
+  }
+  daysContainer.appendChild(dayElement);
   }
 }
   document.getElementById("calendar-next").onclick = function() {
@@ -5487,42 +5615,117 @@ function renderCalendar() {
     return;
   }
   
-  const selectedTrip = booking.availableTrips.find(item => {
+  const canaryParts = (value) => {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Atlantic/Canary",
       year: "numeric",
       month: "numeric",
       day: "numeric"
-    }).formatToParts(new Date(item.starts_at));
+    }).formatToParts(new Date(value));
 
-    const tripDay = Number(
-      parts.find(p => p.type === "day").value
+    return {
+      day: Number(parts.find(p => p.type === "day").value),
+      month: Number(parts.find(p => p.type === "month").value) - 1,
+      year: Number(parts.find(p => p.type === "year").value)
+    };
+  };
+
+  const departures = booking.availableTrips
+    .filter(item => {
+      const date = canaryParts(item.starts_at);
+
+      return date.day === day &&
+             date.month === calendarMonth &&
+             date.year === calendarYear &&
+             Number(item.seats_available) > 0;
+    })
+    .sort((a, b) =>
+      new Date(a.starts_at) - new Date(b.starts_at)
     );
 
-    const tripMonth = Number(
-      parts.find(p => p.type === "month").value
-    ) - 1;
+  if (!departures.length) {
+    alert("No departures available for this date.");
+    return;
+  }
 
-    const tripYear = Number(
-      parts.find(p => p.type === "year").value
-    );
+  const departureSelect =
+    document.getElementById("departure-time");
 
-    return (
-      tripYear === calendarYear &&
-      tripMonth === calendarMonth &&
-      tripDay === day
-    );
+  const departureContainer =
+    document.getElementById("departure-selection");
+
+  departureSelect.innerHTML =
+    '<option value="">Select a departure</option>';
+
+  departures.forEach(trip => {
+    const time = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Atlantic/Canary",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).format(new Date(trip.starts_at));
+
+    const name = {
+      "09:30": "Morning",
+      "14:30": "Arvo",
+      "19:30": "Night"
+    }[time];
+
+    if (!name) return;
+
+    const option = document.createElement("option");
+    option.value = trip.id;
+    option.textContent =
+      `${name} — ${time} (${trip.seats_available} seats left)`;
+
+    departureSelect.appendChild(option);
   });
 
-if (!selectedTrip || selectedTrip.seats_available <= 0) {
-  alert("No seats available for this date. Please choose another day.");
-  return;
-}
+  departureContainer.hidden = false;
 
-booking.tripId = selectedTrip.id;
-booking.seatsAvailable = selectedTrip.seats_available;
-booking.startsAt = selectedTrip.starts_at;
-booking.endsAt = selectedTrip.ends_at;
+  // Keep the existing departure if the same date is selected again.
+  const previousTrip = departures.find(
+    trip => trip.id === booking.tripId
+  );
+
+  const selectedTrip = previousTrip || departures[0];
+
+  departureSelect.value = selectedTrip.id;
+
+  booking.tripId = selectedTrip.id;
+  booking.seatsAvailable = Number(selectedTrip.seats_available);
+  booking.startsAt = selectedTrip.starts_at;
+  booking.endsAt = selectedTrip.ends_at;
+
+  departureSelect.onchange = async function () {
+    if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
+      departureSelect.value = booking.tripId;
+      return;
+    }
+
+    const trip = departures.find(
+      item => item.id === departureSelect.value
+    );
+
+    if (!trip) {
+      document.getElementById("date-continue").disabled = true;
+      return;
+    }
+
+    booking.tripId = trip.id;
+    booking.seatsAvailable = Number(trip.seats_available);
+    booking.startsAt = trip.starts_at;
+    booking.endsAt = trip.ends_at;
+
+    document.getElementById("date-seats").textContent =
+      booking.seatsAvailable + " seats left";
+
+    document.getElementById("seats-left").textContent =
+      booking.seatsAvailable + " seats left";
+
+    document.getElementById("date-continue").disabled =
+      booking.seatsAvailable <= 0;
+  };
     
     document.querySelectorAll(".day").forEach(el => {
       el.classList.remove("selected");
@@ -5695,10 +5898,18 @@ async function continueFromPeople() {
     document.getElementById("review-date").textContent =
       formatDateWithOrdinal(booking.date);
 
+    const canaryTime = value =>
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).format(new Date(value));
+    
     document.getElementById("review-time").textContent =
-      booking.tour === "North Fuerteventura"
-      ? "09:30 – 13:30"
-      : "09:30 – 17:00";
+      booking.startsAt && booking.endsAt
+        ? `${canaryTime(booking.startsAt)} – ${canaryTime(booking.endsAt)}`
+        : "Time to be confirmed";
 
     document.getElementById("review-people").textContent =
       booking.people + (booking.people === 1 ? " person" : " people");
