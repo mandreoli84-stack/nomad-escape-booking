@@ -4520,7 +4520,9 @@ async function createAssistedBooking() {
   async function selectAccessType(type) {
     booking.accessType = type;
 
-    document.getElementById("guest-terms-accepted").checked = false;
+    const guestTerms = document.getElementById("guest-terms-accepted");
+    guestTerms.checked = false;
+    guestTerms.disabled = false;
 
     businessSessionToken = null;
     businessDefaultPickup = "";
@@ -5768,9 +5770,6 @@ async function continueFromReview() {
 
   const payDepositButton = document.getElementById("pay-deposit-button");
 
-  document.getElementById("guest-terms-accepted").disabled =
-    Boolean(guestHoldRequestId);
-
   if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
     payDepositButton.disabled = true;
     payDepositButton.textContent = "BOOKING ATTEMPT IN PROGRESS";
@@ -5778,6 +5777,9 @@ async function continueFromReview() {
     payDepositButton.disabled = false;
     payDepositButton.textContent = "PAY DEPOSIT €" + depositAmount;
   }
+  
+  document.getElementById("guest-terms-accepted").disabled =
+    Boolean(guestHoldRequestId);
 
   showScreen("screen-payment");
 }
@@ -5884,12 +5886,14 @@ async function continueFromReview() {
     try {
       const unlocked = await checkGuestHoldUnlock();
 
-      if (unlocked) {
-        const depositAmount = Math.floor(booking.tourTotal * 0.25);
-
-        button.disabled = false;
-        button.textContent = "PAY DEPOSIT €" + depositAmount;
-      }
+    if (unlocked) {
+      const depositAmount = Math.floor(booking.tourTotal * 0.25);
+    
+      button.disabled = false;
+      button.textContent = "PAY DEPOSIT €" + depositAmount;
+    
+      document.getElementById("guest-terms-accepted").disabled = false;
+    }
     } finally {
       guestHoldAutoUnlockChecking = false;
     }
