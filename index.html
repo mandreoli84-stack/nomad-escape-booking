@@ -5213,33 +5213,159 @@ async function checkBusinessPassword() {
 
   booking.availableTrips = data;
 
-const firstDate = new Date(data[0].starts_at);
-
-const firstDateParts = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Atlantic/Canary",
-  month: "numeric",
-  year: "numeric"
-}).formatToParts(firstDate);
-
-calendarMonth = Number(
-  firstDateParts.find(part => part.type === "month").value
-) - 1;
-
-calendarYear = Number(
-  firstDateParts.find(part => part.type === "year").value
-);
-
-document.getElementById("calendar-month").textContent =
-  firstDate.toLocaleDateString("en-GB", {
-    timeZone: "Atlantic/Canary",
-    month: "long",
-    year: "numeric"
-  });
-    renderCalendar();
+  const firstDate = new Date(data[0].starts_at);
   
-    showScreen("screen-date");
-}
-
+  const firstDateParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Atlantic/Canary",
+    month: "numeric",
+    year: "numeric"
+  }).formatToParts(firstDate);
+  
+  calendarMonth = Number(
+    firstDateParts.find(part => part.type === "month").value
+  ) - 1;
+  
+  calendarYear = Number(
+    firstDateParts.find(part => part.type === "year").value
+  );
+  
+  document.getElementById("calendar-month").textContent =
+    firstDate.toLocaleDateString("en-GB", {
+      timeZone: "Atlantic/Canary",
+      month: "long",
+      year: "numeric"
+    });
+      renderCalendar();
+    
+      showScreen("screen-date");
+  }
+  
+  function updateDepartureSelection() {
+    const select = document.getElementById("departure-time");
+    const container = document.getElementById("departure-selection");
+    const dateSeats = document.getElementById("date-seats");
+    const seatsLeft = document.getElementById("seats-left");
+    const continueButton = document.getElementById("date-continue");
+  
+    if (!select || !container || !dateSeats ||
+        !seatsLeft || !continueButton || !booking.date) return;
+  
+    const formatDate = value =>
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }).format(new Date(value));
+  
+    const formatTime = value =>
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Atlantic/Canary",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).format(new Date(value));
+  
+    const departures = (booking.availableTrips || [])
+      .filter(trip =>
+        formatDate(trip.starts_at) === booking.date &&
+        ["09:30", "14:30", "19:30"].includes(
+          formatTime(trip.starts_at)
+        )
+      )
+      .sort((a, b) =>
+        new Date(a.starts_at) - new Date(b.starts_at)
+      );
+  
+    const bookable = departures.filter(trip =>
+      Number.isFinite(Number(trip.seats_available)) &&
+      Number(trip.seats_available) > 0
+    );
+  
+    const classicOnly =
+      bookable.length === 1 &&
+      formatTime(bookable[0].starts_at) === "09:30";
+  
+    const previousId = booking.tripId;
+  
+    function setTrip(trip) {
+      booking.tripId = trip ? trip.id : "";
+      booking.startsAt = trip ? trip.starts_at : null;
+      booking.endsAt = trip ? trip.ends_at : null;
+      booking.seatsAvailable = trip
+        ? Number(trip.seats_available)
+        : 0;
+    }
+  
+    if (classicOnly) {
+      setTrip(bookable[0]);
+  
+      container.hidden = true;
+      select.replaceChildren(new Option("Select a departure", ""));
+  
+      const seats = booking.seatsAvailable;
+      dateSeats.hidden = false;
+      dateSeats.textContent =
+        `${seats} ${seats === 1 ? "seat" : "seats"} left`;
+  
+    } else {
+      container.hidden = bookable.length === 0;
+      dateSeats.hidden = true;
+      dateSeats.textContent = "";
+  
+      select.replaceChildren(
+        new Option("Select a departure", "")
+      );
+  
+      bookable.forEach(trip => {
+        const seats = Number(trip.seats_available);
+        const time = formatTime(trip.starts_at);
+  
+        select.add(new Option(
+          `${time} (${seats} ${seats === 1 ? "seat" : "seats"} left)`,
+          trip.id
+        ));
+      });
+  
+      const previousTrip = bookable.find(
+        trip => trip.id === previousId
+      );
+  
+      setTrip(previousTrip || null);
+      select.value = previousTrip ? previousTrip.id : "";
+  
+      select.onchange = async function () {
+        if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
+          select.value = booking.tripId || "";
+          return;
+        }
+  
+        const trip = bookable.find(
+          item => item.id === select.value
+        );
+  
+        setTrip(trip || null);
+  
+        seatsLeft.textContent = trip
+          ? `${booking.seatsAvailable} ${
+              booking.seatsAvailable === 1 ? "seat" : "seats"
+            } left`
+          : "";
+  
+        continueButton.disabled = !trip;
+      };
+    }
+  
+    seatsLeft.textContent = booking.tripId
+      ? `${booking.seatsAvailable} ${
+          booking.seatsAvailable === 1 ? "seat" : "seats"
+        } left`
+      : "";
+  
+    continueButton.disabled =
+      !booking.tripId || booking.seatsAvailable <= 0;
+  }
+  
   async function refreshLiveSeatsCalendar() {
     const requestedTour = booking.tour;
 
@@ -5263,111 +5389,8 @@ document.getElementById("calendar-month").textContent =
 
     booking.availableTrips = data || [];
 
-    // Refresh departure options without changing the selected trip.
-    const departureSelect = document.getElementById("departure-time");
-    const departureContainer = document.getElementById("departure-selection");
-    
-    if (departureSelect && departureContainer && booking.date) {
-      const canaryDate = value =>
-        new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Atlantic/Canary",
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        }).format(new Date(value));
-
-      const canaryTime = value =>
-        new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Atlantic/Canary",
-          hour: "2-digit",
-          minute: "2-digit",
-          hourCycle: "h23"
-        }).format(new Date(value));
-
-      const departures = booking.availableTrips
-        .filter(trip =>
-          canaryDate(trip.starts_at) === booking.date &&
-          ["09:30", "14:30", "19:30"].includes(
-            canaryTime(trip.starts_at)
-          )
-        )
-        .sort((a, b) =>
-          new Date(a.starts_at) - new Date(b.starts_at)
-        );
-
-      const previousTripId = booking.tripId;
-
-      departureSelect.replaceChildren();
-      departureSelect.add(
-        new Option("Select a departure", "")
-      );
-
-      departures.forEach(trip => {
-        const seats = Number(trip.seats_available);
-        const time = canaryTime(trip.starts_at);
-
-        const option = new Option(
-          `${time} (${seats} ${seats === 1 ? "seat" : "seats"} left)`,
-          trip.id
-        );
-
-        option.disabled =
-          !Number.isFinite(seats) || seats <= 0;
-
-        departureSelect.add(option);
-      });
-
-      if (
-        previousTripId &&
-        !departures.some(trip => trip.id === previousTripId)
-      ) {
-        const unavailable = new Option(
-          "Selected departure no longer available",
-          previousTripId
-        );
-
-        unavailable.disabled = true;
-        departureSelect.add(unavailable);
-      }
-
-      departureSelect.value = previousTripId || "";
-      departureContainer.hidden = false;
-
-      departureSelect.onchange = async function () {
-        const newTripId = departureSelect.value;
-
-        if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
-          departureSelect.value = booking.tripId || "";
-          return;
-        }
-
-        const trip = departures.find(item =>
-          item.id === newTripId &&
-          Number(item.seats_available) > 0
-        );
-
-        if (!trip) {
-          departureSelect.value = booking.tripId || "";
-          return;
-        }
-
-        booking.tripId = trip.id;
-        booking.startsAt = trip.starts_at;
-        booking.endsAt = trip.ends_at;
-        booking.seatsAvailable = Number(trip.seats_available);
-
-        const seats = booking.seatsAvailable;
-        const seatsText =
-          `${seats} ${seats === 1 ? "seat" : "seats"} left`;
-
-        document.getElementById("date-seats").textContent =
-          seatsText;
-
-        document.getElementById("seats-left").textContent =
-          seatsText;
-
-        document.getElementById("date-continue").disabled = false;
-      };
+    if (booking.date) {
+      updateDepartureSelection();
     }
     
     if (booking.tripId) {
@@ -5655,91 +5678,6 @@ function renderCalendar() {
     alert("No departures available for this date.");
     return;
   }
-
-  const departureSelect =
-    document.getElementById("departure-time");
-
-  const departureContainer =
-    document.getElementById("departure-selection");
-
-  departureSelect.innerHTML =
-    '<option value="">Select a departure</option>';
-
-  departures.forEach(trip => {
-    const time = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Atlantic/Canary",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date(trip.starts_at));
-
-    const name = {
-      "09:30": "Morning",
-      "14:30": "Arvo",
-      "19:30": "Night"
-    }[time];
-
-    if (!name) return;
-
-    const option = document.createElement("option");
-    option.value = trip.id;
-    option.textContent =
-      `${time} (${trip.seats_available} seats left)`;
-
-    departureSelect.appendChild(option);
-  });
-
-  departureContainer.hidden = false;
-
-  // Keep the existing departure if the same date is selected again.
-  const previousTrip = departures.find(
-    trip => trip.id === booking.tripId
-  );
-
-  const selectedTrip = previousTrip || null;
-
-  departureSelect.value = selectedTrip ? selectedTrip.id : "";
-
-  booking.tripId = selectedTrip ? selectedTrip.id : "";
-  booking.seatsAvailable = selectedTrip
-    ? Number(selectedTrip.seats_available)
-    : 0;
-  booking.startsAt = selectedTrip
-    ? selectedTrip.starts_at
-    : null;
-  booking.endsAt = selectedTrip
-    ? selectedTrip.ends_at
-    : null;
-
-  departureSelect.onchange = async function () {
-    if (guestHoldRequestId && !(await checkGuestHoldUnlock())) {
-      departureSelect.value = booking.tripId;
-      return;
-    }
-
-    const trip = departures.find(
-      item => item.id === departureSelect.value
-    );
-
-    if (!trip) {
-      document.getElementById("date-continue").disabled = true;
-      return;
-    }
-
-    booking.tripId = trip.id;
-    booking.seatsAvailable = Number(trip.seats_available);
-    booking.startsAt = trip.starts_at;
-    booking.endsAt = trip.ends_at;
-
-    document.getElementById("date-seats").textContent =
-      booking.seatsAvailable + " seats left";
-
-    document.getElementById("seats-left").textContent =
-      booking.seatsAvailable + " seats left";
-
-    document.getElementById("date-continue").disabled =
-      booking.seatsAvailable <= 0;
-  };
     
     document.querySelectorAll(".day").forEach(el => {
       el.classList.remove("selected");
@@ -5776,16 +5714,7 @@ function renderCalendar() {
     document.getElementById("people-count").textContent = booking.people;
     booking.tourTotal = booking.pricePerPerson * booking.people;
     
-    document.getElementById("date-seats").textContent =
-      booking.seatsAvailable +
-      (booking.seatsAvailable === 1 ? " seat left" : " seats left");
-    
-    document.getElementById("date-continue").disabled =
-      !booking.tripId || booking.seatsAvailable <= 0;
-
-    document.getElementById("seats-left").textContent =
-      booking.seatsAvailable +
-      (booking.seatsAvailable === 1 ? " seat left" : " seats left");
+    updateDepartureSelection();
     }
     
 async function continueFromPeople() {
